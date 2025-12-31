@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mairie de Kloto 1 - Accueil</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .header-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #e6b800;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid var(--white);
+        }
+
+        .btn-secondary:hover {
+            background: var(--white);
+            color: var(--primary);
+        }
+
+        nav {
+            background: rgba(255,255,255,0.1);
+            margin-top: 1rem;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        nav ul li {
+            margin: 0.5rem 1rem;
+        }
+
+        nav ul li a {
+            color: var(--white);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: block;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(0,98,51,0.9), rgba(0,77,40,0.9));
+            color: var(--white);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .section {
+            margin: 3rem 0;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            text-align: center;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .mot-maire {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 3rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 3rem;
+        }
+
+        .mot-maire-header {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .maire-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--secondary);
+        }
+
+        .maire-info h3 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .maire-info p {
+            font-size: 1.1rem;
+            color: var(--dark);
+            opacity: 0.8;
+        }
+
+        .mot-maire-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            text-align: justify;
+            margin-bottom: 2rem;
+        }
+
+        .maire-signature {
+            max-width: 200px;
+            height: auto;
+            margin-top: 1rem;
+        }
+
+        .collaborateurs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .collaborateur-card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .collaborateur-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .collaborateur-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1rem;
+            border: 4px solid var(--secondary);
+        }
+
+        .collaborateur-card h4 {
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .collaborateur-fonction {
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .collaborateur-bureau {
+            color: var(--dark);
+            opacity: 0.7;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .collaborateur-contact {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--light);
+        }
+
+        .collaborateur-contact p {
+            margin: 0.3rem 0;
+            font-size: 0.9rem;
+        }
+
+        .informations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .info-card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 5px solid var(--primary);
+        }
+
+        .info-card h4 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-card .icone {
+            font-size: 2rem;
+        }
+
+        .info-card p {
+            line-height: 1.8;
+            color: var(--dark);
+        }
+
+        footer {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 3rem 2rem 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-column h4 {
+            margin-bottom: 1rem;
+            color: var(--secondary, #FFCD00);
+            font-size: 1.2rem;
+        }
+
+        .footer-column p,
+        .footer-column li,
+        .footer-bottom p {
+            font-size: 0.9rem;
+            color: var(--white);
+            opacity: 0.9;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-column ul li + li {
+            margin-top: 0.3rem;
+        }
+
+        .footer-column a {
+            color: var(--white);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: var(--secondary, #FFCD00);
+            text-decoration: underline;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 0.7rem;
+            margin-top: 0.5rem;
+        }
+
+        .footer-social a {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--white);
+            text-decoration: none;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .mot-maire-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .collaborateurs-grid,
+            .informations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <div class="logo-section">
+                <div class="logo">K1</div>
+                <div class="header-text">
+                    <h1>Mairie de Kloto 1</h1>
+                    <p>Plateforme de Gestion Économique</p>
+                </div>
+            </div>
+            <div class="auth-buttons">
+                {% if user.is_authenticated %}
+                    <span style="color: var(--white); margin-right: 1rem; align-self: center;">Bonjour, {{ user.username }}</span>
+                    <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
+                {% else %}
+                    <a href="{% url 'comptes:connexion' %}" class="btn btn-primary">Connexion</a>
+                    <a href="{% url 'comptes:inscription' %}" class="btn btn-secondary">Inscription</a>
+                {% endif %}
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="{% url 'mairie:accueil' %}" class="active">Accueil</a></li>
+                <li><a href="{% url 'enregistrement' %}">Enregistrement</a></li>
+                <li><a href="{% url 'acteurs:enregistrement' %}">Entreprises</a></li>
+                <li><a href="{% url 'acteurs:inscription_institutions' %}">Institutions Financières</a></li>
+                <li><a href="{% url 'acteurs:sites_public' %}">Sites touristiques</a></li>
+                <li><a href="{% url 'emploi:inscription_jeunes' %}">Emploi</a></li>
+                <li><a href="{% url 'actualites:liste' %}">Actualités</a></li>
+                <li><a href="{% url 'mairie:appels_offres' %}">Appels d'Offres</a></li>
+  
+                {% if user.is_staff or user.is_superuser %}
+                <li><a href="{% url 'tableau_bord' %}" class="nav-link">Tableau de Bord</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div class="hero">
+        <h2>Bienvenue sur le Portail de la Mairie de Kloto 1</h2>
+        <p>Une administration proche des citoyens, engagée pour le développement</p>
+    </div>
+
+    <div class="container">
+        <!-- Mot du Maire -->
+        {% if mot_maire %}
+        <section class="section">
+            <div class="mot-maire">
+                <div class="mot-maire-header">
+                    {% if mot_maire.photo_maire %}
+                    <img src="{{ mot_maire.photo_maire.url }}" alt="{{ mot_maire.nom_maire }}" class="maire-photo">
+                    {% endif %}
+                    <div class="maire-info">
+                        <h3>{{ mot_maire.titre }}</h3>
+                        <p>{{ mot_maire.nom_maire }}</p>
+                    </div>
+                </div>
+                <div class="mot-maire-content">
+                    {{ mot_maire.contenu|linebreaks }}
+                </div>
+                {% if mot_maire.signature %}
+                <img src="{{ mot_maire.signature.url }}" alt="Signature" class="maire-signature">
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Collaborateurs -->
+        {% if collaborateurs %}
+        <section class="section">
+            <h2 class="section-title">Le Bureau Municipal</h2>
+            <div class="collaborateurs-grid">
+                {% for collaborateur in collaborateurs %}
+                <div class="collaborateur-card">
+                    {% if collaborateur.photo %}
+                    <img src="{{ collaborateur.photo.url }}" alt="{{ collaborateur.nom }} {{ collaborateur.prenoms }}" class="collaborateur-photo">
+                    {% else %}
+                    <div class="collaborateur-photo" style="background: var(--light); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 3rem;">👤</div>
+                    {% endif %}
+                    <h4>{{ collaborateur.nom }} {{ collaborateur.prenoms }}</h4>
+                    <p class="collaborateur-fonction">{{ collaborateur.get_fonction_complete }}</p>
+                    {% if collaborateur.bureau %}
+                    <p class="collaborateur-bureau">📍 {{ collaborateur.bureau }}</p>
+                    {% endif %}
+                    {% if collaborateur.description %}
+                    <p style="font-size: 0.9rem; color: var(--dark); opacity: 0.8; margin-top: 1rem;">{{ collaborateur.description|truncatewords:20 }}</p>
+                    {% endif %}
+                    <div class="collaborateur-contact">
+                        {% if collaborateur.telephone %}
+                        <p>📞 {{ collaborateur.telephone }}</p>
+                        {% endif %}
+                        {% if collaborateur.email %}
+                        <p>📧 {{ collaborateur.email }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Informations de la Mairie -->
+        {% if informations %}
+        <section class="section">
+            <h2 class="section-title">Informations Utiles</h2>
+            <div class="informations-grid">
+                {% for info in informations %}
+                <div class="info-card">
+                    <h4>
+                        {% if info.icone %}<span class="icone">{{ info.icone }}</span>{% endif %}
+                        {{ info.titre }}
+                    </h4>
+                    <p>{{ info.contenu|linebreaks }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+
+    {% include 'includes/footer.html' %}
+</body>
+</html>

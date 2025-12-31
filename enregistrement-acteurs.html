@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enregistrement des Acteurs Économiques - Mairie de Kloto 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.95;
+            font-size: 1.1rem;
+        }
+
+        .form-container {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .required {
+            color: var(--accent);
+            margin-left: 0.2rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input[type="file"] {
+            padding: 0.6rem;
+            border-style: dashed;
+        }
+
+        .helper-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+        }
+
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .info-box ul {
+            margin-left: 1.5rem;
+            color: #555;
+        }
+
+        .info-box li {
+            margin-bottom: 0.3rem;
+        }
+
+        .checkbox-group {
+            margin-top: 1.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.8rem;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 98, 51, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            margin-left: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 2px solid #c3e6cb;
+            display: none;
+            animation: slideDown 0.5s;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-message {
+            color: var(--accent);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            display: none;
+        }
+
+        .form-group.error input,
+        .form-group.error select,
+        .form-group.error textarea {
+            border-color: var(--accent);
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn-secondary {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">K1</div>
+            <h1>Enregistrement des Acteurs Économiques</h1>
+            <p>Mairie de Kloto 1 - Kpalimé, Région des Plateaux, Togo</p>
+        </header>
+
+        <div class="form-container">
+            <div class="success-message" id="successMessage">
+                <strong>✓ Succès !</strong> Votre demande d'enregistrement a été soumise avec succès. 
+                Elle sera examinée par les services de la mairie sous 48 heures.
+            </div>
+
+            <div class="info-box">
+                <h3>📋 Informations importantes</h3>
+                <ul>
+                    <li>Tous les champs marqués d'un astérisque (<span class="required">*</span>) sont obligatoires</li>
+                    <li>Assurez-vous que les informations fournies sont exactes et à jour</li>
+                    <li>Les documents fournis doivent être au format PDF, JPG ou PNG (max 5 MB)</li>
+                    <li>Votre enregistrement sera validé par la mairie dans un délai de 48 heures</li>
+                </ul>
+            </div>
+
+            <form id="acteurEconomiqueForm">
+                <!-- Section 1: Informations de base -->
+                <div class="section-title">1. Informations de Base</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Raison sociale <span class="required">*</span></label>
+                        <input type="text" id="raisonSociale" required placeholder="Nom de l'entreprise">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Type d'acteur <span class="required">*</span></label>
+                        <select id="typeActeur" required>
+                            <option value="">Sélectionner...</option>
+                            <option value="entreprise">Entreprise</option>
+                            <option value="commerce">Commerce</option>
+                            <option value="artisan">Artisan</option>
+                            <option value="pme">PME</option>
+                            <option value="pmi">PMI</option>
+                            <option value="ong">ONG</option>
+                            <option value="association">Association</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                        <span class="error-message">Veuillez sélectionner un type</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Secteur d'activité <span class="required">*</span></label>
+                        <select id="secteurActivite" required>
+                            <option value="">Sélectionner...</option>
+                            <option value="commerce">Commerce général</option>
+                            <option value="artisanat">Artisanat</option>
+                            <option value="service">Services</option>
+                            <option value="industrie">Industrie</option>
+                            <option value="agriculture">Agriculture</option>
+                            <option value="batiment">Bâtiment et Travaux Publics</option>
+                            <option value="transport">Transport</option>
+                            <option value="technologie">Technologie et Informatique</option>
+                            <option value="sante">Santé</option>
+                            <option value="education">Éducation et Formation</option>
+                            <option value="hotellerie">Hôtellerie et Restauration</option>
+                            <option value="finance">Finance et Assurance</option>
+                            <option value="bar">Bar</option>
+                            <option value="restaurant">Restaurant</option>
+                            <option value="auberge">Auberge</option>
+                            <option value="traiteur">Service Traiteur</option>
+                            <option value="pharmacie">Pharmacie</option>
+                            <option value="depot_pharmacie">Dépôt de Pharmacie</option>
+                            <option value="ecole_publique">Écoles Publiques</option>
+                            <option value="ecole_privee">Écoles Privées</option>
+                            <option value="supermarche">Supermarché</option>
+                            <option value="boutique">Boutique</option>
+                            <option value="alimentation">Alimentation générale</option>
+                            <option value="pret_a_porter">Prêt-à-porter</option>
+                            <option value="quincaillerie">Quincaillerie</option>
+                            <option value="tourisme">Tourisme</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                        <span class="error-message">Veuillez sélectionner un secteur</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Statut juridique <span class="required">*</span></label>
+                        <select id="statutJuridique" required>
+                            <option value="">Sélectionner...</option>
+                            <option value="sarl">SARL - Société à Responsabilité Limitée</option>
+                            <option value="sa">SA - Société Anonyme</option>
+                            <option value="ei">EI - Entreprise Individuelle</option>
+                            <option value="snc">SNC - Société en Nom Collectif</option>
+                            <option value="association">Association</option>
+                            <option value="ong">ONG</option>
+                            <option value="cooperative">Coopérative</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                        <span class="error-message">Veuillez sélectionner un statut</span>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Description de l'activité <span class="required">*</span></label>
+                    <textarea id="description" required placeholder="Décrivez brièvement vos activités principales..."></textarea>
+                    <span class="helper-text">Minimum 20 caractères</span>
+                    <span class="error-message">Veuillez fournir une description</span>
+                </div>
+
+                <!-- Section 2: Informations légales -->
+                <div class="section-title">2. Informations Légales et Fiscales</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>N° RCCM</label>
+                        <input type="text" id="rccm" placeholder="RCCM-TG-...">
+                        <span class="helper-text">Registre du Commerce et du Crédit Mobilier</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>N° CFE</label>
+                        <input type="text" id="cfe" placeholder="N° CFE">
+                        <span class="helper-text">Si disponible</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>N° Carte d'Opérateur économique</label>
+                        <input type="text" id="numCarteOperateur" placeholder="N° Carte Opérateur">
+                    </div>
+
+                    <div class="form-group">
+                        <label>NIF</label>
+                        <input type="text" id="nif" placeholder="N° d'Identification Fiscale">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date de création</label>
+                        <input type="date" id="dateCreation">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Capital social (FCFA)</label>
+                        <input type="number" id="capital" placeholder="0" min="0">
+                    </div>
+                </div>
+
+                <!-- Section 3: Responsable et Contact -->
+                <div class="section-title">3. Responsable et Coordonnées</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom du responsable <span class="required">*</span></label>
+                        <input type="text" id="nomResponsable" required placeholder="Nom complet">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fonction <span class="required">*</span></label>
+                        <input type="text" id="fonction" required placeholder="Ex: Directeur Général, Gérant">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Téléphone 1 <span class="required">*</span></label>
+                        <input type="tel" id="telephone1" required placeholder="+228 XX XX XX XX">
+                        <span class="error-message">Numéro de téléphone invalide</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Téléphone 2</label>
+                        <input type="tel" id="telephone2" placeholder="+228 XX XX XX XX">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email professionnel <span class="required">*</span></label>
+                        <input type="email" id="email" required placeholder="contact@entreprise.tg">
+                        <span class="error-message">Email invalide</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Site web</label>
+                        <input type="url" id="siteWeb" placeholder="https://www.exemple.tg">
+                    </div>
+                </div>
+
+                <!-- Section 4: Localisation -->
+                <div class="section-title">4. Localisation</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quartier <span class="required">*</span></label>
+                        <input type="text" id="quartier" required placeholder="Ex: Centre-Ville, Agomé">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Canton</label>
+                        <select id="canton">
+                            <option value="">Sélectionner...</option>
+                            <option value="kpalime">Kpalimé</option>
+                            <option value="kpele">Kpélé</option>
+                            <option value="agome">Agomé</option>
+                            <option value="kpime">Kpimé</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Adresse complète <span class="required">*</span></label>
+                        <textarea id="adresse" required placeholder="Adresse physique détaillée"></textarea>
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+                </div>
+
+                <!-- Section 5: Informations complémentaires -->
+                <div class="section-title">5. Informations Complémentaires</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nombre d'employés</label>
+                        <select id="nombreEmployes">
+                            <option value="">Sélectionner...</option>
+                            <option value="1-5">1 à 5</option>
+                            <option value="6-10">6 à 10</option>
+                            <option value="11-50">11 à 50</option>
+                            <option value="51-100">51 à 100</option>
+                            <option value="100+">Plus de 100</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Chiffre d'affaires annuel (FCFA)</label>
+                        <select id="chiffreAffaires">
+                            <option value="">Sélectionner...</option>
+                            <option value="0-5M">Moins de 5 millions</option>
+                            <option value="5M-20M">5 à 20 millions</option>
+                            <option value="20M-50M">20 à 50 millions</option>
+                            <option value="50M-100M">50 à 100 millions</option>
+                            <option value="100M+">Plus de 100 millions</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Section 6: Documents -->
+                <div class="section-title">6. Documents Justificatifs</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Document de registre (RCCM)</label>
+                        <input type="file" id="docRegistre" accept=".pdf,.jpg,.jpeg,.png">
+                        <span class="helper-text">Formats: PDF, JPG, PNG - Max: 5 MB</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Carte CFE</label>
+                        <input type="file" id="docIfu" accept=".pdf,.jpg,.jpeg,.png">
+                        <span class="helper-text">Formats: PDF, JPG, PNG - Max: 5 MB</span>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Autres documents (facultatif)</label>
+                        <input type="file" id="autresDoc" accept=".pdf,.jpg,.jpeg,.png" multiple>
+                        <span class="helper-text">Vous pouvez sélectionner plusieurs fichiers</span>
+                    </div>
+                </div>
+
+                <!-- Conditions -->
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="certifieInfo" required>
+                        <label for="certifieInfo">
+                            Je certifie que les informations fournies sont exactes et complètes <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="accepteConditions" required>
+                        <label for="accepteConditions">
+                            J'accepte que mes données soient traitées par la Mairie de Kloto 1 <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="acceptePublic">
+                        <label for="acceptePublic">
+                            J'accepte que mes coordonnées soient visibles publiquement sur la plateforme
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">📤 Soumettre l'enregistrement</button>
+                    <button type="reset" class="btn btn-secondary">🔄 Réinitialiser le formulaire</button>
+                </div>
+            </form>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 Mairie de Kloto 1 - Tous droits réservés</p>
+            <p>Pour toute assistance, contactez-nous au: +228 XX XX XX XX</p>
+        </footer>
+    </div>
+
+    <script>
+        const form = document.getElementById('acteurEconomiqueForm');
+        const successMessage = document.getElementById('successMessage');
+
+        // Validation en temps réel
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            field.addEventListener('blur', function() {
+                validateField(this);
+            });
+
+            field.addEventListener('input', function() {
+                if (this.parentElement.classList.contains('error')) {
+                    validateField(this);
+                }
+            });
+        });
+
+        function validateField(field) {
+            const formGroup = field.closest('.form-group') || field.closest('.checkbox-item');
+            
+            if (field.type === 'checkbox') {
+                if (!field.checked && field.hasAttribute('required')) {
+                    formGroup.classList.add('error');
+                    return false;
+                } else {
+                    formGroup.classList.remove('error');
+                    return true;
+                }
+            }
+            
+            if (!field.value.trim()) {
+                formGroup.classList.add('error');
+                return false;
+            }
+
+            // Validation email
+            if (field.type === 'email') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(field.value)) {
+                    formGroup.classList.add('error');
+                    return false;
+                }
+            }
+
+            // Validation téléphone
+            if (field.type === 'tel') {
+                const phoneRegex = /^\+228\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{2}$/;
+                if (!phoneRegex.test(field.value)) {
+                    formGroup.classList.add('error');
+                    return false;
+                }
+            }
+
+            // Validation textarea
+            if (field.tagName === 'TEXTAREA') {
+                if (field.value.trim().length < 20) {
+                    formGroup.classList.add('error');
+                    return false;
+                }
+            }
+
+            formGroup.classList.remove('error');
+            return true;
+        }
+
+        // Soumission du formulaire
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            let isValid = true;
+
+            // Valider tous les champs requis
+            requiredFields.forEach(field => {
+                if (!validateField(field)) {
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                alert('Veuillez corriger les erreurs dans le formulaire avant de soumettre.');
+                // Scroll vers la première erreur
+                const firstError = form.querySelector('.error');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+
+            // Collecter les données
+            const formData = {
+                raisonSociale: document.getElementById('raisonSociale').value,
+                typeActeur: document.getElementById('typeActeur').value,
+                secteurActivite: document.getElementById('secteurActivite').value,
+                statutJuridique: document.getElementById('statutJuridique').value,
+                description: document.getElementById('description').value,
+                rccm: document.getElementById('rccm').value,
+                cfe: document.getElementById('cfe').value,
+                numCarteOperateur: document.getElementById('numCarteOperateur').value,
+                nif: document.getElementById('nif').value,
+                dateCreation: document.getElementById('dateCreation').value,
+                capital: document.getElementById('capital').value,
+                nomResponsable: document.getElementById('nomResponsable').value,
+                fonction: document.getElementById('fonction').value,
+                telephone1: document.getElementById('telephone1').value,
+                telephone2: document.getElementById('telephone2').value,
+                email: document.getElementById('email').value,
+                siteWeb: document.getElementById('siteWeb').value,
+                quartier: document.getElementById('quartier').value,
+                canton: document.getElementById('canton').value,
+                adresse: document.getElementById('adresse').value,
+                nombreEmployes: document.getElementById('nombreEmployes').value,
+                chiffreAffaires: document.getElementById('chiffreAffaires').value,
+                acceptePublic: document.getElementById('acceptePublic').checked,
+                dateEnregistrement: new Date().toISOString()
+            };
+
+            console.log('Données soumises:', formData);
+
+            // Afficher le message de succès
+            successMessage.classList.add('active');
+            
+            // Scroll vers le haut
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Réinitialiser le formulaire après 2 secondes
+            setTimeout(() => {
+                form.reset();
+                successMessage.classList.remove('active');
+            }, 5000);
+        });
+
+        // Gestion du reset
+        form.addEventListener('reset', function() {
+            // Retirer toutes les classes d'erreur
+            const errorGroups = form.querySelectorAll('.error');
+            errorGroups.forEach(group => {
+                group.classList.remove('error');
+            });
+            successMessage.classList.remove('active');
+        });
+
+        // Validation de la taille des fichiers
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                const maxSize = 5 * 1024 * 1024; // 5 MB
+                if (this.files.length > 0) {
+                    for (let file of this.files) {
+                        if (file.size > maxSize) {
+                            alert(`Le fichier "${file.name}" dépasse la taille maximale de 5 MB.`);
+                            this.value = '';
+                            return;
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

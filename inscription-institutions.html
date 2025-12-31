@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription Institutions Financières - Mairie de Kloto 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.95;
+            font-size: 1.1rem;
+        }
+
+        .form-container {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .required {
+            color: var(--accent);
+            margin-left: 0.2rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-group input[type="file"] {
+            padding: 0.6rem;
+            border-style: dashed;
+        }
+
+        .helper-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-left: 4px solid #2196F3;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-box ul {
+            margin-left: 1.5rem;
+            color: #555;
+        }
+
+        .info-box li {
+            margin-bottom: 0.5rem;
+        }
+
+        .checkbox-group {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: var(--light);
+            border-radius: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.8rem;
+            margin-top: 0.2rem;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+            line-height: 1.5;
+        }
+
+        .services-checklist {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 8px;
+        }
+
+        .services-checklist .checkbox-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 98, 51, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            margin-left: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 2px solid #28a745;
+            display: none;
+            animation: slideDown 0.5s;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .success-message h3 {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-message {
+            color: var(--accent);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            display: none;
+        }
+
+        .form-group.error input,
+        .form-group.error select,
+        .form-group.error textarea {
+            border-color: var(--accent);
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        .type-icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #666;
+        }
+
+        footer p {
+            margin: 0.3rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .services-checklist {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn-secondary {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🏦</div>
+            <h1>Inscription des Institutions Financières</h1>
+            <p>Mairie de Kloto 1 - Kpalimé, Région des Plateaux, Togo</p>
+        </header>
+
+        <div class="form-container">
+            <div class="success-message" id="successMessage">
+                <h3>✓ Inscription réussie !</h3>
+                <p>Votre institution financière a été enregistrée avec succès dans notre répertoire.</p>
+                <p>Les entreprises et citoyens pourront désormais consulter vos services.</p>
+            </div>
+
+            <div class="info-box">
+                <h3>💡 Pourquoi s'inscrire ?</h3>
+                <ul>
+                    <li>Augmentez votre visibilité auprès des entreprises et citoyens de Kloto 1</li>
+                    <li>Facilitez l'accès aux services financiers pour les acteurs économiques locaux</li>
+                    <li>Contribuez au développement économique de la commune</li>
+                    <li>Accédez aux opportunités de partenariat avec la municipalité</li>
+                </ul>
+            </div>
+
+            <form id="institutionForm">
+                <!-- Section 1: Type et Identification -->
+                <div class="section-title">
+                    <span>1️⃣</span> Type et Identification
+                </div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Type d'institution <span class="required">*</span></label>
+                        <select id="typeInstitution" required>
+                            <option value="">Sélectionner le type...</option>
+                            <option value="banque">🏦 Banque Commerciale</option>
+                            <option value="microfinance">💰 Institution de Microfinance (IMF)</option>
+                            <option value="bailleur">🤝 Bailleur de Fonds</option>
+                            <option value="ong">🌍 ONG de Financement</option>
+                            <option value="cooperative">👥 Coopérative d'Épargne et de Crédit</option>
+                            <option value="assurance">🛡️ Compagnie d'Assurance</option>
+                            <option value="investissement">📈 Société d'Investissement</option>
+                            <option value="autre">➕ Autre</option>
+                        </select>
+                        <span class="error-message">Veuillez sélectionner un type</span>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Nom de l'institution <span class="required">*</span></label>
+                        <input type="text" id="nomInstitution" required placeholder="Ex: ECOBANK Togo, FUCEC, ANPGF">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sigle / Acronyme</label>
+                        <input type="text" id="sigle" placeholder="Ex: BTD, FUCEC">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Année de création</label>
+                        <input type="number" id="anneeCreation" min="1900" max="2025" placeholder="2020">
+                    </div>
+
+                    <div class="form-group">
+                        <label>N° d'agrément</label>
+                        <input type="text" id="numeroAgrement" placeholder="N° d'autorisation officielle">
+                        <span class="helper-text">Agrément BCEAO, Ministère, etc.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>N° IFU</label>
+                        <input type="text" id="ifu" placeholder="Identifiant Fiscal Unique">
+                    </div>
+                </div>
+
+                <!-- Section 2: Services Financiers -->
+                <div class="section-title">
+                    <span>2️⃣</span> Services Financiers Proposés
+                </div>
+                
+                <div class="form-group full-width">
+                    <label>Description générale des services <span class="required">*</span></label>
+                    <textarea id="description" required placeholder="Décrivez les principaux services financiers que vous proposez..."></textarea>
+                    <span class="helper-text">Minimum 30 caractères</span>
+                    <span class="error-message">Veuillez fournir une description</span>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Services disponibles <span class="required">*</span></label>
+                    <div class="services-checklist">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service1" name="services" value="comptes">
+                            <label for="service1">Comptes bancaires</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service2" name="services" value="epargne">
+                            <label for="service2">Épargne</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service3" name="services" value="credits">
+                            <label for="service3">Crédits / Prêts</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service4" name="services" value="microCredits">
+                            <label for="service4">Micro-crédits</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service5" name="services" value="transfert">
+                            <label for="service5">Transfert d'argent</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service6" name="services" value="mobile">
+                            <label for="service6">Mobile Banking</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service7" name="services" value="pme">
+                            <label for="service7">Financement PME</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service8" name="services" value="agricole">
+                            <label for="service8">Crédit agricole</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service9" name="services" value="assurance">
+                            <label for="service9">Assurance</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service10" name="services" value="change">
+                            <label for="service10">Change de devises</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service11" name="services" value="conseil">
+                            <label for="service11">Conseil financier</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="service12" name="services" value="investissement">
+                            <label for="service12">Investissement</label>
+                        </div>
+                    </div>
+                    <span class="error-message">Sélectionnez au moins un service</span>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Taux d'intérêt moyen (crédit)</label>
+                        <input type="text" id="tauxCredit" placeholder="Ex: 8% - 12%">
+                        <span class="helper-text">Optionnel</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Taux d'intérêt moyen (épargne)</label>
+                        <input type="text" id="tauxEpargne" placeholder="Ex: 3% - 5%">
+                        <span class="helper-text">Optionnel</span>
+                    </div>
+                </div>
+
+                <!-- Section 3: Coordonnées -->
+                <div class="section-title">
+                    <span>3️⃣</span> Coordonnées et Contact
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom du responsable <span class="required">*</span></label>
+                        <input type="text" id="nomResponsable" required placeholder="Nom du directeur / gérant">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fonction <span class="required">*</span></label>
+                        <input type="text" id="fonction" required placeholder="Ex: Directeur d'Agence">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Téléphone principal <span class="required">*</span></label>
+                        <input type="tel" id="telephone1" required placeholder="+228 XX XX XX XX">
+                        <span class="error-message">Numéro invalide</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Téléphone secondaire</label>
+                        <input type="tel" id="telephone2" placeholder="+228 XX XX XX XX">
+                    </div>
+
+                    <div class="form-group">
+                        <label>WhatsApp</label>
+                        <input type="tel" id="whatsapp" placeholder="+228 XX XX XX XX">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email principal <span class="required">*</span></label>
+                        <input type="email" id="email" required placeholder="contact@institution.tg">
+                        <span class="error-message">Email invalide</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Site web</label>
+                        <input type="url" id="siteWeb" placeholder="https://www.institution.tg">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Page Facebook</label>
+                        <input type="url" id="facebook" placeholder="https://facebook.com/...">
+                    </div>
+                </div>
+
+                <!-- Section 4: Localisation -->
+                <div class="section-title">
+                    <span>4️⃣</span> Localisation et Présence
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quartier <span class="required">*</span></label>
+                        <input type="text" id="quartier" required placeholder="Ex: Centre-Ville, Agomé">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Canton</label>
+                        <select id="canton">
+                            <option value="">Sélectionner...</option>
+                            <option value="kpalime">Kpalimé</option>
+                            <option value="kpele">Kpélé</option>
+                            <option value="agome">Agomé</option>
+                            <option value="kpime">Kpimé</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Adresse complète <span class="required">*</span></label>
+                        <textarea id="adresse" required placeholder="Adresse physique détaillée de votre agence/bureau"></textarea>
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nombre d'agences dans Kloto 1</label>
+                        <input type="number" id="nombreAgences" min="1" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Horaires d'ouverture <span class="required">*</span></label>
+                        <input type="text" id="horaires" required placeholder="Ex: Lun-Ven 8h-17h, Sam 8h-12h">
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+                </div>
+
+                <!-- Section 5: Documents -->
+                <div class="section-title">
+                    <span>5️⃣</span> Documents Justificatifs
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Agrément officiel</label>
+                        <input type="file" id="docAgrement" accept=".pdf,.jpg,.jpeg,.png">
+                        <span class="helper-text">PDF, JPG, PNG - Max: 5 MB</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Logo de l'institution</label>
+                        <input type="file" id="logo" accept=".jpg,.jpeg,.png,.svg">
+                        <span class="helper-text">Format image - Max: 2 MB</span>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Brochure / Présentation des services</label>
+                        <input type="file" id="brochure" accept=".pdf,.doc,.docx">
+                        <span class="helper-text">Document descriptif de vos services</span>
+                    </div>
+                </div>
+
+                <!-- Section 6: Informations Complémentaires -->
+                <div class="section-title">
+                    <span>6️⃣</span> Informations Complémentaires
+                </div>
+                <div class="form-group full-width">
+                    <label>Conditions d'éligibilité aux services</label>
+                    <textarea id="conditions" placeholder="Décrivez les conditions pour bénéficier de vos services (documents requis, garanties, etc.)"></textarea>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Public cible prioritaire</label>
+                    <textarea id="publicCible" placeholder="Ex: PME, agriculteurs, jeunes entrepreneurs, femmes, coopératives..."></textarea>
+                </div>
+
+                <!-- Conditions -->
+                <div class="checkbox-group">
+                    <h4 style="margin-bottom: 1rem; color: var(--primary);">Conditions d'inscription</h4>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="certifieInfo" required>
+                        <label for="certifieInfo">
+                            Je certifie que les informations fournies sont exactes et à jour <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="acceptePublic" required>
+                        <label for="acceptePublic">
+                            J'accepte que les coordonnées de mon institution soient visibles publiquement sur la plateforme de la Mairie <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="accepteContact" required>
+                        <label for="accepteContact">
+                            J'accepte d'être contacté par les entreprises et citoyens via cette plateforme <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="engagement">
+                        <label for="engagement">
+                            Je m'engage à actualiser mes informations régulièrement
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">✅ Enregistrer l'institution</button>
+                    <button type="reset" class="btn btn-secondary">🔄 Réinitialiser</button>
+                </div>
+            </form>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 Mairie de Kloto 1 - Tous droits réservés</p>
+            <p>📞 Pour assistance: +228 XX XX XX XX | 📧 contact@mairiekl oto1.tg</p>
+        </footer>
+    </div>
+
+    <script>
+        const form = document.getElementById('institutionForm');
+        const successMessage = document.getElementById('successMessage');
+
+        // Validation en temps réel
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            field.addEventListener('blur', function() {
+                validateField(this);
+            });
+
+            field.addEventListener('input', function() {
+                if (this.parentElement.classList.contains('error')) {
+                    validateField(this);
+                }
+            });
+        });
+
+        function validateField(field) {
+            const formGroup = field.closest('.form-group') || field.closest('.checkbox-item');
+            
+            if (field.type === 'checkbox') {
+                if (!field.checked && field.hasAttribute('required')) {
+                    formGroup.classList.add('error');
+                    return false;
+                } else {
+                    formGroup.classList.remove('error');
+                    return true;
+                }
+            }
+            
+            if (!field.value.trim()) {
+                formGroup.classList.add('error');
+                return false;
+            }
+
+            // Validation email
+            if (field.type === 'email') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(field.value)) {
+                    formGroup.classList.add('error');
+                    return false;
+                }
+            }
+
+            // Validation téléphone
+            if (field.type === 'tel') {
+                const phoneRegex = /^\+228\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{2}$/;
+                if (!phoneRegex.test(field.value)) {
+                    formGroup.classList.add('error');
+                    return false;
+                }
+            }
+
+            // Validation textarea
+            if (field.tagName === 'TEXTAREA' && field.hasAttribute('required')) {
+                if (field.value.trim().length < 30) {
+                    formGroup.classList.add('error');
+                    return false;
+                }
+            }
+
+            formGroup.classList.remove('error');
+            return true;
+        }
+
+        // Validation des services cochés
+        function validateServices() {
+            const serviceCheckboxes = document.querySelectorAll('input[name="services"]');
+            const checked = Array.from(serviceCheckboxes).some(cb => cb.checked);
+            const servicesGroup = document.querySelector('.services-checklist').closest('.form-group');
+            
+            if (!checked) {
+                servicesGroup.classList.add('error');
+                return false;
+            } else {
+                servicesGroup.classList.remove('error');
+                return true;
+            }
+        }
+
+        // Écouter les changements sur les services
+        document.querySelectorAll('input[name="services"]').forEach(cb => {
+            cb.addEventListener('change', validateServices);
+        });
+
+        // Soumission du formulaire
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            let isValid = true;
+
+            // Valider tous les champs requis
+            requiredFields.forEach(field => {
+                if (!validateField(field)) {
+                    isValid = false;
+                }
+            });
+
+            // Valider les services
+            if (!validateServices()) {
+                isValid = false;
+            }
+
+            if (!isValid) {
+                alert('Veuillez corriger les erreurs dans le formulaire avant de soumettre.');
+                const firstError = form.querySelector('.error');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+
+            // Collecter les services sélectionnés
+            const services = Array.from(document.querySelectorAll('input[name="services"]:checked'))
+                .map(cb => cb.value);
+
+            // Collecter les données
+            const formData = {
+                typeInstitution: document.getElementById('typeInstitution').value,
+                nomInstitution: document.getElementById('nomInstitution').value,
+                sigle: document.getElementById('sigle').value,
+                anneeCreation: document.getElementById('anneeCreation').value,
+                numeroAgrement: document.getElementById('numeroAgrement').value,
+                ifu: document.getElementById('ifu').value,
+                description: document.getElementById('description').value,
+                services: services,
+                tauxCredit: document.getElementById('tauxCredit').value,
+                tauxEpargne: document.getElementById('tauxEpargne').value,
+                nomResponsable: document.getElementById('nomResponsable').value,
+                fonction: document.getElementById('fonction').value,
+                telephone1: document.getElementById('telephone1').value,
+                telephone2: document.getElementById('telephone2').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                email: document.getElementById('email').value,
+                siteWeb: document.getElementById('siteWeb').value,
+                facebook: document.getElementById('facebook').value,
+                quartier: document.getElementById('quartier').value,
+                canton: document.getElementById('canton').value,
+                adresse: document.getElementById('adresse').value,
+                nombreAgences: document.getElementById('nombreAgences').value,
+                horaires: document.getElementById('horaires').value,
+                certifieInfo: document.getElementById('certifieInfo').checked,
+                acceptePublic: document.getElementById('acceptePublic').checked,
+                accepteContact: document.getElementById('accepteContact').checked,
+                engagement: document.getElementById('engagement').checked,
+                dateEnregistrement: new Date().toISOString()
+            };
+
+            console.log('Données soumises (institution):', formData);
+
+            // Afficher le message de succès
+            successMessage.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Réinitialiser le formulaire après 5 secondes
+            setTimeout(() => {
+                form.reset();
+                successMessage.classList.remove('active');
+            }, 5000);
+        });
+
+        // Gestion du reset
+        form.addEventListener('reset', function() {
+            const errorGroups = form.querySelectorAll('.error');
+            errorGroups.forEach(group => group.classList.remove('error'));
+            successMessage.classList.remove('active');
+        });
+
+        // Validation de la taille des fichiers (≤ 5 MB)
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                const maxSize = 5 * 1024 * 1024;
+                if (this.files.length > 0) {
+                    for (let file of this.files) {
+                        if (file.size > maxSize) {
+                            alert(`Le fichier "${file.name}" dépasse la taille maximale de 5 MB.`);
+                            this.value = '';
+                            return;
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

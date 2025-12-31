@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription Institutions Financières - Mairie de Kloto 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.95;
+            font-size: 1.1rem;
+        }
+
+        .form-container {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .required {
+            color: var(--accent);
+            margin-left: 0.2rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-group input[type="file"] {
+            padding: 0.6rem;
+            border-style: dashed;
+        }
+
+        .helper-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-left: 4px solid #2196F3;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+        }
+
+        .info-box ul {
+            margin-left: 1.5rem;
+            color: #555;
+        }
+
+        .info-box li {
+            margin-bottom: 0.5rem;
+        }
+
+        .checkbox-group {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: var(--light);
+            border-radius: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.8rem;
+            margin-top: 0.2rem;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+            line-height: 1.5;
+        }
+
+        .services-checklist {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 8px;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 98, 51, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            margin-left: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 2px solid #28a745;
+        }
+
+        .success-message.hidden {
+            display: none;
+        }
+
+        footer {
+            background: linear-gradient(135deg, #006233, #004d28);
+            color: #ffffff;
+            padding: 2.5rem 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .footer-column h4 {
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #ffcd00;
+        }
+
+        .footer-column p,
+        .footer-column li,
+        .footer-bottom p {
+            font-size: 0.9rem;
+            color: #ffffff;
+            opacity: 0.9;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-column ul li + li {
+            margin-top: 0.3rem;
+        }
+
+        .footer-column a {
+            color: #ffffff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: var(--secondary, #FFCD00);
+            text-decoration: underline;
+        }
+
+        .footer-column a:hover {
+            text-decoration: underline;
+            color: #ffcd00;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 0.7rem;
+            margin-top: 0.5rem;
+        }
+
+        .footer-social a {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.2);
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .services-checklist {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn-secondary {
+                margin-left: 0;
+            }
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            background: var(--white);
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            color: var(--primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'mairie:accueil' %}" class="back-link">← Retour à l'accueil</a>
+        <header>
+            <div class="logo">🏦</div>
+            <h1>Inscription des Institutions Financières</h1>
+            <p>Mairie de Kloto 1 - Kpalimé, Région des Plateaux, Togo</p>
+        </header>
+
+        <div class="form-container">
+            {% if success %}
+            <div class="success-message">
+                <h3>✓ Inscription réussie !</h3>
+                <p>Votre institution financière a été enregistrée avec succès dans notre répertoire.</p>
+                <p>Les entreprises et citoyens pourront désormais consulter vos services.</p>
+            </div>
+            {% endif %}
+
+            <div class="info-box">
+                <h3>💡 Pourquoi s'inscrire ?</h3>
+                <ul>
+                    <li>Augmentez votre visibilité auprès des entreprises et citoyens de Kloto 1</li>
+                    <li>Facilitez l'accès aux services financiers pour les acteurs économiques locaux</li>
+                    <li>Contribuez au développement économique de la commune</li>
+                    <li>Accédez aux opportunités de partenariat avec la municipalité</li>
+                </ul>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Section 1: Type et Identification -->
+                <div class="section-title">
+                    <span>1️⃣</span> Type et Identification
+                </div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Type d'institution <span class="required">*</span></label>
+                        {{ form.type_institution }}
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Nom de l'institution <span class="required">*</span></label>
+                        {{ form.nom_institution }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sigle / Acronyme</label>
+                        {{ form.sigle }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Année de création</label>
+                        {{ form.annee_creation }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Numéro d'agrément</label>
+                        {{ form.numero_agrement }}
+                        <span class="helper-text">Agrément BCEAO, Ministère, etc.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Numéro IFU</label>
+                        {{ form.ifu }}
+                    </div>
+                </div>
+
+                <!-- Section 2: Services Financiers -->
+                <div class="section-title">
+                    <span>2️⃣</span> Services Financiers Proposés
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Description générale des services <span class="required">*</span></label>
+                    {{ form.description_services }}
+                    <span class="helper-text">Minimum 30 caractères</span>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Services disponibles <span class="required">*</span></label>
+                    <div class="services-checklist">
+                        {% for checkbox in form.services %}
+                        <div class="checkbox-item">
+                            {{ checkbox.tag }}
+                            <label for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Taux d'intérêt moyen (crédit)</label>
+                        {{ form.taux_credit }}
+                        <span class="helper-text">Optionnel</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Taux d'intérêt moyen (épargne)</label>
+                        {{ form.taux_epargne }}
+                        <span class="helper-text">Optionnel</span>
+                    </div>
+                </div>
+
+                <!-- Section 3: Coordonnées -->
+                <div class="section-title">
+                    <span>3️⃣</span> Coordonnées et Contact
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom du responsable <span class="required">*</span></label>
+                        {{ form.nom_responsable }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fonction <span class="required">*</span></label>
+                        {{ form.fonction_responsable }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Téléphone principal <span class="required">*</span></label>
+                        {{ form.telephone1 }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Téléphone secondaire</label>
+                        {{ form.telephone2 }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>WhatsApp</label>
+                        {{ form.whatsapp }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email principal <span class="required">*</span></label>
+                        {{ form.email }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Site web</label>
+                        {{ form.site_web }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Page Facebook</label>
+                        {{ form.facebook }}
+                    </div>
+                </div>
+
+                <!-- Section 4: Localisation -->
+                <div class="section-title">
+                    <span>4️⃣</span> Localisation et Présence
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quartier <span class="required">*</span></label>
+                        {{ form.quartier }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Canton</label>
+                        {{ form.canton }}
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Adresse complète <span class="required">*</span></label>
+                        {{ form.adresse_complete }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nombre d'agences dans Kloto 1</label>
+                        {{ form.nombre_agences }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Horaires d'ouverture <span class="required">*</span></label>
+                        {{ form.horaires }}
+                    </div>
+                </div>
+
+                <!-- Section 5: Documents -->
+                <div class="section-title">
+                    <span>5️⃣</span> Documents Justificatifs
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Agrément officiel</label>
+                        {{ form.doc_agrement }}
+                        <span class="helper-text">PDF, JPG, PNG - Max: 5 MB</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Logo de l'institution</label>
+                        {{ form.logo }}
+                        <span class="helper-text">Format image - Max: 2 MB</span>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Brochure / Présentation des services</label>
+                        {{ form.brochure }}
+                        <span class="helper-text">Document descriptif de vos services</span>
+                    </div>
+                </div>
+
+                <!-- Section 6: Informations Complémentaires -->
+                <div class="section-title">
+                    <span>6️⃣</span> Informations Complémentaires
+                </div>
+                <div class="form-group full-width">
+                    <label>Conditions d'éligibilité aux services</label>
+                    {{ form.conditions_eligibilite }}
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Public cible prioritaire</label>
+                    {{ form.public_cible }}
+                </div>
+
+                <!-- Conditions -->
+                <div class="checkbox-group">
+                    <h4 style="margin-bottom: 1rem; color: var(--primary);">Conditions d'inscription</h4>
+                    <div class="checkbox-item">
+                        {{ form.certifie_info }}
+                        <label>
+                            Je certifie que les informations fournies sont exactes et à jour <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        {{ form.accepte_public }}
+                        <label>
+                            J'accepte que les coordonnées de mon institution soient visibles publiquement sur la plateforme de la Mairie <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        {{ form.accepte_contact }}
+                        <label>
+                            J'accepte d'être contacté par les entreprises et citoyens via cette plateforme <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        {{ form.engagement }}
+                        <label>
+                            Je m'engage à actualiser mes informations régulièrement
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">✅ Enregistrer l'institution</button>
+                    <button type="reset" class="btn btn-secondary">🔄 Réinitialiser</button>
+                    <a href="{% url 'acteurs:pdf_institutions' %}" class="btn btn-secondary" style="text-decoration: none; color: inherit;">📄 Obtenir le PDF</a>
+                </div>
+            </form>
+        </div>
+
+        {% include 'includes/footer.html' %}
+    </div>
+
+    <!-- La validation et le traitement sont gérés côté serveur par Django -->
+</body>
+</html>
+

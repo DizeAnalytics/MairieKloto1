@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidature - {{ appel.titre }} - Mairie de Kloto 1</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        .logo-section { display: flex; align-items: center; gap: 1rem; }
+        .logo {
+            width: 60px; height: 60px; background: var(--white);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; color: var(--primary); font-size: 1.5rem;
+        }
+        .header-text h1 { font-size: 1.5rem; margin-bottom: 0.2rem; }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #e6b800;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid var(--white);
+        }
+
+        .btn-secondary:hover {
+            background: var(--white);
+            color: var(--primary);
+        }
+
+        nav { background: rgba(255,255,255,0.1); margin-top: 1rem; }
+        nav ul {
+            list-style: none; display: flex; justify-content: center; flex-wrap: wrap;
+            max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+        }
+        nav ul li { margin: 0.5rem 1rem; }
+        nav ul li a {
+            color: var(--white); text-decoration: none; padding: 0.5rem 1rem;
+            border-radius: 5px; transition: all 0.3s; display: block;
+        }
+        nav ul li a:hover, nav ul li a.active { background: var(--secondary); color: var(--dark); }
+        
+        .container { max-width: 800px; margin: 0 auto; padding: 3rem 2rem; }
+        
+        .breadcrumb { font-size: 0.9rem; margin-bottom: 1.5rem; color: var(--dark); opacity: 0.7; }
+        .breadcrumb a { color: var(--primary); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+
+        .form-card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+        }
+        
+        .form-header {
+            border-bottom: 1px solid var(--light);
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .form-title { color: var(--primary); margin-bottom: 0.5rem; }
+        .form-subtitle { color: #666; font-size: 0.95rem; }
+
+        .user-info {
+            background: #e8f5e9;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+        }
+        .user-info h3 { font-size: 1rem; margin-bottom: 0.5rem; color: var(--primary); }
+        .user-info p { margin-bottom: 0.3rem; font-size: 0.9rem; }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-control {
+            width: 100%; padding: 0.8rem; border: 1px solid #ddd;
+            border-radius: 5px; font-family: inherit; font-size: 1rem;
+        }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,98,51,0.1); }
+        
+        .help-text { display: block; font-size: 0.85rem; color: #666; margin-top: 0.3rem; }
+        .error-list { list-style: none; color: var(--danger); font-size: 0.9rem; margin-top: 0.5rem; }
+        
+        .btn-submit {
+            background: var(--primary); color: var(--white); border: none;
+            padding: 1rem 2rem; border-radius: 5px; font-size: 1rem;
+            font-weight: 600; cursor: pointer; width: 100%; transition: background 0.3s;
+        }
+        .btn-submit:hover { background: var(--accent); }
+        
+        .requirements-list {
+            background: #fff3cd;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        .requirements-list h4 { margin-bottom: 0.5rem; color: #856404; }
+        .requirements-list ul { margin-left: 1.5rem; }
+    </style>
+    {% include 'includes/footer_styles.html' %}
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <div class="logo-section">
+                <div class="logo">K1</div>
+                <div class="header-text">
+                    <h1>Mairie de Kloto 1</h1>
+                    <p>Plateforme de Gestion Économique</p>
+                </div>
+            </div>
+            <div class="auth-buttons">
+                {% if user.is_authenticated %}
+                    <span style="color: var(--white); margin-right: 1rem; align-self: center;">Bonjour, {{ user.username }}</span>
+                    <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
+                {% else %}
+                    <a href="{% url 'comptes:connexion' %}" class="btn btn-primary">Connexion</a>
+                    <a href="{% url 'comptes:inscription' %}" class="btn btn-secondary">Inscription</a>
+                {% endif %}
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="{% url 'mairie:accueil' %}">Accueil</a></li>
+                <li><a href="{% url 'enregistrement' %}">Enregistrement</a></li>
+                <li><a href="{% url 'acteurs:enregistrement' %}">Entreprises</a></li>
+                <li><a href="{% url 'acteurs:inscription_institutions' %}">Institutions Financières</a></li>
+                <li><a href="{% url 'acteurs:sites_public' %}">Sites touristiques</a></li>
+                <li><a href="{% url 'emploi:inscription_jeunes' %}">Emploi</a></li>
+                <li><a href="{% url 'actualites:liste' %}">Actualités</a></li>
+                <li><a href="{% url 'mairie:appels_offres' %}" class="active">Appels d'Offres</a></li>
+      
+                {% if user.is_staff or user.is_superuser %}
+                <li><a href="{% url 'tableau_bord' %}" class="nav-link">Tableau de Bord</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{% url 'mairie:accueil' %}">Accueil</a> &gt;
+            <a href="{% url 'mairie:appels_offres' %}">Appels d'Offres</a> &gt;
+            <a href="{% url 'mairie:appel_offre_detail' appel.pk %}">{{ appel.reference }}</a> &gt;
+            <span>Candidature</span>
+        </div>
+
+        <div class="form-card">
+            <div class="form-header">
+                <h1 class="form-title">Soumettre votre candidature</h1>
+                <p class="form-subtitle">Pour l'appel d'offres : <strong>{{ appel.titre }}</strong></p>
+            </div>
+
+            <div class="user-info">
+                <h3>👤 Vos informations (pré-remplies)</h3>
+                <p><strong>Nom complet :</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                <p><strong>Email :</strong> {{ user.email }}</p>
+                <p><em>Ces informations seront jointes automatiquement à votre dossier.</em></p>
+            </div>
+
+            {% if appel.dossier_candidature %}
+            <div class="requirements-list">
+                <h4>⚠️ Rappel des pièces à fournir (en un seul PDF) :</h4>
+                {{ appel.dossier_candidature|linebreaks }}
+            </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="error-list">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="{{ form.fichier_dossier.id_for_label }}" class="form-label">
+                        {{ form.fichier_dossier.label }} <span style="color:red">*</span>
+                    </label>
+                    {{ form.fichier_dossier }}
+                    {% if form.fichier_dossier.help_text %}
+                    <small class="help-text">{{ form.fichier_dossier.help_text }}</small>
+                    {% endif %}
+                    {% if form.fichier_dossier.errors %}
+                    <ul class="error-list">
+                        {% for error in form.fichier_dossier.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.message_accompagnement.id_for_label }}" class="form-label">
+                        {{ form.message_accompagnement.label }}
+                    </label>
+                    {{ form.message_accompagnement }}
+                    {% if form.message_accompagnement.errors %}
+                    <ul class="error-list">
+                        {% for error in form.message_accompagnement.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn-submit">Envoyer ma candidature</button>
+            </form>
+        </div>
+    </div>
+
+    {% include 'includes/footer.html' %}
+</body>
+</html>

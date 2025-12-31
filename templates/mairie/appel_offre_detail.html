@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ appel.titre }} - Appel d'Offres - Mairie de Kloto 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+            --success: #28a745;
+            --warning: #ffc107;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #e6b800;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid var(--white);
+        }
+
+        .btn-secondary:hover {
+            background: var(--white);
+            color: var(--primary);
+        }
+
+        nav {
+            background: rgba(255,255,255,0.1);
+            margin-top: 1rem;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        nav ul li {
+            margin: 0.5rem 1rem;
+        }
+
+        nav ul li a {
+            color: var(--white);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: block;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .breadcrumb {
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            opacity: 0.7;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .detail-card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+        }
+
+        .detail-header {
+            border-bottom: 1px solid var(--light);
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-reference {
+            font-size: 0.9rem;
+            color: var(--dark);
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-title {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-entreprises {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-institutions {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge-jeunes {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-retraites {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .badge-tous {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+
+        .statut-chip {
+            padding: 0.3rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .statut-ouvert {
+            background: var(--success);
+        }
+
+        .statut-cloture {
+            background: var(--dark);
+        }
+
+        .statut-brouillon {
+            background: var(--warning);
+            color: var(--dark);
+        }
+
+        .detail-body {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section h3 {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-section p {
+            line-height: 1.7;
+        }
+
+        .side-card {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .side-card h4 {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .side-card p {
+            font-size: 0.95rem;
+            margin: 0.2rem 0;
+        }
+
+        .side-card strong {
+            font-weight: 600;
+        }
+
+        .actions {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            display: inline-block;
+            text-align: center;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-disabled {
+            background: var(--dark);
+            color: var(--white);
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 900px) {
+            .detail-body {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    {% include 'includes/footer_styles.html' %}
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <div class="logo-section">
+                <div class="logo">K1</div>
+                <div class="header-text">
+                    <h1>Mairie de Kloto 1</h1>
+                    <p>Plateforme de Gestion Économique</p>
+                </div>
+            </div>
+            <div class="auth-buttons">
+                {% if user.is_authenticated %}
+                    <span style="color: var(--white); margin-right: 1rem; align-self: center;">Bonjour, {{ user.username }}</span>
+                    <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
+                {% else %}
+                    <a href="{% url 'comptes:connexion' %}" class="btn btn-primary">Connexion</a>
+                    <a href="{% url 'comptes:inscription' %}" class="btn btn-secondary">Inscription</a>
+                {% endif %}
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="{% url 'mairie:accueil' %}">Accueil</a></li>
+                <li><a href="{% url 'enregistrement' %}">Enregistrement</a></li>
+                <li><a href="{% url 'acteurs:enregistrement' %}">Entreprises</a></li>
+                <li><a href="{% url 'acteurs:inscription_institutions' %}">Institutions Financières</a></li>
+                <li><a href="{% url 'acteurs:sites_public' %}">Sites touristiques</a></li>
+                <li><a href="{% url 'emploi:inscription_jeunes' %}">Emploi</a></li>
+                <li><a href="{% url 'actualites:liste' %}">Actualités</a></li>
+                <li><a href="{% url 'mairie:appels_offres' %}" class="active">Appels d'Offres</a></li>
+      
+                {% if user.is_staff or user.is_superuser %}
+                <li><a href="{% url 'tableau_bord' %}" class="nav-link">Tableau de Bord</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{% url 'mairie:accueil' %}">Accueil</a> &gt;
+            <a href="{% url 'mairie:appels_offres' %}">Appels d'Offres</a> &gt;
+            <span>Détail</span>
+        </div>
+
+        <div class="detail-card">
+            <div class="detail-header">
+                {% if appel.reference %}
+                <div class="detail-reference">Référence : {{ appel.reference }}</div>
+                {% endif %}
+                <h1 class="detail-title">{{ appel.titre }}</h1>
+                <div class="detail-meta">
+                    <span class="badge badge-{{ appel.public_cible }}">
+                        {{ appel.get_public_cible_display }}
+                    </span>
+                    {% if est_ouvert %}
+                    <span class="statut-chip statut-ouvert">Appel d'offres ouvert</span>
+                    {% elif appel.statut == "cloture" %}
+                    <span class="statut-chip statut-cloture">Appel d'offres clôturé</span>
+                    {% else %}
+                    <span class="statut-chip statut-brouillon">Brouillon / En préparation</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-body">
+                <div>
+                    <div class="detail-section">
+                        <h3>Objet de l'appel d'offres</h3>
+                        <p>{{ appel.description|linebreaks }}</p>
+                    </div>
+
+                    {% if appel.criteres_selection %}
+                    <div class="detail-section">
+                        <h3>Critères de sélection</h3>
+                        <p>{{ appel.criteres_selection|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if appel.dossier_candidature %}
+                    <div class="detail-section">
+                        <h3>Dossier de candidature à fournir</h3>
+                        <p>{{ appel.dossier_candidature|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <div class="side-card">
+                        <h4>Informations clés</h4>
+                        <p><strong>Ouverture :</strong> {{ appel.date_debut|date:"d/m/Y à H:i" }}</p>
+                        <p><strong>Clôture :</strong> {{ appel.date_fin|date:"d/m/Y à H:i" }}</p>
+                        {% if appel.budget_estime %}
+                        <p><strong>Budget estimé :</strong> {{ appel.budget_estime|floatformat:0 }} FCFA</p>
+                        {% endif %}
+                        <p><strong>Public cible :</strong> {{ appel.get_public_cible_display }}</p>
+                    </div>
+
+                    <div class="side-card">
+                        <h4>Dossier et Candidature</h4>
+                        <div class="actions">
+                            {% if appel.document_officiel %}
+                            <a href="{{ appel.document_officiel.url }}" target="_blank" class="btn btn-secondary">
+                                📄 Télécharger le dossier complet
+                            </a>
+                            {% else %}
+                            <div class="btn btn-disabled">
+                                Dossier à venir (sera mis en ligne prochainement)
+                            </div>
+                            {% endif %}
+
+                            <a href="{% url 'mairie:appel_offre_pdf' appel.pk %}" target="_blank" class="btn btn-secondary">
+                                📑 Générer le PDF de l'appel d'offres
+                            </a>
+
+                            {% if est_ouvert %}
+                            <a href="{% url 'mairie:soumettre_candidature' appel.pk %}" class="btn btn-primary">
+                                Soumettre une candidature
+                            </a>
+                            {% else %}
+                            <div class="btn btn-disabled">
+                                Candidature fermée
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'includes/footer.html' %}
+</body>
+</html>
+
+

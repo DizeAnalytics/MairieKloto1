@@ -1,0 +1,34 @@
+
+@login_required
+def soumettre_candidature(request, pk: int):
+    """Permet à un utilisateur de soumettre une candidature pour un appel d'offres."""
+    appel = get_object_or_404(AppelOffre, pk=pk, est_publie_sur_site=True)
+    
+    # Vérifier si l'appel est ouvert
+    maintenant = timezone.now()
+    if not (appel.statut == "publie" and appel.date_debut <= maintenant <= appel.date_fin):
+        messages.error(request, "Cet appel d'offres n'est plus ouvert aux candidatures.")
+        return redirect('mairie:appel_offre_detail', pk=pk)
+
+    # Vérifier si l'utilisateur a déjà postulé
+    if Candidature.objects.filter(appel_offre=appel, candidat=request.user).exists():
+        messages.warning(request, "Vous avez déjà soumis une candidature pour cet appel d'offres.")
+        return redirect('mairie:appel_offre_detail', pk=pk)
+
+    if request.method == 'POST':
+        form = CandidatureForm(request.POST, request.FILES)
+        if form.is_valid():
+            candidature = form.save(commit=False)
+            candidature.appel_offre = appel
+            candidature.candidat = request.user
+            candidature.save()
+            messages.success(request, "Votre candidature a été soumise avec succès ! Vous recevrez une notification lors de son traitement.")
+            return redirect('mairie:appel_offre_detail', pk=pk)
+    else:
+        form = CandidatureForm()
+
+    context = {
+        'appel': appel,
+        'form': form,
+    }
+    return render(request, 'mairie/candidature_form.html', context)

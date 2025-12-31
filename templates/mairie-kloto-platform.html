@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mairie de Kloto 1 - Plateforme de Gestion Économique</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .header-text h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .header-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #e6b800;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--white);
+            border: 2px solid var(--white);
+        }
+
+        .btn-secondary:hover {
+            background: var(--white);
+            color: var(--primary);
+        }
+
+        nav {
+            background: rgba(255,255,255,0.1);
+            margin-top: 1rem;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        nav ul li {
+            margin: 0.5rem 1rem;
+        }
+
+        nav ul li a {
+            color: var(--white);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: block;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(0,98,51,0.9), rgba(0,77,40,0.9)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400"><rect fill="%23006233" width="1200" height="400"/><path fill="%23004d28" opacity="0.3" d="M0,200 Q300,100 600,200 T1200,200 L1200,400 L0,400 Z"/></svg>');
+            background-size: cover;
+            color: var(--white);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 0.8s;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+            animation: fadeInUp 1s;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border-left: 5px solid var(--primary);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .card h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .card p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .search-box {
+            margin-bottom: 2rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--primary);
+            border-radius: 50px;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        thead {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tbody tr:hover {
+            background: var(--light);
+        }
+
+        .badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        footer {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 3rem 2rem 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .footer-column h4 {
+            margin-bottom: 0.8rem;
+            font-size: 1.05rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+        }
+
+        .footer-column p,
+        .footer-column li,
+        .footer-bottom p {
+            font-size: 0.9rem;
+            color: var(--white);
+            opacity: 0.9;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-column ul li + li {
+            margin-top: 0.3rem;
+        }
+
+        .footer-column a {
+            color: var(--white);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-column a:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .footer-social a {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.15);
+            margin-top: 2rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close-modal:hover {
+            color: var(--accent);
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .hero h2 {
+                font-size: 1.8rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <div class="logo-section">
+                <div class="logo">K1</div>
+                <div class="header-text">
+                    <h1>Mairie de Kloto 1</h1>
+                    <p>Kpalimé - Région des Plateaux, Togo</p>
+                </div>
+            </div>
+            <div class="auth-buttons">
+                {% if user.is_authenticated %}
+                    <span style="color: var(--white); margin-right: 1rem;">Bonjour, {{ user.username }}</span>
+                    <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
+                {% else %}
+                    <a href="{% url 'comptes:connexion' %}" class="btn btn-primary">Connexion</a>
+                    <a href="{% url 'comptes:inscription' %}" class="btn btn-secondary">Inscription</a>
+                {% endif %}
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="{% url 'mairie:accueil' %}" class="nav-link">Accueil</a></li>
+                <li><a href="{% url 'enregistrement' %}" class="nav-link active">Enregistrement</a></li>
+                <li><a href="{% url 'acteurs:enregistrement' %}" class="nav-link">Entreprises</a></li>
+                <li><a href="{% url 'acteurs:inscription_institutions' %}" class="nav-link">Institutions Financières</a></li>
+                <li><a href="{% url 'acteurs:sites_public' %}" class="nav-link">Sites touristiques</a></li>
+                <li><a href="{% url 'emploi:inscription_jeunes' %}" class="nav-link">Emploi</a></li>
+                <li><a href="{% url 'actualites:liste' %}" class="nav-link">Actualités</a></li>
+                <li><a href="#" class="nav-link" data-section="appels-offres">Appels d'Offres</a></li>
+
+                {% if user.is_staff or user.is_superuser %}
+                <li><a href="{% url 'tableau_bord' %}" class="nav-link">Tableau de Bord</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div class="hero">
+        <h2>Plateforme de Gestion Économique et Sociale</h2>
+        <p>Transparence, Efficacité, Opportunités pour tous</p>
+    </div>
+
+    <div class="container">
+        <!-- Section Accueil -->
+        <div id="accueil" class="section active">
+        <div style="text-align: center; max-width: 900px; margin: 0 auto 3rem;">
+            <h2 style="margin-bottom: 0.8rem;">
+                Bienvenue sur la plateforme de la Mairie de Kloto 1
+            </h2>
+            <p style="font-size: 1.1rem;">
+                Une plateforme moderne pour digitaliser et centraliser la gestion économique et sociale de notre commune
+            </p>
+        </div>
+
+            <div class="cards-grid">
+                    <div class="card">
+                    <div class="card-icon">🏢</div>
+                    <h3>Acteurs Économiques</h3>
+                    <p>Enregistrez votre entreprise, commerce, ONG ou activité économique</p>
+                    <a href="{% url 'acteurs:enregistrement' %}" class="btn btn-primary">S'enregistrer</a>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🏦</div>
+                    <h3>Institutions Financières</h3>
+                    <p>Trouvez les banques, IMF et structures de financement disponibles</p>
+                    <a href="{% url 'acteurs:inscription_institutions' %}" class="btn btn-primary">S'inscrire</a>
+                </div>
+                <div class="card">
+                    <div class="card-icon">💼</div>
+                    <h3>Emploi & Compétences</h3>
+                    <p>Inscrivez-vous comme demandeur d'emploi ou retraité actif</p>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <a href="{% url 'emploi:inscription_jeunes' %}" class="btn btn-primary">Jeune demandeur d'emploi</a>
+                        <a href="{% url 'emploi:inscription_retraites' %}" class="btn btn-secondary">Retraité actif</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📋</div>
+                    <h3>Appels d'Offres</h3>
+                    <p>Consultez et soumissionnez aux appels d'offres municipaux</p>
+                    <button class="btn btn-primary" onclick="showSection('appels-offres')">Voir les offres</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Entreprises -->
+        <div id="entreprises" class="section">
+        <h2>Enregistrement des Acteurs Économiques</h2>
+        <p style="margin-top: 0.5rem;">
+            <a href="{% url 'acteurs:enregistrement' %}" class="btn btn-primary">Accéder au formulaire complet</a>
+        </p>
+            <div style="max-width: 800px; margin: 2rem auto;">
+                <div class="card">
+                    <h3>Enregistrer une entreprise</h3>
+                    <form id="entrepriseForm">
+                        <div class="form-group">
+                            <label>Raison sociale *</label>
+                            <input type="text" required placeholder="Nom de l'entreprise">
+                        </div>
+                        <div class="form-group">
+                            <label>Type d'activité *</label>
+                            <select required>
+                                <option value="">Sélectionner...</option>
+                                <option>Commerce</option>
+                                <option>Artisanat</option>
+                                <option>Service</option>
+                                <option>Industrie</option>
+                                <option>Agriculture</option>
+                                <option>Bar</option>
+                                <option>Restaurant</option>
+                                <option>Auberge</option>
+                                <option>Service Traiteur</option>
+                                <option>Pharmacie</option>
+                                <option>Dépôt de Pharmacie</option>
+                                <option>Écoles Publiques</option>
+                                <option>Écoles Privées</option>
+                                <option>Supermarché</option>
+                                <option>Boutique</option>
+                                <option>Alimentation générale</option>
+                                <option>Prêt-à-porter</option>
+                                <option>Quincaillerie</option>
+                                <option>Tourisme</option>
+                                <option>ONG</option>
+                                <option>Autre</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>N° RCCM</label>
+                            <input type="text" placeholder="RCCM-TG-...">
+                        </div>
+                        <div class="form-group">
+                            <label>N° CFE</label>
+                            <input type="text" placeholder="N° CFE">
+                        </div>
+                        <div class="form-group">
+                            <label>Responsable *</label>
+                            <input type="text" required placeholder="Nom du dirigeant">
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone *</label>
+                            <input type="tel" required placeholder="+228 XX XX XX XX">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" placeholder="contact@entreprise.tg">
+                        </div>
+                        <div class="form-group">
+                            <label>Quartier/Canton *</label>
+                            <input type="text" required placeholder="Localisation">
+                        </div>
+                        <div class="form-group">
+                            <label>Statut juridique *</label>
+                            <select required>
+                                <option value="">Sélectionner...</option>
+                                <option>SARL</option>
+                                <option>SA</option>
+                                <option>EI</option>
+                                <option>SNC</option>
+                                <option>Association</option>
+                                <option>ONG</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Document de registre</label>
+                            <input type="file" accept=".pdf,.jpg,.png">
+                        </div>
+                        <div class="success-message" id="entrepriseSuccess">
+                            ✓ Entreprise enregistrée avec succès!
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </form>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 3rem;">Entreprises enregistrées</h3>
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Rechercher une entreprise..." id="searchEntreprise">
+            </div>
+            <div class="table-container">
+                <table id="entreprisesTable">
+                    <thead>
+                        <tr>
+                            <th>Raison sociale</th>
+                            <th>Type</th>
+                            <th>Responsable</th>
+                            <th>Contact</th>
+                            <th>Localisation</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>TOGO TRADING SARL</td>
+                            <td>Commerce</td>
+                            <td>Kofi MENSAH</td>
+                            <td>+228 90 12 34 56</td>
+                            <td>Centre-Ville</td>
+                            <td><span class="badge badge-success">Validé</span></td>
+                        </tr>
+                        <tr>
+                            <td>ARTISAN D'OR</td>
+                            <td>Artisanat</td>
+                            <td>Ama KOSSI</td>
+                            <td>+228 91 23 45 67</td>
+                            <td>Agomé</td>
+                            <td><span class="badge badge-warning">En attente</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section Institutions Financières -->
+        <div id="institutions" class="section">
+            <h2>Institutions Financières</h2>
+            <p style="margin-top: 0.5rem;">
+                <a href="{% url 'acteurs:inscription_institutions' %}" class="btn btn-primary">Accéder au formulaire d'inscription</a>
+            </p>
+            <div class="cards-grid">
+                <div class="card">
+                    <h3>🏦 Banques Commerciales</h3>
+                    <p><strong>ECOBANK Togo</strong></p>
+                    <p>Services: Comptes, Crédits PME, Épargne</p>
+                    <p>📞 +228 22 21 24 76</p>
+                    <p>📍 Avenue de la Paix, Kpalimé</p>
+                </div>
+                <div class="card">
+                    <h3>🏦 Banques Commerciales</h3>
+                    <p><strong>ORABANK</strong></p>
+                    <p>Services: Financement entreprises, Transfert</p>
+                    <p>📞 +228 22 41 11 22</p>
+                    <p>📍 Centre Commercial, Kpalimé</p>
+                </div>
+                <div class="card">
+                    <h3>💰 Microfinance</h3>
+                    <p><strong>FUCEC Togo</strong></p>
+                    <p>Services: Micro-crédits, Épargne solidaire</p>
+                    <p>📞 +228 90 11 22 33</p>
+                    <p>📍 Quartier Kpadapé</p>
+                </div>
+                <div class="card">
+                    <h3>🤝 Bailleurs de Fonds</h3>
+                    <p><strong>ANPGF Kloto</strong></p>
+                    <p>Services: Financement projets agricoles</p>
+                    <p>📞 +228 91 44 55 66</p>
+                    <p>📍 Préfecture de Kloto</p>
+                </div>
+            </div>
+
+            <div style="max-width: 800px; margin: 3rem auto;">
+                <div class="card">
+                    <h3>Enregistrer une institution financière</h3>
+                    <form id="institutionForm">
+                        <div class="form-group">
+                            <label>Nom de l'institution *</label>
+                            <input type="text" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Type *</label>
+                            <select required>
+                                <option value="">Sélectionner...</option>
+                                <option>Banque commerciale</option>
+                                <option>Microfinance</option>
+                                <option>Bailleur de fonds</option>
+                                <option>ONG de financement</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Services proposés *</label>
+                            <textarea required placeholder="Décrivez les services financiers"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone *</label>
+                            <input type="tel" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Localisation *</label>
+                            <input type="text" required>
+                        </div>
+                        <div class="success-message" id="institutionSuccess">
+                            ✓ Institution enregistrée avec succès!
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Emploi -->
+        <div id="emploi" class="section">
+            <h2>Emploi & Ressources Humaines</h2>
+            <div class="cards-grid">
+                <div class="card">
+                    <h3>👨‍🎓 Jeunes Demandeurs d'Emploi</h3>
+                    <p>Inscrivez-vous pour être visible auprès des employeurs locaux</p>
+                    <a href="{% url 'emploi:inscription_jeunes' %}" class="btn btn-primary">S'inscrire</a>
+                </div>
+                <div class="card">
+                    <h3>👴 Retraités Actifs</h3>
+                    <p>Partagez vos compétences et expériences professionnelles</p>
+                    <a href="{% url 'emploi:inscription_retraites' %}" class="btn btn-primary">S'inscrire</a>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 3rem;">Profils disponibles</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nom & Prénoms</th>
+                            <th>Âge</th>
+                            <th>Compétences</th>
+                            <th>Diplôme</th>
+                            <th>Disponibilité</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Kossi ADAMA</td>
+                            <td>25 ans</td>
+                            <td>Informatique, Gestion</td>
+                            <td>Licence</td>
+                            <td><span class="badge badge-success">Immédiate</span></td>
+                            <td><span class="badge badge-info">Jeune</span></td>
+                        </tr>
+                        <tr>
+                            <td>Akouvi GNASSINGBE</td>
+                            <td>28 ans</td>
+                            <td>Comptabilité</td>
+                            <td>BTS</td>
+                            <td><span class="badge badge-success">Immédiate</span></td>
+                            <td><span class="badge badge-info">Jeune</span></td>
+                        </tr>
+                        <tr>
+                            <td>Jean KODJO</td>
+                            <td>62 ans</td>
+                            <td>Enseignement, Conseil</td>
+                            <td>Maîtrise</td>
+                            <td><span class="badge badge-warning">Temps partiel</span></td>
+                            <td><span class="badge badge-info">Retraité</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section Appels d'Offres -->
+        <div id="appels-offres" class="section">
+            <h2>Appels d'Offres Municipaux</h2>
+            <div class="cards-grid">
+                <div class="card">
+                    <h3>🏗️ Réhabilitation du Marché Central</h3>
+                    <p><strong>Budget:</strong> 50 000 000 FCFA</p>
+                    <p><strong>Date limite:</strong> 31 Janvier 2026</p>
+                    <p>Travaux de rénovation et modernisation du marché central de Kpalimé</p>
+                    <span class="badge badge-success">Ouvert</span>
+                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openModal('soumissionModal')">Soumissionner</button>
+                </div>
+                <div class="card">
+                    <h3>💡 Électrification des Quartiers Périphériques</h3>
+                    <p><strong>Budget:</strong> 30 000 000 FCFA</p>
+                    <p><strong>Date limite:</strong> 15 Février 2026</p>
+                    <p>Installation de réseau électrique dans 5 quartiers</p>
+                    <span class="badge badge-success">Ouvert</span>
+                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openModal('soumissionModal')">Soumissionner</button>
+                </div>
+                <div class="card">
+                    <h3>🚰 Construction de Points d'Eau</h3>
+                    <p><strong>Budget:</strong> 15 000 000 FCFA</p>
+                    <p><strong>Date limite:</strong> 20 Janvier 2026</p>
+                    <p>Construction de 10 forages dans la commune</p>
+                    <span class="badge badge-warning">Clôturé</span>
+                </div>
+            </div>
+
+            <div style="max-width: 800px; margin: 3rem auto;">
+                <div class="card">
+                    <h3>Publier un appel d'offres (Réservé à la Mairie)</h3>
+                    <form id="appelOffresForm">
+                        <div class="form-group">
+                            <label>Titre *</label>
+                            <input type="text" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description *</label>
+                            <textarea required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Publier</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'includes/footer.html' %}
+</body>
+</html>

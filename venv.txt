@@ -1,0 +1,169 @@
+ **supprimer un environnement virtuel Python `.venv`** puis en créer un nouveau. 
+
+---
+
+ 1. Supprimer l’ancien environnement virtuel
+
+Dans le dossier où se trouve `.venv` :
+
+### Linux / macOS :
+
+```bash
+rm -rf .venv
+```
+
+### Windows (PowerShell) :
+
+```powershell
+Remove-Item -Recurse -Force .venv
+```
+
+
+
+## 2. Créer un nouvel environnement virtuel
+
+Toujours dans ton projet :
+
+```bash
+python -m venv .venv
+```
+
+activer PowerShell  si bloque
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+## 3. Activer le nouvel environnement
+
+### Linux / macOS :
+
+```bash
+source .venv/bin/activate
+```
+
+### Windows (PowerShell) :
+
+```powershell
+.venv\Scripts\Activate
+```
+
+Tu devrais voir `(.venv)` au début de ta ligne de commande 
+
+
+
+## 4. Mettre à jour pip (recommandé)
+
+```bash
+python -m pip install --upgrade pip
+```
+
+
+
+ **PowerShell bloque par défaut l’exécution des scripts** (`ExecutionPolicy`).
+C’est pour ça que tu ne peux pas activer ton `.venv`.
+
+---
+
+## ✅ Solutions
+
+### 1. Activer avec le script `Activate.bat` (contourne le problème)
+
+Dans **cmd.exe** (pas PowerShell) :
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+---
+
+### 2. Autoriser l’exécution de scripts PowerShell
+
+Ouvre **PowerShell en administrateur** et tape :
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Puis réactive ton venv :
+
+```powershell
+.venv\Scripts\Activate
+```
+
+⚠️ Explication :
+
+* `RemoteSigned` = tu peux exécuter tes scripts locaux (comme `Activate.ps1`) sans restriction.
+* Tu ne touches que ton utilisateur actuel (`-Scope CurrentUser`).
+
+---
+
+### 3. Alternative rapide (session en cours seulement)
+
+Si tu veux éviter de changer la stratégie globale :
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.venv\Scripts\Activate
+```
+
+Quand tu fermes la fenêtre PowerShell, tout revient comme avant.
+
+---
+
+Parfait 🚀
+Comme tu es sous **Windows + PowerShell**, voici un petit script que tu peux lancer directement dans ton terminal PowerShell (dans ton dossier `C:\Users\CALIC\Desktop\devcaisse`) :
+
+```powershell
+# Supprime l'ancien venv s'il existe
+Remove-Item -Recurse -Force .venv -ErrorAction SilentlyContinue
+
+# Crée un nouveau venv
+python -m venv .venv
+
+# Autorise temporairement l'exécution des scripts pour cette session
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Active le venv
+.venv\Scripts\Activate
+
+# Met à jour pip
+python -m pip install --upgrade pip
+```
+
+👉 Ce script fait tout en une fois :
+
+1. Supprime `.venv` s’il existe.
+2. Recrée l’environnement.
+3. Autorise *uniquement pour cette session* l’exécution des scripts.
+4. Active `.venv`.
+5. Met à jour `pip`.
+
+
+
+👉 installer automatiquement les dépendances depuis un `requirements.txt`** 
+pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python login.py
+python manage.py runserver
+https://www.python.org/downloads/windows/
+
+pythonanywhere
+# 1) Aller dans le dossier du projet
+cd /home/fkmgestion/GestionCaisse
+# 2) Activer l'environnement virtuel
+source .venv/bin/activate
+# (ou
+
+# 3) Récupérer la dernière version depuis GitHub
+git pull origin main
+# 4) Mettre à jour les dépendances (si besoin)
+pip install -r requirements.txt
+# 5) Appliquer les
+# 6) (Optionnel si tu utilises les statics) Recollecter les fichiers statiques
+python manage.py collectstatic --noinput
+
+
+’ajoute la modification/suppression via modals (édition d’une séance/cotisation existante) 
+
+dinnovdefis@gmail.com
+Developpement10

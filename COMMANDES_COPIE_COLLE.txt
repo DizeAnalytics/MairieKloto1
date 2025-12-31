@@ -1,0 +1,16 @@
+git config --global user.email "dizeanalytics@gmail.com"
+
+git config --global user.name "DizeAnalytics"
+
+git init
+
+git add .
+
+git commit -m "Initial commit: Plateforme web Mairie de Kloto 1"
+
+git remote add origin https://github.com/DizeAnalytics/MairieKloto1.git
+
+git branch -M main
+
+git push -u origin main
+

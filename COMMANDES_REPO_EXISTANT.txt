@@ -1,0 +1,39 @@
+=== Commandes pour pousser vers un dépôt GitHub EXISTANT ===
+
+ÉTAPE 1: Configuration Git (première fois seulement)
+git config --global user.email "dizeanalytics@gmail.com"
+git config --global user.name "DizeAnalytics"
+
+ÉTAPE 2: Initialiser le dépôt local
+git init
+
+ÉTAPE 3: Ajouter tous les fichiers
+git add .
+
+ÉTAPE 4: Créer le commit
+git commit -m "Initial commit: Plateforme web Mairie de Kloto 1"
+
+ÉTAPE 5: Connecter au dépôt GitHub existant
+git remote add origin https://github.com/DizeAnalytics/MairieKloto1.git
+
+ÉTAPE 6: Renommer la branche en main
+git branch -M main
+
+ÉTAPE 7: Récupérer les fichiers existants (si le repo n'est pas vide)
+git pull origin main --allow-unrelated-histories --no-edit
+
+ÉTAPE 8: Pousser vers GitHub
+git push -u origin main --force
+
+NOTE: Si le dépôt GitHub est vide, vous pouvez ignorer l'étape 7.
+Si le dépôt contient déjà des fichiers (README, .gitignore, etc.), 
+l'étape 7 les récupérera et les fusionnera avec vos fichiers locaux.
+
+SI ERREUR "remote origin already exists":
+git remote remove origin
+git remote add origin https://github.com/DizeAnalytics/MairieKloto1.git
+
+SI ERREUR lors du push:
+Essayez: git push -u origin main --force
+(Attention: --force écrase l'historique sur GitHub, utilisez seulement si nécessaire)
+

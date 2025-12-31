@@ -1,0 +1,48 @@
+"""
+URL configuration for mairie_kloto_platform project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+
+from . import views
+
+urlpatterns = [
+    # Route sécurisée pour l'admin Django (renommée pour la sécurité)
+    path("Securelogin/", admin.site.urls),
+    # Fausse route admin pour tromper les attaquants
+    path("admin/", views.fake_admin, name="fake_admin"),
+    # Page d'accueil avec mot du maire et informations
+    path("", include("mairie.urls", namespace="mairie")),
+    # Page d'enregistrement (ancienne page d'accueil)
+    path("enregistrement/", views.home, name="enregistrement"),
+    path("acteurs/", include("acteurs.urls", namespace="acteurs")),
+    path("emploi/", include("emploi.urls", namespace="emploi")),
+    path("actualites/", include("actualites.urls", namespace="actualites")),
+    path("comptes/", include("comptes.urls", namespace="comptes")),
+    # Tableau de bord administrateur
+    path("tableau-bord/", views.tableau_bord, name="tableau_bord"),
+    path("tableau-bord/acteurs-economiques/", views.liste_acteurs_economiques, name="liste_acteurs"),
+    path("tableau-bord/institutions-financieres/", views.liste_institutions_financieres, name="liste_institutions"),
+    path("tableau-bord/jeunes/", views.liste_jeunes, name="liste_jeunes"),
+    path("tableau-bord/retraites/", views.liste_retraites, name="liste_retraites"),
+    path("tableau-bord/candidatures/", views.liste_candidatures, name="liste_candidatures"),
+]
+
+# Servir les fichiers média en développement
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

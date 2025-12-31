@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <a href="{% url 'mairie:accueil' %}" class="back-link">← Retour à l'accueil</a>
+    <header>
+        <div class="logo">K1</div>
+        <h1>Enregistrement des Sites Touristiques</h1>
+        <p>Mairie de Kloto 1 - Kpalimé, Région des Plateaux, Togo</p>
+    </header>
+    <div class="form-container">
+        {% if success %}
+        <div class="success-message active">
+            <strong>✓ Succès !</strong> Votre site touristique a été enregistré.
+        </div>
+        {% endif %}
+        <div class="info-box">
+            <h3>Informations importantes</h3>
+            <ul>
+                <li>Les champs marqués d'un astérisque sont obligatoires</li>
+                <li>Assurez-vous que les informations sont exactes et à jour</li>
+            </ul>
+        </div>
+        <form id="siteTouristiqueForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="section-title">1. Informations de Base</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nom du site <span class="required">*</span></label>
+                    {{ form.nom_site }}
+                </div>
+                <div class="form-group">
+                    <label>Catégorie <span class="required">*</span></label>
+                    {{ form.categorie_site }}
+                </div>
+                <div class="form-group full-width">
+                    <label>Description <span class="required">*</span></label>
+                    {{ form.description }}
+                </div>
+                <div class="form-group full-width">
+                    <label>Particularité</label>
+                    {{ form.particularite }}
+                </div>
+            </div>
+            <div class="section-title">2. Visite</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Prix de visite par personne (FCFA) <span class="required">*</span></label>
+                    {{ form.prix_visite }}
+                </div>
+                <div class="form-group">
+                    <label>Horaires de visite <span class="required">*</span></label>
+                    {{ form.horaires_visite }}
+                </div>
+                <div class="form-group full-width">
+                    <label>Jours d'ouverture</label>
+                    {{ form.jours_ouverture }}
+                </div>
+            </div>
+            <div class="section-title">3. Localisation</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Quartier <span class="required">*</span></label>
+                    {{ form.quartier }}
+                </div>
+                <div class="form-group">
+                    <label>Canton</label>
+                    {{ form.canton }}
+                </div>
+                <div class="form-group full-width">
+                    <label>Adresse complète <span class="required">*</span></label>
+                    {{ form.adresse_complete }}
+                </div>
+                <div class="form-group">
+                    <label>Coordonnées GPS</label>
+                    {{ form.coordonnees_gps }}
+                </div>
+            </div>
+            <div class="section-title">4. Options</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Guide disponible</label>
+                    {{ form.guide_disponible }}
+                </div>
+                <div class="form-group">
+                    <label>Parking disponible</label>
+                    {{ form.parking_disponible }}
+                </div>
+                <div class="form-group">
+                    <label>Restauration disponible</label>
+                    {{ form.restauration_disponible }}
+                </div>
+                <div class="form-group">
+                    <label>Accès pour personnes handicapées</label>
+                    {{ form.acces_handicapes }}
+                </div>
+            </div>
+            <div class="section-title">5. Contact et Média</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    {{ form.telephone_contact }}
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    {{ form.email_contact }}
+                </div>
+                <div class="form-group">
+                    <label>Site web</label>
+                    {{ form.site_web }}
+                </div>
+                <div class="form-group">
+                    <label>Photo principale</label>
+                    {{ form.photo_principale }}
+                </div>
+            </div>
+            <div class="section-title">6. Accès</div>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>Conditions d'accès</label>
+                    {{ form.conditions_acces }}
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
+        <div class="section-title">Sites enregistrés</div>
+        <div class="list-container">
+            {% if sites %}
+                <ul class="item-list">
+                    {% for s in sites %}
+                        <li>
+                            <strong>{{ s.nom_site }}</strong> — {{ s.categorie_site }} — {{ s.quartier }} — {{ s.prix_visite }} FCFA
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Aucun site enregistré pour le moment.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

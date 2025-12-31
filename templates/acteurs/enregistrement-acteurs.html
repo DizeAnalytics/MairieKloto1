@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enregistrement des Acteurs Économiques - Mairie de Kloto 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            background: var(--white);
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.95;
+            font-size: 1.1rem;
+        }
+
+        .form-container {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .required {
+            color: var(--accent);
+            margin-left: 0.2rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group input[type="file"] {
+            padding: 0.6rem;
+            border-style: dashed;
+        }
+
+        .helper-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+        }
+
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .info-box ul {
+            margin-left: 1.5rem;
+            color: #555;
+        }
+
+        .info-box li {
+            margin-bottom: 0.3rem;
+        }
+
+        .checkbox-group {
+            margin-top: 1.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.8rem;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 98, 51, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            margin-left: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 2px solid #c3e6cb;
+            display: none;
+            animation: slideDown 0.5s;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-message {
+            color: var(--accent);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            display: none;
+        }
+
+        .form-group.error input,
+        .form-group.error select,
+        .form-group.error textarea {
+            border-color: var(--accent);
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        footer {
+            background: linear-gradient(135deg, #006233, #004d28);
+            color: #ffffff;
+            padding: 3rem 2rem 1rem;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .footer-column h4 {
+            margin-bottom: 0.6rem;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #ffcd00;
+        }
+
+        .footer-column p,
+        .footer-column li,
+        .footer-bottom p {
+            font-size: 0.9rem;
+            color: #ffffff;
+            opacity: 0.9;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-column ul li + li {
+            margin-top: 0.3rem;
+        }
+
+        .footer-column a {
+            color: #ffffff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: var(--secondary, #FFCD00);
+            text-decoration: underline;
+        }
+
+        .footer-column a:hover {
+            text-decoration: underline;
+            color: #ffcd00;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 0.7rem;
+            margin-top: 0.5rem;
+        }
+
+        .footer-social a {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.2);
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn-secondary {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'mairie:accueil' %}" class="back-link">← Retour à l'accueil</a>
+        <header>
+            <div class="logo">K1</div>
+            <h1>Enregistrement des Acteurs Économiques</h1>
+            <p>Mairie de Kloto 1 - Kpalimé, Région des Plateaux, Togo</p>
+        </header>
+
+        <div class="form-container">
+            {% if success %}
+            <div class="success-message active">
+                <strong>✓ Succès !</strong> Votre demande d'enregistrement a été soumise avec succès. 
+                Elle sera examinée par les services de la mairie sous 48 heures.
+            </div>
+            {% endif %}
+
+            <div class="info-box">
+                <h3>📋 Informations importantes</h3>
+                <ul>
+                    <li>Tous les champs marqués d'un astérisque (<span class="required">*</span>) sont obligatoires</li>
+                    <li>Assurez-vous que les informations fournies sont exactes et à jour</li>
+                    <li>Les documents fournis doivent être au format PDF, JPG ou PNG (max 5 MB)</li>
+                    <li>Votre enregistrement sera validé par la mairie dans un délai de 48 heures</li>
+                </ul>
+            </div>
+
+            <form id="acteurEconomiqueForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <!-- Section 1: Informations de base -->
+                <div class="section-title">1. Informations de Base</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Raison sociale <span class="required">*</span></label>
+                        {{ form.raison_sociale }}
+                        <span class="error-message">{{ form.raison_sociale.errors|first }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Type d'acteur <span class="required">*</span></label>
+                        {{ form.type_acteur }}
+                        <span class="error-message">{{ form.type_acteur.errors|first }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Secteur d'activité <span class="required">*</span></label>
+                        {{ form.secteur_activite }}
+                        <span class="error-message">{{ form.secteur_activite.errors|first }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Statut juridique <span class="required">*</span></label>
+                        {{ form.statut_juridique }}
+                        <span class="error-message">{{ form.statut_juridique.errors|first }}</span>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Description de l'activité <span class="required">*</span></label>
+                    {{ form.description }}
+                    <span class="helper-text">Minimum 20 caractères</span>
+                    <span class="error-message">Veuillez fournir une description</span>
+                </div>
+
+                <!-- Section 2: Informations légales -->
+                <div class="section-title">2. Informations Légales et Fiscales</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>N° RCCM</label>
+                        {{ form.rccm }}
+                        <span class="helper-text">Registre du Commerce et du Crédit Mobilier</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>N° CFE</label>
+                        {{ form.cfe }}
+                        <span class="helper-text">Si disponible</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>N° Carte d'Opérateur économique</label>
+                        {{ form.numero_carte_operateur }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>NIF</label>
+                        {{ form.nif }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date de création</label>
+                        {{ form.date_creation }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Capital social (FCFA)</label>
+                        {{ form.capital_social }}
+                    </div>
+                </div>
+
+                <!-- Section 3: Responsable et Contact -->
+                <div class="section-title">3. Responsable et Coordonnées</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom du responsable <span class="required">*</span></label>
+                        {{ form.nom_responsable }}
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fonction <span class="required">*</span></label>
+                        {{ form.fonction_responsable }}
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Téléphone 1 <span class="required">*</span></label>
+                        {{ form.telephone1 }}
+                        <span class="error-message">Numéro de téléphone invalide</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Téléphone 2</label>
+                        {{ form.telephone2 }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email professionnel <span class="required">*</span></label>
+                        {{ form.email }}
+                        <span class="error-message">Email invalide</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Site web</label>
+                        {{ form.site_web }}
+                    </div>
+                </div>
+
+                <!-- Section 4: Localisation -->
+                <div class="section-title">4. Localisation</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Quartier <span class="required">*</span></label>
+                        {{ form.quartier }}
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Canton</label>
+                        {{ form.canton }}
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Adresse complète <span class="required">*</span></label>
+                        {{ form.adresse_complete }}
+                        <span class="error-message">Ce champ est obligatoire</span>
+                    </div>
+                </div>
+
+                <!-- Section 5: Informations complémentaires -->
+                <div class="section-title">5. Informations Complémentaires</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nombre d'employés</label>
+                        {{ form.nombre_employes }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Chiffre d'affaires annuel (FCFA)</label>
+                        {{ form.chiffre_affaires }}
+                    </div>
+                </div>
+
+                <!-- Section 6: Documents -->
+                <div class="section-title">6. Documents Justificatifs</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Document de registre (RCCM)</label>
+                        {{ form.doc_registre }}
+                        <span class="helper-text">Formats: PDF, JPG, PNG - Max: 5 MB</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Carte CFE</label>
+                        {{ form.doc_ifu }}
+                        <span class="helper-text">Formats: PDF, JPG, PNG - Max: 5 MB</span>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Autres documents (facultatif)</label>
+                        {{ form.autres_documents }}
+                        <span class="helper-text">Vous pouvez sélectionner plusieurs fichiers</span>
+                    </div>
+                </div>
+
+                <!-- Conditions -->
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        {{ form.certifie_information }}
+                        <label for="certifieInfo">
+                            Je certifie que les informations fournies sont exactes et complètes <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        {{ form.accepte_conditions }}
+                        <label for="accepteConditions">
+                            J'accepte que mes données soient traitées par la Mairie de Kloto 1 <span class="required">*</span>
+                        </label>
+                    </div>
+                    <div class="checkbox-item">
+                        {{ form.accepte_public }}
+                        <label for="acceptePublic">
+                            J'accepte que mes coordonnées soient visibles publiquement sur la plateforme
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">📤 Soumettre l'enregistrement</button>
+                    <button type="reset" class="btn btn-secondary">🔄 Réinitialiser le formulaire</button>
+                    <a href="{% url 'acteurs:pdf_acteurs' %}" class="btn btn-secondary" style="text-decoration: none; color: inherit;">📄 Obtenir le PDF</a>
+                </div>
+            </form>
+        </div>
+
+        {% include 'includes/footer.html' %}
+    </div>
+
+    <!-- La validation et le traitement sont désormais gérés côté serveur par Django -->
+</body>
+</html>
