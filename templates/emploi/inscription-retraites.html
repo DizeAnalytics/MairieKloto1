@@ -48,13 +48,23 @@
             text-decoration: none;
         }
 
-        header {
+        /* Header local - ne doit pas masquer le header principal */
+        .container header {
             background: linear-gradient(135deg, var(--primary), #004d28);
             color: var(--white);
             padding: 2rem;
             border-radius: 15px 15px 0 0;
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
             text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* S'assurer que le header principal reste au-dessus */
+        body > header {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1000 !important;
         }
 
         .logo {
