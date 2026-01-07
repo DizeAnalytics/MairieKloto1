@@ -1,0 +1,15 @@
+# Requirements spécifiques pour PythonAnywhere
+# Utilise Django 4.2 qui est compatible avec Python 3.8+
+
+# Django Framework (version compatible Python 3.8+)
+Django==4.2.16
+
+# Image processing library
+Pillow>=10.0.0
+
+# Interface admin améliorée
+django-admin-interface==0.32.0
+django-colorfield>=0.9.0
+
+# Génération de PDFs
+reportlab>=4.0.0

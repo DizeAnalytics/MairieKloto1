@@ -26,15 +26,29 @@ cd MairieKloto1
 ### 3. Créer un environnement virtuel
 
 ```bash
+# Vérifier la version de Python disponible
+python3 --version
+
+# Créer l'environnement virtuel (Python 3.8, 3.9, 3.10 ou 3.11)
 python3.10 -m venv venv
+# OU si Python 3.10 n'est pas disponible :
+# python3.9 -m venv venv
+# OU
+# python3.8 -m venv venv
+
 source venv/bin/activate
 ```
 
 ### 4. Installer les dépendances
 
 ```bash
-pip install --upgrade pip
+pip install --upgrade pip setuptools wheel
+
+# Option 1 : Utiliser le fichier requirements standard (si Python 3.10+)
 pip install -r requirements.txt
+
+# Option 2 : Si erreur, utiliser la version compatible PythonAnywhere
+pip install -r requirements-pythonanywhere.txt
 ```
 
 ### 5. Configurer les variables d'environnement
@@ -191,6 +205,27 @@ python manage.py shell
 
 ## Dépannage
 
+### Erreur : "No matching distribution found for Django>=6.0,<7.0"
+
+**Solution :** Django 6.0 nécessite Python 3.10+. Si votre version de Python est inférieure :
+
+1. Vérifiez votre version de Python :
+   ```bash
+   python3 --version
+   ```
+
+2. Si vous avez Python 3.8 ou 3.9, utilisez le fichier de requirements alternatif :
+   ```bash
+   pip install -r requirements-pythonanywhere.txt
+   ```
+
+3. Ou créez un environnement virtuel avec Python 3.10+ si disponible :
+   ```bash
+   python3.10 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
 ### Erreur 500
 - Vérifiez les logs d'erreur dans l'onglet **Web**
 - Vérifiez que tous les chemins sont corrects
@@ -203,3 +238,8 @@ python manage.py shell
 ### Erreurs de migration
 - Exécutez `python manage.py migrate`
 - Vérifiez que la base de données est accessible
+
+### Problèmes de version Python
+- PythonAnywhere supporte Python 3.8, 3.9, 3.10 et 3.11
+- Utilisez `python3.10` ou `python3.11` pour Django 6.0
+- Utilisez `python3.8` ou `python3.9` avec `requirements-pythonanywhere.txt` (Django 4.2)

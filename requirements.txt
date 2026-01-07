@@ -1,5 +1,6 @@
 # Django Framework
-Django>=6.0,<7.0
+# Compatible avec Python 3.8+ (Django 4.2) ou Python 3.10+ (Django 6.0)
+Django>=4.2,<7.0
 
 # Image processing library (recommandé pour Django, même avec FileField)
 Pillow>=10.0.0
