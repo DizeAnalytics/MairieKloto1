@@ -9,27 +9,32 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 
-from .models import MotMaire, Collaborateur, InformationMairie, AppelOffre, Candidature
+from .models import MotMaire, Collaborateur, InformationMairie, AppelOffre, Candidature, ImageCarousel
 from .forms import CandidatureForm
 
 
 def accueil(request):
     """Page d'accueil avec le mot du maire, collaborateurs et informations."""
+    import random
     
     mot_maire = MotMaire.objects.filter(est_actif=True).first()
     collaborateurs = Collaborateur.objects.filter(est_visible=True).order_by('ordre_affichage', 'fonction', 'nom')
     informations = InformationMairie.objects.filter(est_visible=True).order_by('ordre_affichage', 'type_info')
     
+    # Récupérer les images actives du carousel (max 5) et les mélanger aléatoirement
+    images_carousel = list(ImageCarousel.objects.filter(est_actif=True).order_by('ordre_affichage', '-date_creation')[:5])
+    random.shuffle(images_carousel)
+    
     context = {
         'mot_maire': mot_maire,
         'collaborateurs': collaborateurs,
         'informations': informations,
+        'images_carousel': images_carousel,
     }
     
     return render(request, 'mairie/accueil.html', context)
 
 
-@login_required
 def liste_appels_offres(request):
     """Page listant tous les appels d'offres publiés et ouverts."""
     
@@ -210,7 +215,6 @@ def soumettre_candidature(request, pk: int):
         messages.error(request, "Cet appel d'offres n'est plus ouvert aux candidatures.")
         return redirect('mairie:appel_offre_detail', pk=pk)
 
-    # Vérifier si l'utilisateur a déjà postulé
     if Candidature.objects.filter(appel_offre=appel, candidat=request.user).exists():
         messages.warning(request, "Vous avez déjà soumis une candidature pour cet appel d'offres.")
         return redirect('mairie:appel_offre_detail', pk=pk)

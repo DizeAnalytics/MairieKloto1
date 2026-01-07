@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">🏢 Annuaire des Acteurs Économiques</h1>
+        <p class="page-subtitle">Découvrez les entreprises et acteurs économiques de Kloto 1</p>
+    </div>
+
+    {% if acteurs %}
+    <div class="acteurs-grid">
+        {% for acteur in acteurs %}
+        <div class="acteur-card">
+            <div class="acteur-image-placeholder">
+                <div class="placeholder-icon">
+                    {% if acteur.type_acteur == 'entreprise' %}🏢
+                    {% elif acteur.type_acteur == 'commerce' %}🏪
+                    {% elif acteur.type_acteur == 'artisan' %}🔨
+                    {% elif acteur.type_acteur == 'association' %}👥
+                    {% elif acteur.type_acteur == 'ong' %}🤝
+                    {% else %}💼{% endif %}
+                </div>
+                <div class="acteur-category-badge">{{ acteur.get_type_acteur_display }}</div>
+            </div>
+            
+            <div class="acteur-card-body">
+                <div class="acteur-header">
+                    <h2 class="acteur-titre">{{ acteur.raison_sociale }}</h2>
+                    <div class="acteur-location">
+                        <span class="location-icon">📍</span>
+                        <span>{{ acteur.quartier }}{% if acteur.canton %}, {{ acteur.canton }}{% endif %}</span>
+                    </div>
+                </div>
+                
+                <div class="acteur-description">
+                    {{ acteur.description|truncatewords:20 }}
+                </div>
+
+                <div class="acteur-features">
+                    <div class="feature-item">
+                        <span class="feature-icon">🏭</span>
+                        <span class="feature-text">{{ acteur.get_secteur_activite_display }}</span>
+                    </div>
+                    {% if acteur.telephone1 %}
+                    <div class="feature-item">
+                        <span class="feature-icon">📞</span>
+                        <span class="feature-text">{{ acteur.telephone1 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="acteur-footer">
+                    {% if acteur.site_web %}
+                    <a href="{{ acteur.site_web }}" target="_blank" class="acteur-link-btn">Site Web →</a>
+                    {% endif %}
+                    {% if acteur.email %}
+                    <a href="mailto:{{ acteur.email }}" class="acteur-link-btn secondary">Email</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-acteurs">
+        <div class="no-acteurs-icon">🏢</div>
+        <h3>Aucun acteur économique inscrit pour le moment</h3>
+        <p>Revenez bientôt pour consulter l'annuaire.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    :root { 
+        --success: #28a745;
+        --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+        --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .page-subtitle {
+        color: var(--dark);
+        opacity: 0.7;
+        font-size: 1.1rem;
+    }
+
+    .acteurs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .acteur-card {
+        background: var(--white);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        border: 1px solid rgba(0, 98, 51, 0.1);
+    }
+
+    .acteur-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+
+    .acteur-image-placeholder {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        background: linear-gradient(135deg, var(--primary), #004d28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .placeholder-icon {
+        font-size: 4rem;
+        opacity: 0.3;
+    }
+
+    .acteur-category-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--primary);
+        padding: 0.4rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .acteur-card-body {
+        padding: 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .acteur-header {
+        margin-bottom: 1rem;
+    }
+
+    .acteur-titre {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+        color: var(--dark);
+    }
+
+    .acteur-location {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--dark);
+        opacity: 0.7;
+        font-size: 0.9rem;
+    }
+
+    .acteur-description {
+        color: var(--dark);
+        opacity: 0.8;
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex-grow: 1;
+        font-size: 0.95rem;
+    }
+
+    .acteur-features {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--light);
+        border-radius: 8px;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--dark);
+    }
+
+    .feature-icon {
+        font-size: 1.1rem;
+    }
+
+    .acteur-footer {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid var(--light);
+        margin-top: auto;
+    }
+
+    .acteur-link-btn {
+        text-decoration: none;
+        color: var(--primary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: color 0.2s;
+    }
+    
+    .acteur-link-btn.secondary {
+        color: #666;
+    }
+
+    .acteur-link-btn:hover {
+        color: var(--secondary);
+    }
+
+    .no-acteurs {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #666;
+    }
+
+    .no-acteurs-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}

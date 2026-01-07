@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modification Profil Jeune - Mairie de Kloto 1</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .back-link {
+            display: inline-block; margin-bottom: 1rem; color: var(--primary);
+            text-decoration: none; font-weight: 600; padding: 0.5rem 1rem;
+            background: var(--white); border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .back-link:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); color: var(--primary); }
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28); color: var(--white);
+            padding: 2rem; border-radius: 15px 15px 0 0; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .logo {
+            width: 80px; height: 80px; background: var(--white); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+            color: var(--primary); font-size: 2rem; margin: 0 auto 1rem;
+        }
+        header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        header p { opacity: 0.95; font-size: 1.1rem; }
+        .form-container {
+            background: var(--white); padding: 3rem; border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .section-title {
+            color: var(--primary); font-size: 1.5rem; margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem; border-bottom: 3px solid var(--secondary);
+        }
+        .form-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem; margin-bottom: 2rem;
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label {
+            display: block; margin-bottom: 0.5rem; color: var(--dark);
+            font-weight: 600; font-size: 0.95rem;
+        }
+        .required { color: var(--accent); margin-left: 0.2rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.9rem; border: 2px solid #ddd; border-radius: 8px;
+            font-size: 1rem; transition: all 0.3s; font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+        }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-group input[type="file"] { padding: 0.6rem; border-style: dashed; }
+        .helper-text { font-size: 0.85rem; color: #666; margin-top: 0.3rem; }
+        .btn {
+            display: block; width: 100%; padding: 1rem; border: none; border-radius: 8px;
+            background: var(--primary); color: var(--white); font-size: 1.1rem;
+            font-weight: bold; cursor: pointer; transition: all 0.3s; margin-top: 2rem;
+        }
+        .btn:hover { background: #004d28; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,98,51,0.3); }
+        .alert { padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; font-weight: 500; }
+        .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'comptes:profil' %}" class="back-link">← Retour au profil</a>
+        
+        <header>
+            <div class="logo">MK1</div>
+            <h1>Modification Profil Jeune</h1>
+            <p>Mettez à jour vos informations personnelles et professionnelles</p>
+        </header>
+
+        <div class="form-container">
+            {% if form.errors %}
+            <div class="alert alert-error">
+                Veuillez corriger les erreurs ci-dessous.
+            </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="section-title">1. Informations Personnelles</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom <span class="required">*</span></label>
+                        {{ form.nom }}
+                    </div>
+                    <div class="form-group">
+                        <label>Prénom(s) <span class="required">*</span></label>
+                        {{ form.prenoms }}
+                    </div>
+                    <div class="form-group">
+                        <label>Date de naissance <span class="required">*</span></label>
+                        {{ form.date_naissance }}
+                    </div>
+                    <div class="form-group">
+                        <label>Genre <span class="required">*</span></label>
+                        {{ form.genre }}
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Adresse de résidence <span class="required">*</span></label>
+                        {{ form.adresse }}
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone <span class="required">*</span></label>
+                        {{ form.telephone }}
+                    </div>
+                </div>
+
+                <div class="section-title">2. Profil Professionnel</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Niveau d'étude <span class="required">*</span></label>
+                        {{ form.niveau_etude }}
+                    </div>
+                    <div class="form-group">
+                        <label>Domaine de compétence <span class="required">*</span></label>
+                        {{ form.domaine_competence }}
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Expérience professionnelle</label>
+                        {{ form.experience_professionnelle }}
+                        <p class="helper-text">Décrivez brièvement vos expériences passées.</p>
+                    </div>
+                </div>
+
+                <div class="section-title">3. Documents</div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Curriculum Vitae (PDF)</label>
+                        {{ form.cv }}
+                        <p class="helper-text">Laissez vide si vous ne souhaitez pas modifier le document existant.</p>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Lettre de motivation (PDF)</label>
+                        {{ form.lettre_motivation }}
+                        <p class="helper-text">Laissez vide si vous ne souhaitez pas modifier le document existant.</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Enregistrer les modifications</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

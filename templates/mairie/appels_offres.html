@@ -1,576 +1,211 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appels d'Offres - Mairie de Kloto 1</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #006233;
-            --secondary: #FFCD00;
-            --accent: #D21034;
-            --dark: #1a1a1a;
-            --light: #f5f5f5;
-            --white: #ffffff;
-            --success: #28a745;
-            --warning: #ffc107;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: var(--dark);
-        }
-
-        header {
-            background: linear-gradient(135deg, var(--primary), #004d28);
-            color: var(--white);
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logo {
-            width: 60px;
-            height: 60px;
-            background: var(--white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
-
-        .header-text h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.2rem;
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.7rem 1.5rem;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: var(--secondary);
-            color: var(--dark);
-            font-weight: 600;
-        }
-
-        .btn-primary:hover {
-            background: #e6b800;
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--white);
-            border: 2px solid var(--white);
-        }
-
-        .btn-secondary:hover {
-            background: var(--white);
-            color: var(--primary);
-        }
-
-        nav {
-            background: rgba(255,255,255,0.1);
-            margin-top: 1rem;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        nav ul li {
-            margin: 0.5rem 1rem;
-        }
-
-        nav ul li a {
-            color: var(--white);
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            transition: all 0.3s;
-            display: block;
-        }
-
-        nav ul li a:hover, nav ul li a.active {
-            background: var(--secondary);
-            color: var(--dark);
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
-
-        .page-title {
-            font-size: 2.5rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        .page-subtitle {
-            text-align: center;
-            color: var(--dark);
-            opacity: 0.8;
-            margin-bottom: 3rem;
-        }
-
-        .section-title {
-            font-size: 1.8rem;
-            color: var(--primary);
-            margin: 3rem 0 1.5rem 0;
-            padding-bottom: 0.5rem;
-            border-bottom: 3px solid var(--secondary);
-        }
-
-        .appels-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            margin-top: 2rem;
-            justify-content: center;
-        }
-
-        .appel-card-link {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-            flex: 0 0 calc((100% - 4rem) / 3);
-            max-width: calc((100% - 4rem) / 3);
-        }
-
-        .appel-card {
-            background: var(--white);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            border-left: 5px solid var(--primary);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .appel-card-link:hover .appel-card {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-
-        .appel-card.cloture {
-            border-left-color: var(--dark);
-            opacity: 0.7;
-        }
-
-        .appel-header {
-            background: linear-gradient(135deg, var(--primary), #004d28);
-            color: var(--white);
-            padding: 1.5rem;
-        }
-
-        .appel-reference {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-bottom: 0.5rem;
-        }
-
-        .appel-titre {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        .appel-public {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-top: 0.5rem;
-        }
-
-        .appel-content {
-            padding: 1.5rem;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .appel-info {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .appel-info-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--dark);
-            opacity: 0.8;
-        }
-
-        .appel-description {
-            color: var(--dark);
-            opacity: 0.8;
-            margin-bottom: 1rem;
-            line-height: 1.6;
-            display: -webkit-box;
-            -webkit-line-clamp: 4;
-            line-clamp: 4;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            flex-grow: 1;
-        }
-
-        .appel-budget {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-
-        .appel-criteres {
-            background: var(--light);
-            padding: 1rem;
-            border-radius: 5px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .appel-criteres h4 {
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-            font-size: 1rem;
-        }
-
-        .appel-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 1rem;
-            border-top: 1px solid var(--light);
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-top: auto;
-        }
-
-        .appel-statut {
-            display: inline-block;
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .statut-ouvert {
-            background: var(--success);
-            color: var(--white);
-        }
-
-        .statut-cloture {
-            background: var(--dark);
-            color: var(--white);
-        }
-
-        .appel-link {
-            display: inline-block;
-            padding: 0.7rem 1.5rem;
-            background: var(--primary);
-            color: var(--white);
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s;
-            font-weight: 500;
-        }
-
-        .appel-link:hover {
-            background: var(--accent);
-        }
-
-        .appel-link.cloture {
-            background: var(--dark);
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .no-appels {
-            text-align: center;
-            padding: 3rem;
-            color: var(--dark);
-            opacity: 0.7;
-            background: var(--light);
-            border-radius: 10px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-entreprises {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .badge-institutions {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .badge-jeunes {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-        .badge-retraites {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-
-        .badge-tous {
-            background: #fce4ec;
-            color: #c2185b;
-        }
-
-        @media (max-width: 1200px) {
-            .appel-card-link {
-                flex: 0 0 calc(50% - 2rem);
-                max-width: calc(50% - 2rem);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .appel-card-link {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-
-            .appel-footer {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .appel-link {
-                text-align: center;
-            }
-        }
-    </style>
-    {% include 'includes/footer_styles.html' %}
-</head>
-<body>
-    <header>
-        <div class="header-top">
-            <div class="logo-section">
-                <div class="logo">K1</div>
-                <div class="header-text">
-                    <h1>Mairie de Kloto 1</h1>
-                    <p>Plateforme de Gestion Économique</p>
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+    .container { max-width: 1400px; }
+    .page-title {
+        font-size: 2.5rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    .page-subtitle { text-align: center; color: var(--dark); opacity: 0.8; margin-bottom: 3rem; }
+    .section-title {
+        font-size: 1.8rem;
+        color: var(--primary);
+        margin: 3rem 0 1.5rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid var(--secondary);
+    }
+    .appels-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin-top: 2rem;
+        justify-content: center;
+    }
+    .appel-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        flex: 0 0 calc((100% - 4rem) / 3);
+        max-width: calc((100% - 4rem) / 3);
+    }
+    .appel-card {
+        background: var(--white);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-left: 5px solid var(--primary);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .appel-card-link:hover .appel-card { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+    .appel-card.cloture { border-left-color: var(--dark); opacity: 0.7; }
+    .appel-header { background: linear-gradient(135deg, var(--primary), #004d28); color: var(--white); padding: 1.5rem; }
+    .appel-reference { font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem; }
+    .appel-titre { font-size: 1.5rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .appel-public { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; margin-top: 0.5rem; }
+    .appel-content { padding: 1.5rem; flex-grow: 1; display: flex; flex-direction: column; }
+    .appel-info { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; font-size: 0.9rem; }
+    .appel-info-item { display: flex; align-items: center; gap: 0.5rem; color: var(--dark); opacity: 0.8; }
+    .appel-description {
+        color: var(--dark);
+        opacity: 0.8;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex-grow: 1;
+    }
+    .appel-budget { font-size: 1.1rem; font-weight: 600; color: var(--primary); margin-bottom: 1rem; }
+    .appel-criteres { background: var(--light); padding: 1rem; border-radius: 5px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .appel-criteres h4 { color: var(--primary); margin-bottom: 0.5rem; font-size: 1rem; }
+    .appel-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid var(--light);
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: auto;
+    }
+    .appel-statut { display: inline-block; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+    .statut-ouvert { background: var(--success); color: var(--white); }
+    .statut-cloture { background: var(--dark); color: var(--white); }
+    .appel-link { display: inline-block; padding: 0.7rem 1.5rem; background: var(--primary); color: var(--white); text-decoration: none; border-radius: 5px; transition: background 0.3s; font-weight: 500; }
+    .appel-link:hover { background: var(--accent); }
+    .appel-link.cloture { background: var(--dark); opacity: 0.7; cursor: not-allowed; }
+    .no-appels { text-align: center; padding: 3rem; color: var(--dark); opacity: 0.7; background: var(--light); border-radius: 10px; }
+    .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .badge-entreprises { background: #e3f2fd; color: #1976d2; }
+    .badge-institutions { background: #fff3e0; color: #f57c00; }
+    .badge-jeunes { background: #f3e5f5; color: #7b1fa2; }
+    .badge-retraites { background: #e8f5e9; color: #388e3c; }
+    .badge-tous { background: #fce4ec; color: #c2185b; }
+    @media (max-width: 1200px) {
+        .appel-card-link { flex: 0 0 calc(50% - 2rem); max-width: calc(50% - 2rem); }
+    }
+    @media (max-width: 768px) {
+        .appel-card-link { flex: 0 0 100%; max-width: 100%; }
+        .appel-footer { flex-direction: column; align-items: stretch; }
+        .appel-link { text-align: center; }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Appels d'Offres</h1>
+    <p class="page-subtitle">Découvrez les opportunités d'affaires et de partenariats proposées par la Mairie de Kloto 1</p>
+    {% if appels_ouverts %}
+    <h2 class="section-title">Appels d'Offres Ouverts</h2>
+    <div class="appels-grid">
+        {% for appel in appels_ouverts %}
+        <a href="{% url 'mairie:appel_offre_detail' appel.pk %}" class="appel-card-link">
+            <div class="appel-card">
+                <div class="appel-header">
+                    {% if appel.reference %}
+                    <div class="appel-reference">Réf. {{ appel.reference }}</div>
+                    {% endif %}
+                    <h2 class="appel-titre">{{ appel.titre }}</h2>
+                    <span class="appel-public badge badge-{{ appel.public_cible }}">
+                        {{ appel.get_public_cible_display }}
+                    </span>
+                </div>
+                <div class="appel-content">
+                    <div class="appel-info">
+                        <div class="appel-info-item">
+                            📅 <strong>Ouverture:</strong> {{ appel.date_debut|date:"d/m/Y à H:i" }}
+                        </div>
+                        <div class="appel-info-item">
+                            ⏰ <strong>Clôture:</strong> {{ appel.date_fin|date:"d/m/Y à H:i" }}
+                        </div>
+                    </div>
+                    {% if appel.budget_estime %}
+                    <div class="appel-budget">
+                        💰 Budget estimé: {{ appel.budget_estime|floatformat:0 }} FCFA
+                    </div>
+                    {% endif %}
+                    <div class="appel-description">
+                        {{ appel.description|truncatewords:50 }}
+                    </div>
+                    {% if appel.criteres_selection %}
+                    <div class="appel-criteres">
+                        <h4>Critères de sélection:</h4>
+                        <p>{{ appel.criteres_selection|truncatewords:30 }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="appel-footer">
+                        <span class="appel-statut statut-ouvert">Ouvert</span>
+                        {% if appel.document_officiel %}
+                        <a href="{{ appel.document_officiel.url }}" class="appel-link" target="_blank" onclick="event.stopPropagation();">
+                            📄 Télécharger le dossier
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-            <div class="auth-buttons">
-                {% if user.is_authenticated %}
-                    <span style="color: var(--white); margin-right: 1rem; align-self: center;">Bonjour, {{ user.username }}</span>
-                    <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
-                {% else %}
-                    <a href="{% url 'comptes:connexion' %}" class="btn btn-primary">Connexion</a>
-                    <a href="{% url 'comptes:inscription' %}" class="btn btn-secondary">Inscription</a>
-                {% endif %}
-            </div>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="{% url 'mairie:accueil' %}">Accueil</a></li>
-                <li><a href="{% url 'enregistrement' %}">Enregistrement</a></li>
-                <li><a href="{% url 'acteurs:enregistrement' %}">Entreprises</a></li>
-                <li><a href="{% url 'acteurs:inscription_institutions' %}">Institutions Financières</a></li>
-                <li><a href="{% url 'emploi:inscription_jeunes' %}">Emploi</a></li>
-                <li><a href="{% url 'actualites:liste' %}">Actualités</a></li>
-                <li><a href="{% url 'acteurs:sites_public' %}">Sites touristiques</a></li>
-                <li><a href="{% url 'mairie:appels_offres' %}" class="active">Appels d'Offres</a></li>
-      
-                {% if user.is_staff or user.is_superuser %}
-                <li><a href="{% url 'tableau_bord' %}" class="nav-link">Tableau de Bord</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </header>
-
-    <div class="container">
-        <h1 class="page-title">Appels d'Offres</h1>
-        <p class="page-subtitle">Découvrez les opportunités d'affaires et de partenariats proposées par la Mairie de Kloto 1</p>
-
-        <!-- Appels d'offres ouverts -->
-        {% if appels_ouverts %}
-        <h2 class="section-title">Appels d'Offres Ouverts</h2>
-        <div class="appels-grid">
-            {% for appel in appels_ouverts %}
-            <a href="{% url 'mairie:appel_offre_detail' appel.pk %}" class="appel-card-link">
-                <div class="appel-card">
-                    <div class="appel-header">
-                        {% if appel.reference %}
-                        <div class="appel-reference">Réf. {{ appel.reference }}</div>
-                        {% endif %}
-                        <h2 class="appel-titre">{{ appel.titre }}</h2>
-                        <span class="appel-public badge badge-{{ appel.public_cible }}">
-                            {{ appel.get_public_cible_display }}
-                        </span>
-                    </div>
-                    <div class="appel-content">
-                        <div class="appel-info">
-                            <div class="appel-info-item">
-                                📅 <strong>Ouverture:</strong> {{ appel.date_debut|date:"d/m/Y à H:i" }}
-                            </div>
-                            <div class="appel-info-item">
-                                ⏰ <strong>Clôture:</strong> {{ appel.date_fin|date:"d/m/Y à H:i" }}
-                            </div>
-                        </div>
-                        
-                        {% if appel.budget_estime %}
-                        <div class="appel-budget">
-                            💰 Budget estimé: {{ appel.budget_estime|floatformat:0 }} FCFA
-                        </div>
-                        {% endif %}
-
-                        <div class="appel-description">
-                            {{ appel.description|truncatewords:50 }}
-                        </div>
-
-                        {% if appel.criteres_selection %}
-                        <div class="appel-criteres">
-                            <h4>Critères de sélection:</h4>
-                            <p>{{ appel.criteres_selection|truncatewords:30 }}</p>
-                        </div>
-                        {% endif %}
-
-                        <div class="appel-footer">
-                            <span class="appel-statut statut-ouvert">Ouvert</span>
-                            {% if appel.document_officiel %}
-                            <a href="{{ appel.document_officiel.url }}" class="appel-link" target="_blank" onclick="event.stopPropagation();">
-                                📄 Télécharger le dossier
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Appels d'offres clôturés -->
-        {% if appels_clotures %}
-        <h2 class="section-title">Appels d'Offres Clôturés</h2>
-        <div class="appels-grid">
-            {% for appel in appels_clotures %}
-            <a href="{% url 'mairie:appel_offre_detail' appel.pk %}" class="appel-card-link">
-                <div class="appel-card cloture">
-                    <div class="appel-header">
-                        {% if appel.reference %}
-                        <div class="appel-reference">Réf. {{ appel.reference }}</div>
-                        {% endif %}
-                        <h2 class="appel-titre">{{ appel.titre }}</h2>
-                        <span class="appel-public badge badge-{{ appel.public_cible }}">
-                            {{ appel.get_public_cible_display }}
-                        </span>
-                    </div>
-                    <div class="appel-content">
-                        <div class="appel-info">
-                            <div class="appel-info-item">
-                                📅 <strong>Ouverture:</strong> {{ appel.date_debut|date:"d/m/Y à H:i" }}
-                            </div>
-                            <div class="appel-info-item">
-                                ⏰ <strong>Clôture:</strong> {{ appel.date_fin|date:"d/m/Y à H:i" }}
-                            </div>
-                        </div>
-
-                        {% if appel.budget_estime %}
-                        <div class="appel-budget">
-                            💰 Budget estimé: {{ appel.budget_estime|floatformat:0 }} FCFA
-                        </div>
-                        {% endif %}
-
-                        <div class="appel-description">
-                            {{ appel.description|truncatewords:50 }}
-                        </div>
-
-                        <div class="appel-footer">
-                            <span class="appel-statut statut-cloture">Clôturé</span>
-                            {% if appel.document_officiel %}
-                            <a href="{{ appel.document_officiel.url }}" class="appel-link cloture" target="_blank" onclick="event.stopPropagation();">
-                                📄 Consulter le dossier
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Message si aucun appel d'offres -->
-        {% if not appels_ouverts and not appels_clotures %}
-        <div class="no-appels">
-            <h3>Aucun appel d'offres disponible pour le moment</h3>
-            <p>Revenez bientôt pour découvrir les nouvelles opportunités proposées par la Mairie de Kloto 1.</p>
-        </div>
-        {% endif %}
+        </a>
+        {% endfor %}
     </div>
-
-    {% include 'includes/footer.html' %}
-</body>
-</html>
+    {% endif %}
+    {% if appels_clotures %}
+    <h2 class="section-title">Appels d'Offres Clôturés</h2>
+    <div class="appels-grid">
+        {% for appel in appels_clotures %}
+        <a href="{% url 'mairie:appel_offre_detail' appel.pk %}" class="appel-card-link">
+            <div class="appel-card cloture">
+                <div class="appel-header">
+                    {% if appel.reference %}
+                    <div class="appel-reference">Réf. {{ appel.reference }}</div>
+                    {% endif %}
+                    <h2 class="appel-titre">{{ appel.titre }}</h2>
+                    <span class="appel-public badge badge-{{ appel.public_cible }}">
+                        {{ appel.get_public_cible_display }}
+                    </span>
+                </div>
+                <div class="appel-content">
+                    <div class="appel-info">
+                        <div class="appel-info-item">
+                            📅 <strong>Ouverture:</strong> {{ appel.date_debut|date:"d/m/Y à H:i" }}
+                        </div>
+                        <div class="appel-info-item">
+                            ⏰ <strong>Clôture:</strong> {{ appel.date_fin|date:"d/m/Y à H:i" }}
+                        </div>
+                    </div>
+                    {% if appel.budget_estime %}
+                    <div class="appel-budget">
+                        💰 Budget estimé: {{ appel.budget_estime|floatformat:0 }} FCFA
+                    </div>
+                    {% endif %}
+                    <div class="appel-description">
+                        {{ appel.description|truncatewords:50 }}
+                    </div>
+                    <div class="appel-footer">
+                        <span class="appel-statut statut-cloture">Clôturé</span>
+                        {% if appel.document_officiel %}
+                        <a href="{{ appel.document_officiel.url }}" class="appel-link cloture" target="_blank" onclick="event.stopPropagation();">
+                            📄 Consulter le dossier
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if not appels_ouverts and not appels_clotures %}
+    <div class="no-appels">
+        <h3>Aucun appel d'offres disponible pour le moment</h3>
+        <p>Revenez bientôt pour découvrir les nouvelles opportunités proposées par la Mairie de Kloto 1.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
 

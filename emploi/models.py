@@ -1,8 +1,11 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class ProfilEmploi(models.Model):
     """Profil d'une personne en recherche d'activité (jeune ou retraité actif)."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='profil_emploi')
 
     TYPE_PROFIL_CHOICES = [
         ("jeune", "Jeune en quête d'emploi"),

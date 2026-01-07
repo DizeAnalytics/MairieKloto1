@@ -4,8 +4,8 @@ Django>=6.0,<7.0
 # Image processing library (recommandé pour Django, même avec FileField)
 Pillow>=10.0.0
 
-# Interface admin améliorée
-django-admin-interface>=3.2.0
+# Interface admin améliorée (version max dispo sur PyPI)
+django-admin-interface==0.32.0
 django-colorfield>=0.9.0
 
 # Database (SQLite est inclus avec Python, mais on peut ajouter d'autres backends si nécessaire)

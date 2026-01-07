@@ -1,391 +1,177 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="container">
-    <div class="page-header">
-        <h1 class="page-title">🏞️ Sites Touristiques</h1>
-        <p class="page-subtitle">Découvrez les sites touristiques validés par la Mairie de Kloto 1</p>
-    </div>
-
-    {% if sites %}
-    <div class="sites-grid">
-        {% for s in sites %}
-        <a href="{% url 'acteurs:site_detail' s.pk %}" class="site-card-link">
-            <div class="site-card">
-                {% if s.photo_principale %}
-                <div class="site-image-wrapper">
-                    <img src="{{ s.photo_principale.url }}" alt="{{ s.nom_site }}" class="site-image">
-                    <div class="site-category-badge">{{ s.get_categorie_site_display }}</div>
-                </div>
-                {% else %}
-                <div class="site-image-placeholder">
-                    <div class="placeholder-icon">🏞️</div>
-                    <div class="site-category-badge">{{ s.get_categorie_site_display }}</div>
-                </div>
-                {% endif %}
-                
-                <div class="site-card-body">
-                    <div class="site-header">
-                        <h2 class="site-titre">{{ s.nom_site }}</h2>
-                        <div class="site-location">
-                            <span class="location-icon">📍</span>
-                            <span>{{ s.quartier }}{% if s.canton %}, {{ s.canton }}{% endif %}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="site-description">
-                        {{ s.particularite|default:s.description|truncatewords:30 }}
-                    </div>
-
-                    <div class="site-features">
-                        <div class="feature-item price">
-                            <span class="feature-icon">💰</span>
-                            <span class="feature-text">{{ s.prix_visite }} FCFA</span>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">⏰</span>
-                            <span class="feature-text">{{ s.horaires_visite }}</span>
-                        </div>
-                    </div>
-
-                    {% if s.guide_disponible or s.parking_disponible or s.restauration_disponible or s.acces_handicapes %}
-                    <div class="site-amenities">
-                        {% if s.guide_disponible %}
-                        <span class="amenity-badge" title="Guide disponible">👨‍🏫</span>
-                        {% endif %}
-                        {% if s.parking_disponible %}
-                        <span class="amenity-badge" title="Parking disponible">🅿️</span>
-                        {% endif %}
-                        {% if s.restauration_disponible %}
-                        <span class="amenity-badge" title="Restauration disponible">🍽️</span>
-                        {% endif %}
-                        {% if s.acces_handicapes %}
-                        <span class="amenity-badge" title="Accès handicapés">♿</span>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-
-                    <div class="site-footer">
-                        <span class="site-statut">✓ Validé</span>
-                        <span class="site-link-btn">Voir les détails →</span>
-                    </div>
-                </div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="no-sites">
-        <div class="no-sites-icon">🏞️</div>
-        <h3>Aucun site touristique validé pour le moment</h3>
-        <p>Revenez bientôt pour découvrir de nouveaux sites de la commune.</p>
-    </div>
-    {% endif %}
-</div>
-
+{% block extra_css %}
 <style>
-    :root { 
-        --success: #28a745;
-        --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
-        --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
-        --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
+    .tourism-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2.5rem 2rem;
     }
-
-    .page-header {
-        text-align: center;
-        margin-bottom: 3rem;
-    }
-
     .page-title {
-        font-size: 2.5rem;
+        font-size: 2rem;
         color: var(--primary);
-        margin-bottom: 0.5rem;
-        font-weight: 700;
+        margin-bottom: 1.5rem;
+        text-align: center;
     }
-
-    .page-subtitle {
-        color: var(--dark);
-        opacity: 0.7;
-        font-size: 1.1rem;
-    }
-
-    .sites-grid {
+    .cards-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 2rem;
-        margin-bottom: 3rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.75rem;
     }
-
-    .site-card-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-    }
-
-    .site-card {
+    .card {
         background: var(--white);
-        border-radius: 12px;
-        box-shadow: var(--shadow-sm);
-        overflow: hidden;
-        transition: all 0.3s ease;
+        border-radius: 10px;
+        padding: 0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.04);
         display: flex;
         flex-direction: column;
         height: 100%;
-        border: 1px solid rgba(0, 98, 51, 0.1);
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-
-    .site-card:hover {
-        transform: translateY(-8px);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--primary);
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.16);
     }
-
-    .site-image-wrapper {
-        position: relative;
+    .card-image {
         width: 100%;
-        height: 220px;
+        height: 180px;
         overflow: hidden;
         background: linear-gradient(135deg, var(--primary), #004d28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 2.4rem;
     }
-
-    .site-image {
+    .card-image img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.3s ease;
+        display: block;
     }
-
-    .site-card:hover .site-image {
-        transform: scale(1.05);
-    }
-
-    .site-image-placeholder {
-        position: relative;
-        width: 100%;
-        height: 220px;
-        background: linear-gradient(135deg, var(--primary), #004d28);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .placeholder-icon {
-        font-size: 4rem;
-        opacity: 0.3;
-    }
-
-    .site-category-badge {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: rgba(255, 255, 255, 0.95);
-        color: var(--primary);
-        padding: 0.4rem 0.9rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: var(--shadow-sm);
-    }
-
-    .site-card-body {
-        padding: 1.5rem;
-        flex-grow: 1;
+    .card-body {
+        padding: 1.2rem 1.3rem 1rem;
         display: flex;
         flex-direction: column;
-    }
-
-    .site-header {
-        margin-bottom: 1rem;
-    }
-
-    .site-titre {
-        font-size: 1.4rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        line-height: 1.3;
-        color: var(--dark);
-    }
-
-    .site-location {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        color: var(--dark);
-        opacity: 0.7;
-        font-size: 0.9rem;
-    }
-
-    .location-icon {
-        font-size: 0.9rem;
-    }
-
-    .site-description {
-        color: var(--dark);
-        opacity: 0.8;
-        margin-bottom: 1.2rem;
-        line-height: 1.6;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        flex-grow: 1;
-        font-size: 0.95rem;
-    }
-
-    .site-features {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        padding: 1rem;
-        background: var(--light);
-        border-radius: 8px;
-    }
-
-    .feature-item {
-        display: flex;
-        align-items: center;
         gap: 0.5rem;
-        font-size: 0.9rem;
-        color: var(--dark);
     }
-
-    .feature-item.price {
-        font-weight: 700;
-        color: var(--primary);
-    }
-
-    .feature-icon {
+    .card h3 {
+        margin: 0;
         font-size: 1.1rem;
+        color: var(--primary);
+        font-weight: 700;
     }
-
-    .site-amenities {
+    .card-description {
+        font-size: 0.95rem;
+        color: var(--dark);
+        opacity: 0.9;
+    }
+    .card-meta {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.5rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .amenity-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: var(--light);
-        border-radius: 50%;
-        font-size: 1rem;
-        transition: all 0.2s;
-    }
-
-    .site-card:hover .amenity-badge {
-        background: var(--secondary);
-        transform: scale(1.1);
-    }
-
-    .site-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 1rem;
-        border-top: 2px solid var(--light);
-        margin-top: auto;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .site-statut {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.4rem 1rem;
-        border-radius: 20px;
+        margin-top: 0.4rem;
         font-size: 0.85rem;
-        font-weight: 600;
-        background: var(--success);
-        color: var(--white);
     }
-
-    .site-link-btn {
+    .badge-chip {
         display: inline-flex;
         align-items: center;
-        padding: 0.5rem 1.2rem;
+        gap: 0.25rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        background: var(--light);
+        color: var(--dark);
+    }
+    .card-location {
+        font-size: 0.9rem;
+        margin-top: 0.4rem;
+        color: var(--dark);
+        opacity: 0.9;
+    }
+    .card-website {
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+    }
+    .card-website a {
+        color: var(--primary);
+        text-decoration: none;
+    }
+    .card-website a:hover {
+        text-decoration: underline;
+    }
+    .card-footer {
+        padding: 0 1.3rem 1.1rem;
+        margin-top: auto;
+    }
+    .card p {
+        margin: 0;
+    }
+    .card a.btn {
+        margin-top: auto;
+        display: inline-block;
+    }
+    .btn.btn-primary {
         background: var(--primary);
         color: var(--white);
-        text-decoration: none;
+        padding: 0.6rem 1.1rem;
         border-radius: 6px;
-        transition: all 0.3s;
-        font-size: 0.9rem;
+        text-decoration: none;
         font-weight: 600;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-
-    .site-card:hover .site-link-btn {
-        background: var(--accent);
-        transform: translateX(4px);
+    .btn.btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.12);
     }
-
-    .no-sites {
-        text-align: center;
-        padding: 4rem 2rem;
-        background: var(--light);
-        border-radius: 12px;
-        border: 2px dashed rgba(0, 98, 51, 0.2);
-    }
-
-    .no-sites-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
-    .no-sites h3 {
-        color: var(--dark);
-        margin-bottom: 0.5rem;
-        font-size: 1.5rem;
-    }
-
-    .no-sites p {
-        color: var(--dark);
-        opacity: 0.7;
-        font-size: 1rem;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .page-title {
-            font-size: 2rem;
-        }
-
-        .sites-grid {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-
-        .site-image-wrapper,
-        .site-image-placeholder {
-            height: 200px;
-        }
-
-        .site-card-body {
-            padding: 1.2rem;
-        }
-
-        .site-footer {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .site-link-btn {
-            text-align: center;
-            justify-content: center;
-        }
-    }
-
-    @media (min-width: 1200px) {
-        .sites-grid {
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        }
+    @media (max-width: 640px) {
+        .tourism-container { padding: 2rem 1.25rem; }
     }
 </style>
+{% endblock %}
+{% block content %}
+<div class="tourism-container">
+    <h1 class="page-title">Sites Touristiques</h1>
+
+    <div class="section">
+        {% if sites %}
+            <div class="cards-grid">
+                {% for s in sites %}
+                    <div class="card">
+                        <div class="card-image">
+                            {% if s.photo_principale %}
+                                <img src="{{ s.photo_principale.url }}" alt="{{ s.nom_site }}">
+                            {% else %}
+                                <span>🗺️</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h3>{{ s.nom_site }}</h3>
+                            <p class="card-description">
+                                {{ s.particularite|default:s.description|truncatechars:140 }}
+                            </p>
+                            <div class="card-meta">
+                                <span class="badge-chip">💰 {{ s.prix_visite }} FCFA</span>
+                                <span class="badge-chip">🕒 {{ s.horaires_visite }}</span>
+                            </div>
+                            <p class="card-location">
+                                📍 {{ s.quartier }}{% if s.canton %}, {{ s.canton }}{% endif %}
+                            </p>
+                            {% if s.site_web %}
+                            <p class="card-website">
+                                🔗 <a href="{{ s.site_web }}" target="_blank" rel="noopener">Site web officiel</a>
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'acteurs:site_detail' s.pk %}" class="btn btn-primary">Voir le détail</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Aucun site touristique validé pour le moment.</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

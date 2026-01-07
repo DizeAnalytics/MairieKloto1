@@ -1,8 +1,11 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class ActeurEconomique(models.Model):
     """Représente une entreprise / acteur économique dans la commune."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='acteur_economique')
 
     TYPE_ACTEUR_CHOICES = [
         ("entreprise", "Entreprise"),
@@ -73,6 +76,7 @@ class ActeurEconomique(models.Model):
     ]
 
     raison_sociale = models.CharField(max_length=255)
+    sigle = models.CharField(max_length=50, blank=True)
     type_acteur = models.CharField(max_length=20, choices=TYPE_ACTEUR_CHOICES)
     secteur_activite = models.CharField(max_length=30, choices=SECTEUR_ACTIVITE_CHOICES)
     statut_juridique = models.CharField(max_length=20, choices=STATUT_JURIDIQUE_CHOICES)
@@ -129,6 +133,8 @@ class ActeurEconomique(models.Model):
 
 class InstitutionFinanciere(models.Model):
     """Représente une institution financière (banque, IMF, etc.) partenaire de la commune."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='institution_financiere')
 
     TYPE_INSTITUTION_CHOICES = [
         ("banque", "Banque commerciale"),

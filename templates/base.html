@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mairie de Kloto 1</title>
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% endif %}
+    {% block extra_css %}{% endblock %}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -37,28 +42,154 @@
             padding: 0 2rem;
         }
         .logo-section { display: flex; align-items: center; gap: 1rem; }
-        .logo {
-            width: 60px; height: 60px; background: var(--white);
-            border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; font-weight: bold; color: var(--primary); font-size: 1.5rem;
-        }
+        .logo { width: 60px; height: 60px; background: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 1.5rem; }
+        .logo-image { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: var(--white); }
         .auth-buttons { display: flex; gap: 1rem; }
         .btn { padding: 0.7rem 1.5rem; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem; transition: all 0.3s; text-decoration: none; display: inline-block; }
         .btn-primary { background: var(--secondary); color: var(--dark); font-weight: 600; }
         .btn-primary:hover { background: #e6b800; transform: translateY(-2px); }
         .btn-secondary { background: transparent; color: var(--white); border: 2px solid var(--white); }
         .btn-secondary:hover { background: var(--white); color: var(--primary); }
-        nav { background: rgba(255,255,255,0.1); margin-top: 1rem; }
+        nav { background: rgba(255,255,255,0.1); margin-top: 1rem; overflow-x: auto; }
         nav ul {
-            list-style: none; display: flex; justify-content: center; flex-wrap: wrap;
-            max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+            list-style: none; display: flex; justify-content: center; flex-wrap: nowrap;
+            width: 100%; margin: 0 auto; padding: 0 2rem; gap: 0.75rem;
         }
-        nav ul li { margin: 0.5rem 1rem; }
+        nav ul li { margin: 0.5rem 0; white-space: nowrap; }
         nav ul li a {
             color: var(--white); text-decoration: none; padding: 0.5rem 1rem;
             border-radius: 5px; transition: all 0.3s; display: block;
         }
         nav ul li a:hover, nav ul li a.active { background: var(--secondary); color: var(--dark); }
+        .mobile-only { display: none; }
+
+        /* Styles du hamburger - Visible par défaut pour tester, caché sur desktop via media query */
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 6px;
+            background: transparent;
+            border: 2px solid white;
+            padding: 8px;
+            border-radius: 5px;
+            z-index: 2000;
+        }
+        
+        /* Cacher sur Desktop */
+        @media screen and (min-width: 1201px) {
+            .hamburger {
+                display: none !important;
+            }
+        }
+        .hamburger span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: var(--white);
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+        .hamburger:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        /* Media Query pour Mobile et Tablette - PRIORITÉ ÉLEVÉE */
+        @media screen and (max-width: 1200px) {
+            .mobile-only { display: block !important; }
+            
+            .header-top {
+                padding: 0.5rem 1rem;
+                position: relative;
+                flex-wrap: nowrap;
+            }
+            
+            .logo-section {
+                flex-grow: 1;
+                overflow: hidden;
+            }
+            
+            .header-text h1 {
+                font-size: 1.2rem;
+                white-space: normal;
+            }
+            .header-text p {
+                font-size: 0.8rem;
+                opacity: 0.9;
+                display: block;
+            }
+            
+            .auth-buttons {
+                display: none !important;
+            }
+            
+            .hamburger {
+                display: flex !important;
+                margin-left: 0;
+                flex-shrink: 0;
+                border-color: rgba(255,255,255,0.5); /* Plus visible */
+            }
+            
+            nav {
+                display: block;
+                background: transparent;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                padding: 0;
+                z-index: 1900;
+            }
+
+            @keyframes slideDown {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            nav ul {
+                display: none; /* Caché par défaut */
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0;
+                margin: 0;
+                background: var(--primary); /* Fond opaque garanti */
+                width: 100%;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+                border-top: 1px solid rgba(255,255,255,0.1);
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+
+            nav ul.active {
+                display: flex;
+                animation: slideDown 0.3s ease-out;
+            }
+            
+            nav ul li {
+                margin: 0;
+                width: 100%;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+            
+            nav ul li a {
+                display: block;
+                padding: 10px 15px;
+                text-align: left;
+                font-size: 0.95rem;
+                color: var(--white) !important;
+            }
+            
+            nav ul li a:hover, nav ul li a.active {
+                background-color: var(--secondary);
+                color: var(--dark) !important;
+                padding-left: 25px;
+            }
+
+            .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(7px, 6px); }
+            .hamburger.active span:nth-child(2) { opacity: 0; }
+            .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(7px, -6px); }
+        }
+        
         .container { max-width: 1400px; margin: 0 auto; padding: 3rem 2rem; }
     </style>
     {% include 'includes/footer_styles.html' %}
@@ -67,10 +198,14 @@
     <header>
         <div class="header-top">
             <div class="logo-section">
+                {% if mairie_config and mairie_config.logo %}
+                <img src="{{ mairie_config.logo.url }}" alt="Logo" class="logo-image">
+                {% else %}
                 <div class="logo">K1</div>
+                {% endif %}
                 <div class="header-text">
                     <h1>Mairie de Kloto 1</h1>
-                    <p>Plateforme de Gestion Économique</p>
+                    <p>Kpalimé - Région des Plateaux, Togo</p>
                 </div>
             </div>
             <div class="auth-buttons">
@@ -82,19 +217,32 @@
                     <a href="{% url 'comptes:inscription' %}" class="btn btn-secondary">Inscription</a>
                 {% endif %}
             </div>
+            <button class="hamburger mobile-only" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
         <nav>
             <ul>
-                <li><a href="{% url 'mairie:accueil' %}">Accueil</a></li>
-                <li><a href="{% url 'enregistrement' %}">Enregistrement</a></li>
-                <li><a href="{% url 'acteurs:enregistrement' %}">Entreprises</a></li>
-                <li><a href="{% url 'acteurs:inscription_institutions' %}">Institutions Financières</a></li>
-                <li><a href="{% url 'acteurs:sites_public' %}">Sites touristiques</a></li>
-                <li><a href="{% url 'emploi:inscription_jeunes' %}">Emploi</a></li>
-                <li><a href="{% url 'actualites:liste' %}">Actualités</a></li>
-                <li><a href="{% url 'mairie:appels_offres' %}">Appels d'Offres</a></li>
+                <li><a href="{% url 'mairie:accueil' %}" {% if request.resolver_match.url_name == 'accueil' %}class="active"{% endif %}>Accueil</a></li>
+                <li><a href="{% url 'enregistrement' %}" {% if request.resolver_match.url_name == 'enregistrement' and not request.resolver_match.namespace %}class="active"{% endif %}>Enregistrement</a></li>
+                <li><a href="{% url 'acteurs:enregistrement' %}" {% if request.resolver_match.namespace == 'acteurs' and request.resolver_match.url_name == 'enregistrement' %}class="active"{% endif %}>Entreprises</a></li>
+                <li><a href="{% url 'acteurs:inscription_institutions' %}" {% if request.resolver_match.url_name == 'inscription_institutions' %}class="active"{% endif %}>Institutions Financières</a></li>
+                <li><a href="{% url 'acteurs:sites_public' %}" {% if request.resolver_match.url_name == 'sites_public' %}class="active"{% endif %}>Sites touristiques</a></li>
+                <li><a href="{% url 'emploi:inscription_jeunes' %}" {% if request.resolver_match.url_name == 'inscription_jeunes' %}class="active"{% endif %}>Emploi</a></li>
+                <li><a href="{% url 'actualites:liste' %}" {% if request.resolver_match.url_name == 'liste' %}class="active"{% endif %}>Actualités</a></li>
+                <li><a href="{% url 'mairie:appels_offres' %}" {% if request.resolver_match.url_name == 'appels_offres' %}class="active"{% endif %}>Appels d'offres</a></li>
                 {% if user.is_staff or user.is_superuser %}
-                <li><a href="{% url 'tableau_bord' %}" class="nav-link">Tableau de Bord</a></li>
+                <li><a href="{% url 'tableau_bord' %}" {% if request.resolver_match.url_name == 'tableau_bord' %}class="active"{% endif %}>Tableau de Bord</a></li>
+                {% endif %}
+                {% if user.is_authenticated %}
+                <li><a href="{% url 'comptes:profil' %}" {% if request.resolver_match.namespace == 'comptes' and request.resolver_match.url_name == 'profil' %}class="active"{% endif %}>Mon Compte</a></li>
+                {% endif %}
+                {% if user.is_authenticated %}
+                <li class="mobile-only">
+                    <a href="{% url 'comptes:deconnexion' %}">Déconnexion{% if user.username %} ({{ user.username }}){% endif %}</a>
+                </li>
                 {% endif %}
             </ul>
         </nav>
@@ -103,5 +251,97 @@
     {% block content %}{% endblock %}
 
     {% include 'includes/footer.html' %}
+    {% block extra_js %}{% endblock %}
+    
+    <script>
+        // Gestion du menu hamburger
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.hamburger');
+            const nav = document.querySelector('nav');
+            const navUl = document.querySelector('nav ul');
+            
+            if (hamburger && navUl) {
+                hamburger.addEventListener('click', function() {
+                    hamburger.classList.toggle('active');
+                    navUl.classList.toggle('active'); // On toggle le UL maintenant
+                });
+
+                // Fermer le menu si on clique en dehors
+                document.addEventListener('click', function(event) {
+                    if (!nav.contains(event.target) && !hamburger.contains(event.target) && navUl.classList.contains('active')) {
+                        hamburger.classList.remove('active');
+                        navUl.classList.remove('active');
+                    }
+                });
+            }
+        });
+
+        // Fonction pour activer l'onglet correspondant à la page actuelle
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('nav ul li a');
+            
+            navLinks.forEach(function(link) {
+                try {
+                    const linkUrl = new URL(link.href);
+                    const linkPath = linkUrl.pathname;
+                    
+                    // Normaliser les chemins (supprimer trailing slash sauf pour la racine)
+                    let normalizedCurrent = currentPath;
+                    let normalizedLink = linkPath;
+                    
+                    if (normalizedCurrent !== '/') {
+                        normalizedCurrent = normalizedCurrent.replace(/\/$/, '');
+                    }
+                    if (normalizedLink !== '/') {
+                        normalizedLink = normalizedLink.replace(/\/$/, '');
+                    }
+                    
+                    // Vérifier correspondance exacte
+                    if (normalizedCurrent === normalizedLink) {
+                        link.classList.add('active');
+                        return;
+                    }
+                    
+                    // Vérifier si la page actuelle est une sous-page du lien
+                    if (normalizedLink !== '/' && normalizedCurrent.startsWith(normalizedLink + '/')) {
+                        link.classList.add('active');
+                        return;
+                    }
+                    
+                    // Cas spécial pour "Sites touristiques"
+                    // L'URL de liste est /acteurs/sites-touristiques/
+                    // Les pages de détail sont /acteurs/sites/<id>/
+                    // Il faut activer l'onglet pour les deux cas
+                    if (normalizedLink.includes('sites-touristiques')) {
+                        // Activer si on est sur une page de détail de site (/acteurs/sites/...)
+                        if (normalizedCurrent.match(/^\/acteurs\/sites\/\d+/)) {
+                            link.classList.add('active');
+                            return;
+                        }
+                        // Activer si on est sur la liste des sites
+                        if (normalizedCurrent.includes('sites-touristiques')) {
+                            link.classList.add('active');
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Si l'URL est relative ou invalide, utiliser une comparaison basée sur le texte du lien
+                    const linkHref = link.getAttribute('href');
+                    const linkText = link.textContent.trim().toLowerCase();
+                    
+                    // Cas spécial pour "Sites touristiques"
+                    if (linkText.includes('sites touristiques') || linkText.includes('sites')) {
+                        // Vérifier si on est sur une page liée aux sites
+                        if (currentPath.match(/\/acteurs\/sites\/\d+/) || 
+                            currentPath.includes('sites-touristiques') ||
+                            currentPath.includes('/sites/')) {
+                            link.classList.add('active');
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

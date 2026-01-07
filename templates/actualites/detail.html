@@ -1,400 +1,128 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ actualite.titre }} - Mairie de Kloto 1</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #006233;
-            --secondary: #FFCD00;
-            --accent: #D21034;
-            --dark: #1a1a1a;
-            --light: #f5f5f5;
-            --white: #ffffff;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: var(--dark);
-        }
-
-        header {
-            background: linear-gradient(135deg, var(--primary), #004d28);
-            color: var(--white);
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logo {
-            width: 60px;
-            height: 60px;
-            background: var(--white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
-
-        .header-text h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.2rem;
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.7rem 1.5rem;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: var(--secondary);
-            color: var(--dark);
-            font-weight: 600;
-        }
-
-        .btn-primary:hover {
-            background: #e6b800;
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--white);
-            border: 2px solid var(--white);
-        }
-
-        .btn-secondary:hover {
-            background: var(--white);
-            color: var(--primary);
-        }
-
-        nav {
-            background: rgba(255,255,255,0.1);
-            margin-top: 1rem;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        nav ul li {
-            margin: 0.5rem 1rem;
-        }
-
-        nav ul li a {
-            color: var(--white);
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            transition: all 0.3s;
-            display: block;
-        }
-
-        nav ul li a:hover, nav ul li a.active {
-            background: var(--secondary);
-            color: var(--dark);
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-bottom: 2rem;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        .actualite-header {
-            margin-bottom: 2rem;
-        }
-
-        .actualite-date {
-            color: var(--primary);
-            font-size: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .actualite-title {
-            font-size: 2.5rem;
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-        }
-
-        .actualite-images {
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+    .container { max-width: 1000px; }
+    .back-link {
+        display: inline-block;
+        margin-bottom: 2rem;
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .actualite-header { margin-bottom: 2rem; }
+    .actualite-date { color: var(--primary); font-size: 1rem; margin-bottom: 1rem; }
+    .actualite-title { font-size: 2.5rem; color: var(--primary); margin-bottom: 1.5rem; }
+    .actualite-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+    .actualite-image { width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .actualite-content { font-size: 1.1rem; line-height: 1.8; color: var(--dark); margin-top: 2rem; }
+    .actualite-content p { margin-bottom: 1.5rem; }
+    .sidebar { background: var(--light); padding: 2rem; border-radius: 10px; margin-top: 3rem; }
+    .sidebar h3 { color: var(--primary); margin-bottom: 1.5rem; }
+    .sidebar-actualite { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ddd; }
+    .sidebar-actualite:last-child { border-bottom: none; }
+    .sidebar-actualite a { color: var(--primary); text-decoration: none; font-weight: 600; }
+    .sidebar-actualite a:hover { text-decoration: underline; }
+    .sidebar-actualite-date { font-size: 0.9rem; color: var(--dark); opacity: 0.7; margin-top: 0.5rem; }
+    @media (min-width: 1024px) {
+        .main-content {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-            margin: 2rem 0;
+            grid-template-columns: 2fr 1fr;
+            gap: 3rem;
         }
-
-        .actualite-image {
-            width: 100%;
-            height: auto;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .actualite-content {
-            font-size: 1.1rem;
-            line-height: 1.8;
-            color: var(--dark);
-            margin-top: 2rem;
-        }
-
-        .actualite-content p {
-            margin-bottom: 1.5rem;
-        }
-
-        .sidebar {
-            background: var(--light);
-            padding: 2rem;
-            border-radius: 10px;
-            margin-top: 3rem;
-        }
-
-        .sidebar h3 {
-            color: var(--primary);
-            margin-bottom: 1.5rem;
-        }
-
-        .sidebar-actualite {
-            margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .sidebar-actualite:last-child {
-            border-bottom: none;
-        }
-
-        .sidebar-actualite a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .sidebar-actualite a:hover {
-            text-decoration: underline;
-        }
-
-        .sidebar-actualite-date {
-            font-size: 0.9rem;
-            color: var(--dark);
-            opacity: 0.7;
-            margin-top: 0.5rem;
-        }
-
-        @media (min-width: 1024px) {
-            .main-content {
-                display: grid;
-                grid-template-columns: 2fr 1fr;
-                gap: 3rem;
-            }
-        }
-
-        .actualite-image-inline {
-            width: 100%;
-            max-width: 800px;
-            height: auto;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin: 2rem auto;
-            display: block;
-        }
-
-        .actualite-bloc {
-            margin-bottom: 3rem;
-        }
-
-        .actualite-bloc:last-child {
-            margin-bottom: 0;
-        }
-
-        .actualite-bloc-titre {
-            font-size: 1.8rem;
-            color: var(--primary);
-            margin: 1.5rem 0 1rem;
-            text-align: center;
-        }
-
-        .actualite-bloc-texte {
-            margin-top: 1rem;
-            line-height: 1.8;
-        }
-    </style>
-    {% include 'includes/footer_styles.html' %}
-</head>
-<body>
-    <header>
-        <div class="header-top">
-            <div class="logo-section">
-                <div class="logo">K1</div>
-                <div class="header-text">
-                    <h1>Mairie de Kloto 1</h1>
-                    <p>Plateforme de Gestion Économique</p>
+    }
+    .actualite-image-inline {
+        width: 100%;
+        max-width: 800px;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin: 2rem auto;
+        display: block;
+    }
+    .actualite-bloc { margin-bottom: 3rem; }
+    .actualite-bloc:last-child { margin-bottom: 0; }
+    .actualite-bloc-titre {
+        font-size: 1.8rem;
+        color: var(--primary);
+        margin: 1.5rem 0 1rem;
+        text-align: center;
+    }
+    .actualite-bloc-texte { margin-top: 1rem; line-height: 1.8; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <a href="{% url 'actualites:liste' %}" class="back-link">← Retour aux actualités</a>
+    <div class="main-content">
+        <div>
+            <div class="actualite-header">
+                <div class="actualite-date">
+                    📅 {{ actualite.date_publication|date:"d F Y à H:i" }}
                 </div>
+                <h1 class="actualite-title">{{ actualite.titre }}</h1>
             </div>
-            <div class="auth-buttons">
-                {% if user.is_authenticated %}
-                    <span style="color: var(--white); margin-right: 1rem; align-self: center;">Bonjour, {{ user.username }}</span>
-                    <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
-                {% else %}
-                    <a href="{% url 'comptes:connexion' %}" class="btn btn-primary">Connexion</a>
-                    <a href="{% url 'comptes:inscription' %}" class="btn btn-secondary">Inscription</a>
-                {% endif %}
-            </div>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="{% url 'mairie:accueil' %}">Accueil</a></li>
-                <li><a href="{% url 'enregistrement' %}">Enregistrement</a></li>
-                <li><a href="{% url 'acteurs:enregistrement' %}">Entreprises</a></li>
-                <li><a href="{% url 'acteurs:inscription_institutions' %}">Institutions Financières</a></li>
-                <li><a href="{% url 'acteurs:sites_public' %}">Sites touristiques</a></li>
-                <li><a href="{% url 'emploi:inscription_jeunes' %}">Emploi</a></li>
-                <li><a href="{% url 'actualites:liste' %}" class="active">Actualités</a></li>
-                <li><a href="{% url 'mairie:appels_offres' %}">Appels d'Offres</a></li>
-      
-                {% if user.is_staff or user.is_superuser %}
-                <li><a href="{% url 'tableau_bord' %}" class="nav-link">Tableau de Bord</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </header>
-
-    <div class="container">
-        <a href="{% url 'actualites:liste' %}" class="back-link">← Retour aux actualités</a>
-
-        <div class="main-content">
-            <div>
-                <div class="actualite-header">
-                    <div class="actualite-date">
-                        📅 {{ actualite.date_publication|date:"d F Y à H:i" }}
+            <div class="actualite-content">
+                {% if actualite.photo1 or actualite.titre1 or actualite.texte1 %}
+                    <div class="actualite-bloc">
+                        {% if actualite.photo1 %}
+                            <img src="{{ actualite.photo1.url }}" alt="{{ actualite.titre1|default:actualite.titre }}" class="actualite-image-inline">
+                        {% endif %}
+                        {% if actualite.titre1 %}
+                            <h2 class="actualite-bloc-titre">{{ actualite.titre1 }}</h2>
+                        {% endif %}
+                        {% if actualite.texte1 %}
+                            <div class="actualite-bloc-texte">{{ actualite.texte1|linebreaks }}</div>
+                        {% endif %}
                     </div>
-                    <h1 class="actualite-title">{{ actualite.titre }}</h1>
-                </div>
-
-                <div class="actualite-content">
-                    {# Nouveau format : Bloc 1 - Photo 1 → Titre 1 → Texte 1 #}
-                    {% if actualite.photo1 or actualite.titre1 or actualite.texte1 %}
-                        <div class="actualite-bloc">
-                            {% if actualite.photo1 %}
-                                <img src="{{ actualite.photo1.url }}" alt="{{ actualite.titre1|default:actualite.titre }}" class="actualite-image-inline">
-                            {% endif %}
-                            {% if actualite.titre1 %}
-                                <h2 class="actualite-bloc-titre">{{ actualite.titre1 }}</h2>
-                            {% endif %}
-                            {% if actualite.texte1 %}
-                                <div class="actualite-bloc-texte">{{ actualite.texte1|linebreaks }}</div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-
-                    {# Bloc 2 - Photo 2 → Titre 2 → Texte 2 #}
-                    {% if actualite.photo2 or actualite.titre2 or actualite.texte2 %}
-                        <div class="actualite-bloc">
-                            {% if actualite.photo2 %}
-                                <img src="{{ actualite.photo2.url }}" alt="{{ actualite.titre2|default:actualite.titre }}" class="actualite-image-inline">
-                            {% endif %}
-                            {% if actualite.titre2 %}
-                                <h2 class="actualite-bloc-titre">{{ actualite.titre2 }}</h2>
-                            {% endif %}
-                            {% if actualite.texte2 %}
-                                <div class="actualite-bloc-texte">{{ actualite.texte2|linebreaks }}</div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-
-                    {# Bloc 3 - Photo 3 → Titre 3 → Texte 3 #}
-                    {% if actualite.photo3 or actualite.titre3 or actualite.texte3 %}
-                        <div class="actualite-bloc">
-                            {% if actualite.photo3 %}
-                                <img src="{{ actualite.photo3.url }}" alt="{{ actualite.titre3|default:actualite.titre }}" class="actualite-image-inline">
-                            {% endif %}
-                            {% if actualite.titre3 %}
-                                <h2 class="actualite-bloc-titre">{{ actualite.titre3 }}</h2>
-                            {% endif %}
-                            {% if actualite.texte3 %}
-                                <div class="actualite-bloc-texte">{{ actualite.texte3|linebreaks }}</div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-
-                    {# Ancien format (compatibilité) : afficher contenu si aucun bloc n'est rempli #}
-                    {% if not actualite.photo1 and not actualite.photo2 and not actualite.photo3 and actualite.contenu %}
-                        <div>{{ actualite.contenu|linebreaks }}</div>
-                    {% endif %}
-                </div>
+                {% endif %}
+                {% if actualite.photo2 or actualite.titre2 or actualite.texte2 %}
+                    <div class="actualite-bloc">
+                        {% if actualite.photo2 %}
+                            <img src="{{ actualite.photo2.url }}" alt="{{ actualite.titre2|default:actualite.titre }}" class="actualite-image-inline">
+                        {% endif %}
+                        {% if actualite.titre2 %}
+                            <h2 class="actualite-bloc-titre">{{ actualite.titre2 }}</h2>
+                        {% endif %}
+                        {% if actualite.texte2 %}
+                            <div class="actualite-bloc-texte">{{ actualite.texte2|linebreaks }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if actualite.photo3 or actualite.titre3 or actualite.texte3 %}
+                    <div class="actualite-bloc">
+                        {% if actualite.photo3 %}
+                            <img src="{{ actualite.photo3.url }}" alt="{{ actualite.titre3|default:actualite.titre }}" class="actualite-image-inline">
+                        {% endif %}
+                        {% if actualite.titre3 %}
+                            <h2 class="actualite-bloc-titre">{{ actualite.titre3 }}</h2>
+                        {% endif %}
+                        {% if actualite.texte3 %}
+                            <div class="actualite-bloc-texte">{{ actualite.texte3|linebreaks }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if not actualite.photo1 and not actualite.photo2 and not actualite.photo3 and actualite.contenu %}
+                    <div>{{ actualite.contenu|linebreaks }}</div>
+                {% endif %}
             </div>
-
-            {% if actualites_recentes %}
-            <div class="sidebar">
-                <h3>Autres actualités</h3>
-                {% for autre in actualites_recentes %}
-                <div class="sidebar-actualite">
-                    <a href="{% url 'actualites:detail' autre.pk %}">{{ autre.titre }}</a>
-                    <div class="sidebar-actualite-date">{{ autre.date_publication|date:"d F Y" }}</div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
         </div>
+        {% if actualites_recentes %}
+        <div class="sidebar">
+            <h3>Autres actualités</h3>
+            {% for autre in actualites_recentes %}
+            <div class="sidebar-actualite">
+                <a href="{% url 'actualites:detail' autre.pk %}">{{ autre.titre }}</a>
+                <div class="sidebar-actualite-date">{{ autre.date_publication|date:"d F Y" }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
-
-    {% include 'includes/footer.html' %}
-</body>
-</html>
+</div>
+{% endblock %}

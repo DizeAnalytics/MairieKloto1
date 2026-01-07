@@ -316,3 +316,56 @@ class Candidature(models.Model):
 
     def __str__(self):
         return f"Candidature de {self.candidat.get_full_name() or self.candidat.username} pour {self.appel_offre.reference}"
+
+
+class ImageCarousel(models.Model):
+    """Images pour le carousel de la page d'accueil."""
+    
+    image = models.ImageField(
+        upload_to="mairie/carousel/",
+        help_text="Image pour le carousel (recommandé: 1920x800px ou ratio 16:9)"
+    )
+    titre = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Titre optionnel pour l'image"
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Description optionnelle pour l'image"
+    )
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage (0 = premier, plus grand = plus bas)"
+    )
+    est_actif = models.BooleanField(
+        default=True,
+        help_text="Afficher cette image dans le carousel"
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Image carousel"
+        verbose_name_plural = "Images carousel"
+        ordering = ["ordre_affichage", "-date_creation"]
+        
+    def __str__(self):
+        return f"Image carousel - {self.titre or f'Image #{self.pk}'}"
+
+
+class ConfigurationMairie(models.Model):
+    nom_commune = models.CharField(max_length=255, default="Mairie de Kloto 1")
+    logo = models.ImageField(upload_to="mairie/logo/", blank=True, null=True, validators=[validate_file_size])
+    favicon = models.FileField(upload_to="mairie/favicon/", blank=True, null=True, validators=[validate_file_size])
+    est_active = models.BooleanField(default=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuration de la mairie"
+        verbose_name_plural = "Configuration de la mairie"
+        ordering = ["-date_modification"]
+
+    def __str__(self):
+        return self.nom_commune

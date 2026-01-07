@@ -1,6 +1,7 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 
-from .models import MotMaire, Collaborateur, InformationMairie, AppelOffre
+from .models import MotMaire, Collaborateur, InformationMairie, AppelOffre, ImageCarousel, ConfigurationMairie
 
 
 @admin.register(MotMaire)
@@ -126,6 +127,17 @@ class AppelOffreAdmin(admin.ModelAdmin):
     readonly_fields = ("date_creation", "date_modification")
 
 
+@admin.register(ConfigurationMairie)
+class ConfigurationMairieAdmin(admin.ModelAdmin):
+    list_display = ("nom_commune", "est_active", "date_modification")
+    list_filter = ("est_active",)
+    search_fields = ("nom_commune",)
+    fieldsets = (
+        ("Identité", {"fields": ("nom_commune", "logo", "favicon", "est_active")}),
+        ("Dates", {"fields": ("date_creation", "date_modification")}),
+    )
+    readonly_fields = ("date_creation", "date_modification")
+
 @admin.register(Collaborateur)
 class CollaborateurAdmin(admin.ModelAdmin):
     """Administration des collaborateurs."""
@@ -225,3 +237,53 @@ class InformationMairieAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ("date_creation", "date_modification")
+
+
+@admin.register(ImageCarousel)
+class ImageCarouselAdmin(admin.ModelAdmin):
+    """Administration des images du carousel."""
+    
+    list_display = (
+        "titre",
+        "ordre_affichage",
+        "est_actif",
+        "date_creation",
+        "date_modification",
+    )
+    
+    list_filter = ("est_actif", "date_creation")
+    
+    search_fields = ("titre", "description")
+    
+    fieldsets = (
+        ("Image", {
+            "fields": (
+                "image",
+                "titre",
+                "description",
+            )
+        }),
+        ("Affichage", {
+            "fields": (
+                "ordre_affichage",
+                "est_actif",
+            )
+        }),
+    )
+    
+    readonly_fields = ("date_creation", "date_modification")
+    
+    def save_model(self, request, obj, form, change):
+        """Limiter à 5 images actives maximum."""
+        if obj.est_actif:
+            # Compter les images actives existantes (exclure l'objet actuel si modification)
+            images_actives = ImageCarousel.objects.filter(est_actif=True)
+            if change:
+                images_actives = images_actives.exclude(pk=obj.pk)
+            
+            if images_actives.count() >= 5:
+                raise ValidationError(
+                    "Vous ne pouvez avoir que 5 images actives maximum dans le carousel. "
+                    "Désactivez d'abord une image existante."
+                )
+        super().save_model(request, obj, form, change)

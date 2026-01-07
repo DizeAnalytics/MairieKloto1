@@ -1,10 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inscription Jeunes Demandeurs d'Emploi - Mairie de Kloto 1</title>
-    <style>
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
         * {
             margin: 0;
             padding: 0;
@@ -73,6 +69,16 @@
             color: var(--primary);
             font-size: 2rem;
             margin: 0 auto 1rem;
+        }
+        .logo-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--white);
+            display: block;
+            margin: 0 auto 1rem;
+            background: var(--white);
         }
 
         header h1 {
@@ -380,12 +386,16 @@
             }
         }
     </style>
-</head>
-<body>
+{% endblock %}
+{% block content %}
     <div class="container">
         <a href="{% url 'mairie:accueil' %}" class="back-link">← Retour à l'accueil</a>
         <header>
+            {% if mairie_config and mairie_config.logo %}
+            <img src="{{ mairie_config.logo.url }}" alt="Logo Mairie de Kloto 1" class="logo-image">
+            {% else %}
             <div class="logo">K1</div>
+            {% endif %}
             <h1>Inscription des Jeunes Demandeurs d'Emploi</h1>
             <p>Mairie de Kloto 1 - Plateforme Emploi & Compétences</p>
         </header>
@@ -413,6 +423,30 @@
 
             <form method="post">
                 {% csrf_token %}
+
+                <!-- Section 0: Informations de Connexion -->
+                <div class="section-title">Informations de Connexion</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom d'utilisateur <span class="required">*</span></label>
+                        {{ form.username }}
+                        <span class="helper-text">{{ form.username.help_text }}</span>
+                        <span class="error-message">{{ form.username.errors|first }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mot de passe <span class="required">*</span></label>
+                        {{ form.password }}
+                        <span class="helper-text">{{ form.password.help_text }}</span>
+                        <span class="error-message">{{ form.password.errors|first }}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirmer le mot de passe <span class="required">*</span></label>
+                        {{ form.confirm_password }}
+                        <span class="error-message">{{ form.confirm_password.errors|first }}</span>
+                    </div>
+                </div>
 
                 <!-- Informations personnelles -->
                 <div class="section-title">1. Informations personnelles</div>
@@ -564,42 +598,9 @@
                 </div>
             </form>
 
-            {% if profils %}
-            <h3 style="margin-top: 3rem; color: var(--primary);">Jeunes déjà inscrits</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nom & Prénoms</th>
-                        <th>Âge approx.</th>
-                        <th>Compétences</th>
-                        <th>Niveau</th>
-                        <th>Quartier</th>
-                        <th>Disponibilité</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in profils %}
-                    <tr>
-                        <td>{{ p.nom }} {{ p.prenoms }}</td>
-                        <td>
-                            {% if p.date_naissance %}
-                                {{ p.date_naissance|date:"Y" }}
-                            {% endif %}
-                        </td>
-                        <td>{{ p.domaine_competence|truncatechars:60 }}</td>
-                        <td>{{ p.get_niveau_etude_display }}</td>
-                        <td>{{ p.quartier }}</td>
-                        <td><span class="badge badge-success">{{ p.get_disponibilite_display }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% endif %}
         </div>
 
-        {% include 'includes/footer.html' %}
     </div>
-</body>
-</html>
+{% endblock %}
 
 

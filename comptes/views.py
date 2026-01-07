@@ -3,6 +3,9 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from .models import Notification
+from django.views.decorators.http import require_http_methods
+from django.shortcuts import get_object_or_404
 
 
 def inscription(request):
@@ -54,5 +57,57 @@ def deconnexion(request):
 
 @login_required
 def profil(request):
-    """Vue pour afficher le profil de l'utilisateur."""
-    return render(request, 'comptes/profil.html')
+    """Vue pour afficher le profil de l'utilisateur (Mon compte)."""
+    user = request.user
+    context = {}
+    
+    # Vérifier les profils liés
+    if hasattr(user, 'acteur_economique'):
+        context['profile'] = user.acteur_economique
+        context['profile_type'] = 'Acteur Économique'
+        context['status'] = user.acteur_economique.est_valide_par_mairie
+    elif hasattr(user, 'institution_financiere'):
+        context['profile'] = user.institution_financiere
+        context['profile_type'] = 'Institution Financière'
+        context['status'] = user.institution_financiere.est_valide_par_mairie
+    elif hasattr(user, 'profil_emploi'):
+        context['profile'] = user.profil_emploi
+        context['profile_type'] = user.profil_emploi.get_type_profil_display()
+        context['status'] = user.profil_emploi.est_valide_par_mairie
+    else:
+        context['profile'] = None
+        context['profile_type'] = 'Utilisateur standard'
+
+    # Récupérer les candidatures aux appels d'offres
+    # On importe ici pour éviter les imports circulaires
+    from mairie.models import Candidature
+    candidatures = Candidature.objects.filter(candidat=user).order_by('-date_soumission')
+    context['candidatures'] = candidatures
+    
+    # Notifications
+    notifications = Notification.objects.filter(recipient=user).order_by('-created_at')
+    context['notifications'] = notifications
+    context['notifications_unread_count'] = notifications.filter(is_read=False).count()
+    
+    return render(request, 'comptes/profil.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def notification_mark_read(request, pk: int):
+    """Marque une notification comme lue pour l'utilisateur connecté."""
+    notif = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    if not notif.is_read:
+        notif.is_read = True
+        notif.save()
+        messages.success(request, "Notification marquée comme lue.")
+    return redirect('comptes:profil')
+
+
+@login_required
+@require_http_methods(["POST"])
+def notifications_mark_all_read(request):
+    """Marque toutes les notifications comme lues pour l'utilisateur connecté."""
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    messages.success(request, "Toutes les notifications ont été marquées comme lues.")
+    return redirect('comptes:profil')

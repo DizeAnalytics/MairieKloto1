@@ -1,85 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mairie de Kloto 1 - Plateforme de Gestion Économique</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #006233;
-            --secondary: #FFCD00;
-            --accent: #D21034;
-            --dark: #1a1a1a;
-            --light: #f5f5f5;
-            --white: #ffffff;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: var(--dark);
-            overflow-x: hidden;
-        }
-
-        header {
-            background: linear-gradient(135deg, var(--primary), #004d28);
-            color: var(--white);
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .logo {
-            width: 60px;
-            height: 60px;
-            background: var(--white);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
-
-        .header-text h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.2rem;
-        }
-
-        .header-text p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
         .btn {
             padding: 0.7rem 1.5rem;
             border: none;
@@ -112,38 +33,53 @@
             background: var(--white);
             color: var(--primary);
         }
-
-        nav {
-            background: rgba(255,255,255,0.1);
-            margin-top: 1rem;
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            font-weight: 600;
         }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        nav ul li {
-            margin: 0.5rem 1rem;
-        }
-
-        nav ul li a {
+        .btn-outline:hover {
+            background: var(--primary);
             color: var(--white);
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            transition: all 0.3s;
-            display: block;
+            transform: translateY(-2px);
         }
-
-        nav ul li a:hover, nav ul li a.active {
-            background: var(--secondary);
+        .btn-card {
+            position: relative;
+            display: inline-block;
+            padding: 0.9rem 1.8rem;
+            border-radius: 30px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
             color: var(--dark);
+            background: linear-gradient(135deg, #ffe36a, var(--secondary));
+            box-shadow: 0 8px 22px rgba(0,0,0,0.12), 0 0 0 rgba(0,0,0,0);
+            transition: transform 0.2s ease, box-shadow 0.3s ease, filter 0.3s ease;
+        }
+        .btn-card::after {
+            content: "→";
+            display: inline-block;
+            margin-left: 10px;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            opacity: 0.8;
+        }
+        .btn-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.18), 0 0 22px rgba(255,205,0,0.45);
+            filter: brightness(1.04);
+        }
+        .btn-card:hover::after {
+            transform: translateX(4px);
+            opacity: 1;
+        }
+        .btn-card.secondary {
+            color: var(--white);
+            background: linear-gradient(135deg, #0ca159, var(--primary));
+            box-shadow: 0 8px 22px rgba(0,0,0,0.12), 0 0 0 rgba(0,0,0,0);
+        }
+        .btn-card.secondary:hover {
+            box-shadow: 0 14px 30px rgba(0,0,0,0.18), 0 0 22px rgba(0,98,51,0.45);
+            filter: brightness(1.06);
         }
 
         .hero {
@@ -178,7 +114,7 @@
             }
         }
 
-        .container {
+        .container-platform {
             max-width: 1400px;
             margin: 0 auto;
             padding: 3rem 2rem;
@@ -495,16 +431,6 @@
         }
 
         @media (max-width: 768px) {
-            .header-top {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            nav ul {
-                flex-direction: column;
-                align-items: center;
-            }
-
             .hero h2 {
                 font-size: 1.8rem;
             }
@@ -514,44 +440,8 @@
             }
         }
     </style>
-</head>
-<body>
-    <header>
-        <div class="header-top">
-            <div class="logo-section">
-                <div class="logo">K1</div>
-                <div class="header-text">
-                    <h1>Mairie de Kloto 1</h1>
-                    <p>Kpalimé - Région des Plateaux, Togo</p>
-                </div>
-            </div>
-            <div class="auth-buttons">
-                {% if user.is_authenticated %}
-                    <span style="color: var(--white); margin-right: 1rem;">Bonjour, {{ user.username }}</span>
-                    <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
-                {% else %}
-                    <a href="{% url 'comptes:connexion' %}" class="btn btn-primary">Connexion</a>
-                    <a href="{% url 'comptes:inscription' %}" class="btn btn-secondary">Inscription</a>
-                {% endif %}
-            </div>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="{% url 'mairie:accueil' %}" class="nav-link">Accueil</a></li>
-                <li><a href="{% url 'enregistrement' %}" class="nav-link active">Enregistrement</a></li>
-                <li><a href="{% url 'acteurs:enregistrement' %}" class="nav-link">Entreprises</a></li>
-                <li><a href="{% url 'acteurs:inscription_institutions' %}" class="nav-link">Institutions Financières</a></li>
-                <li><a href="{% url 'acteurs:sites_public' %}" class="nav-link">Sites touristiques</a></li>
-                <li><a href="{% url 'emploi:inscription_jeunes' %}" class="nav-link">Emploi</a></li>
-                <li><a href="{% url 'actualites:liste' %}" class="nav-link">Actualités</a></li>
-                <li><a href="#" class="nav-link" data-section="appels-offres">Appels d'Offres</a></li>
-
-                {% if user.is_staff or user.is_superuser %}
-                <li><a href="{% url 'tableau_bord' %}" class="nav-link">Tableau de Bord</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </header>
+{% endblock %}
+{% block content %}
 
     <div class="hero">
         <h2>Plateforme de Gestion Économique et Sociale</h2>
@@ -575,28 +465,28 @@
                     <div class="card-icon">🏢</div>
                     <h3>Acteurs Économiques</h3>
                     <p>Enregistrez votre entreprise, commerce, ONG ou activité économique</p>
-                    <a href="{% url 'acteurs:enregistrement' %}" class="btn btn-primary">S'enregistrer</a>
+                    <a href="{% url 'acteurs:enregistrement' %}" class="btn btn-outline">S'enregistrer</a>
                 </div>
                 <div class="card">
                     <div class="card-icon">🏦</div>
                     <h3>Institutions Financières</h3>
                     <p>Trouvez les banques, IMF et structures de financement disponibles</p>
-                    <a href="{% url 'acteurs:inscription_institutions' %}" class="btn btn-primary">S'inscrire</a>
+                    <a href="{% url 'acteurs:inscription_institutions' %}" class="btn btn-outline">S'inscrire</a>
                 </div>
                 <div class="card">
                     <div class="card-icon">💼</div>
                     <h3>Emploi & Compétences</h3>
                     <p>Inscrivez-vous comme demandeur d'emploi ou retraité actif</p>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <a href="{% url 'emploi:inscription_jeunes' %}" class="btn btn-primary">Jeune demandeur d'emploi</a>
-                        <a href="{% url 'emploi:inscription_retraites' %}" class="btn btn-secondary">Retraité actif</a>
+                        <a href="{% url 'emploi:inscription_jeunes' %}" class="btn btn-outline">Jeune demandeur d'emploi</a>
+                        <a href="{% url 'emploi:inscription_retraites' %}" class="btn btn-outline">Retraité actif</a>
                     </div>
                 </div>
                 <div class="card">
                     <div class="card-icon">📋</div>
                     <h3>Appels d'Offres</h3>
                     <p>Consultez et soumissionnez aux appels d'offres municipaux</p>
-                    <button class="btn btn-primary" onclick="showSection('appels-offres')">Voir les offres</button>
+                    <a href="{% url 'mairie:appels_offres' %}" class="btn btn-outline">Voir les offres</a>
                 </div>
             </div>
         </div>
@@ -911,6 +801,4 @@
         </div>
     </div>
 
-    {% include 'includes/footer.html' %}
-</body>
-</html>
+{% endblock %}

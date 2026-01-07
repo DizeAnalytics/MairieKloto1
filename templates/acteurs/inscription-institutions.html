@@ -1,10 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inscription Institutions Financières - Mairie de Kloto 1</title>
-    <style>
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
         * {
             margin: 0;
             padding: 0;
@@ -39,6 +35,7 @@
             border-radius: 15px 15px 0 0;
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
             text-align: center;
+            margin-bottom: 0;
         }
 
         .logo {
@@ -54,15 +51,27 @@
             font-size: 2rem;
             margin: 0 auto 1rem;
         }
+        .logo-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--white);
+            display: block;
+            margin: 0 auto 1rem;
+            background: var(--white);
+        }
 
         header h1 {
             font-size: 2rem;
             margin-bottom: 0.5rem;
+            color: var(--white);
         }
 
         header p {
             opacity: 0.95;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
+            color: var(--white);
         }
 
         .form-container {
@@ -70,6 +79,7 @@
             padding: 3rem;
             border-radius: 0 0 15px 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            margin-top: 0;
         }
 
         .section-title {
@@ -389,12 +399,16 @@
             text-decoration: none;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+{% block content %}
     <div class="container">
         <a href="{% url 'mairie:accueil' %}" class="back-link">← Retour à l'accueil</a>
         <header>
+            {% if mairie_config and mairie_config.logo %}
+            <img src="{{ mairie_config.logo.url }}" alt="Logo" class="logo-image">
+            {% else %}
             <div class="logo">🏦</div>
+            {% endif %}
             <h1>Inscription des Institutions Financières</h1>
             <p>Mairie de Kloto 1 - Kpalimé, Région des Plateaux, Togo</p>
         </header>
@@ -648,10 +662,8 @@
             </form>
         </div>
 
-        {% include 'includes/footer.html' %}
     </div>
 
     <!-- La validation et le traitement sont gérés côté serveur par Django -->
-</body>
-</html>
+{% endblock %}
 

@@ -32,6 +32,7 @@
             color: var(--white);
             padding: 1.5rem 2rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
         }
 
         .header-content {
@@ -72,6 +73,18 @@
         .btn-secondary:hover {
             background: var(--white);
             color: var(--primary);
+            text-decoration: none;
+        }
+
+        .btn-admin {
+            background: var(--secondary);
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .btn-admin:hover {
+            background: #e6b800;
+            transform: translateY(-2px);
             text-decoration: none;
         }
 
@@ -166,19 +179,179 @@
             font-weight: bold;
             color: var(--primary);
         }
+
+        /* Hamburger Styles */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 6px;
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.5);
+            padding: 8px;
+            border-radius: 5px;
+            z-index: 2000;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: var(--white);
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(7px, 6px); }
+        .hamburger.active span:nth-child(2) { opacity: 0; }
+        .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(7px, -6px); }
+
+        .mobile-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: var(--primary);
+            z-index: 1500;
+            flex-direction: column;
+            align-items: stretch;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .mobile-menu.active {
+            display: flex;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mobile-menu .menu-header {
+            padding: 15px 20px;
+            color: var(--white);
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .mobile-menu a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1.1rem;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            text-align: left;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+        }
+
+        .mobile-menu a:hover {
+            background-color: var(--secondary);
+            color: var(--dark);
+            padding-left: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 0;
+                position: relative;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+                max-width: 70%;
+            }
+
+            .header-user {
+                display: none; /* Hide desktop menu items */
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-menu {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
-            <h1>📊 Tableau de Bord Administrateur</h1>
+            <h1>📊 Tableau de Bord</h1>
+            
             <div class="header-user">
                 <span>Bonjour, {{ user.username }}</span>
+                <a href="/Securelogin/" class="btn btn-admin" target="_blank">⚙️ Admin Django</a>
                 <a href="{% url 'mairie:accueil' %}" class="btn btn-secondary">← Retour à l'accueil</a>
                 <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
             </div>
+
+            <button class="hamburger" id="hamburgerBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <div class="menu-header">Bonjour, {{ user.username }}</div>
+            
+            <a href="{% url 'liste_candidatures' %}">📂 Candidatures</a>
+            <a href="{% url 'liste_acteurs' %}">🏢 Acteurs Économiques</a>
+            <a href="{% url 'liste_institutions' %}">🏦 Institutions Financières</a>
+            <a href="{% url 'liste_jeunes' %}">👨‍🎓 Jeunes Demandeurs</a>
+            <a href="{% url 'liste_retraites' %}">👴 Retraités Actifs</a>
+            
+            <a href="/Securelogin/" target="_blank">⚙️ Admin Django</a>
+            <a href="{% url 'mairie:accueil' %}">← Retour à l'accueil</a>
+            <a href="{% url 'comptes:deconnexion' %}">Déconnexion</a>
         </div>
     </div>
+
+    <script>
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        hamburgerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hamburgerBtn.classList.toggle('active');
+            mobileMenu.classList.toggle('active');
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(e.target) && 
+                !hamburgerBtn.contains(e.target)) {
+                hamburgerBtn.classList.remove('active');
+                mobileMenu.classList.remove('active');
+            }
+        });
+
+        // Close menu on resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                hamburgerBtn.classList.remove('active');
+                mobileMenu.classList.remove('active');
+            }
+        });
+    </script>
 
     <div class="container">
         <div class="stats-section">
@@ -246,8 +419,137 @@
                 <p>Consulter la liste des retraités actifs</p>
                 <div class="menu-card-count">{{ stats.retraites }}</div>
             </a>
+
+            <a href="/Securelogin/" class="menu-card" target="_blank">
+                <div class="menu-card-icon">⚙️</div>
+                <h2>Admin Django</h2>
+                <p>Accéder à l'interface d'administration Django complète</p>
+            </a>
+        </div>
+
+        <div class="stats-section" style="margin-top: 2rem;">
+            <h2>Impression PDF par période</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: start;">
+                <form method="get" action="{% url 'export_pdf_acteurs' %}" style="background: var(--white); padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                    <h3 style="margin-bottom: 0.5rem;">Acteurs Économiques</h3>
+                    <label>Du</label>
+                    <input type="date" name="start" class="form-control" style="width: 100%; margin-bottom: 0.5rem;">
+                    <label>Au</label>
+                    <input type="date" name="end" class="form-control" style="width: 100%; margin-bottom: 0.8rem;">
+                    <button type="submit" class="btn-admin" style="width: 100%;">Imprimer PDF</button>
+                </form>
+                <form method="get" action="{% url 'export_pdf_entreprises' %}" style="background: var(--white); padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                    <h3 style="margin-bottom: 0.5rem;">Entreprises</h3>
+                    <label>Du</label>
+                    <input type="date" name="start" class="form-control" style="width: 100%; margin-bottom: 0.5rem;">
+                    <label>Au</label>
+                    <input type="date" name="end" class="form-control" style="width: 100%; margin-bottom: 0.8rem;">
+                    <button type="submit" class="btn-admin" style="width: 100%;">Imprimer PDF</button>
+                </form>
+                <form method="get" action="{% url 'export_pdf_jeunes' %}" style="background: var(--white); padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                    <h3 style="margin-bottom: 0.5rem;">Jeunes</h3>
+                    <label>Du</label>
+                    <input type="date" name="start" class="form-control" style="width: 100%; margin-bottom: 0.5rem;">
+                    <label>Au</label>
+                    <input type="date" name="end" class="form-control" style="width: 100%; margin-bottom: 0.8rem;">
+                    <button type="submit" class="btn-admin" style="width: 100%;">Imprimer PDF</button>
+                </form>
+                <form method="get" action="{% url 'export_pdf_retraites' %}" style="background: var(--white); padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                    <h3 style="margin-bottom: 0.5rem;">Retraités</h3>
+                    <label>Du</label>
+                    <input type="date" name="start" class="form-control" style="width: 100%; margin-bottom: 0.5rem;">
+                    <label>Au</label>
+                    <input type="date" name="end" class="form-control" style="width: 100%; margin-bottom: 0.8rem;">
+                    <button type="submit" class="btn-admin" style="width: 100%;">Imprimer PDF</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="stats-section" style="margin-top: 2rem;">
+            <h2>Suivi des Inscriptions (30 derniers jours)</h2>
+            <div style="position: relative; height: 400px; width: 100%;">
+                <canvas id="inscriptionChart"></canvas>
+            </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('inscriptionChart').getContext('2d');
+            const data = JSON.parse('{{ chart_data_json|escapejs }}');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Acteurs Économiques',
+                            data: data.acteurs,
+                            borderColor: '#006233', // Primary
+                            backgroundColor: 'rgba(0, 98, 51, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Institutions Financières',
+                            data: data.institutions,
+                            borderColor: '#FFCD00', // Secondary
+                            backgroundColor: 'rgba(255, 205, 0, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Jeunes Demandeurs',
+                            data: data.jeunes,
+                            borderColor: '#D21034', // Accent
+                            backgroundColor: 'rgba(210, 16, 52, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Retraités Actifs',
+                            data: data.retraites,
+                            borderColor: '#1a1a1a', // Dark
+                            backgroundColor: 'rgba(26, 26, 26, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
 

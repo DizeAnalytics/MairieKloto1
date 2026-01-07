@@ -1,120 +1,171 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Profil - Mairie de Kloto 1</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends 'base.html' %}
 
-        :root {
-            --primary: #006233;
-            --secondary: #FFCD00;
-            --accent: #D21034;
-            --dark: #1a1a1a;
-            --light: #f5f5f5;
-            --white: #ffffff;
-        }
+{% block content %}
+<style>
+    .notif-card { border: 1px solid #eee; padding: 1rem; border-radius: 8px; }
+    .notif-unread { background: #fff8e1; }
+</style>
+<div style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+    
+    <!-- En-tête -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="color: var(--primary); margin-bottom: 0.5rem;">Mon Espace Personnel</h1>
+            <p style="color: #666;">Bienvenue, {{ user.email }}</p>
+        </div>
+    </div>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: var(--dark);
-            background: var(--light);
-            min-height: 100vh;
-            padding: 2rem;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: var(--white);
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 3rem;
-        }
-
-        h1 {
-            color: var(--primary);
-            margin-bottom: 2rem;
-        }
-
-        .profile-info {
-            margin-bottom: 2rem;
-        }
-
-        .profile-info p {
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-        }
-
-        .profile-info strong {
-            color: var(--primary);
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            background: var(--primary);
-            color: var(--white);
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 1rem;
-            transition: background 0.3s;
-        }
-
-        .btn:hover {
-            background: #004d28;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--accent);
-            border: 2px solid var(--accent);
-        }
-
-        .btn-secondary:hover {
-            background: var(--accent);
-            color: var(--white);
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-bottom: 1rem;
-            color: var(--primary);
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border: 2px solid var(--primary);
-            border-radius: 25px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .back-link:hover {
-            background: var(--primary);
-            color: var(--white);
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <a href="{% url 'mairie:accueil' %}" class="back-link">← Retour à l'accueil</a>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
         
-        <h1>Mon Profil</h1>
-        
-        <div class="profile-info">
-            <p><strong>Nom d'utilisateur :</strong> {{ user.username }}</p>
-            <p><strong>Email :</strong> {{ user.email|default:"Non renseigné" }}</p>
-            <p><strong>Date d'inscription :</strong> {{ user.date_joined|date:"d F Y" }}</p>
+        <!-- Carte Informations Profil -->
+        <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+                <span style="margin-right: 10px;">👤</span> Mes Informations
+            </h2>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <p style="font-weight: bold; color: #555;">Type de compte</p>
+                <p style="font-size: 1.1rem;">{{ profile_type }}</p>
+            </div>
+
+            {% if profile %}
+                <div style="margin-bottom: 1.5rem;">
+                    <p style="font-weight: bold; color: #555;">Statut de validation</p>
+                    {% if status == True or status == 'acceptee' %}
+                        <span style="background: #e8f5e9; color: #2e7d32; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
+                            ✅ Validé
+                        </span>
+                    {% elif status == False or status == 'refusee' %}
+                        <span style="background: #ffebee; color: #c62828; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
+                            ❌ Refusé / En attente
+                        </span>
+                    {% else %}
+                        <span style="background: #fff3e0; color: #ef6c00; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
+                            ⏳ En attente de validation
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Détails spécifiques selon le type -->
+                {% if profile_type == 'Acteur Économique' %}
+                    <p><strong>Entreprise :</strong> {{ profile.raison_sociale }}</p>
+                    <p><strong>Secteur :</strong> {{ profile.get_secteur_activite_display }}</p>
+                    <div style="margin-top: 1.5rem;">
+                        <a href="{% url 'acteurs:modifier_acteur' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mes informations</a>
+                    </div>
+                {% elif profile_type == 'Institution Financière' %}
+                    <p><strong>Institution :</strong> {{ profile.nom_institution }}</p>
+                    <p><strong>Type :</strong> {{ profile.get_type_institution_display }}</p>
+                    <div style="margin-top: 1.5rem;">
+                        <a href="{% url 'acteurs:modifier_institution' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mes informations</a>
+                    </div>
+                {% else %}
+                    <p><strong>Nom complet :</strong> {{ profile.nom }} {{ profile.prenoms }}</p>
+                    <p><strong>Qualification :</strong> {{ profile.niveau_etude }} - {{ profile.domaine_competence }}</p>
+                    <div style="margin-top: 1.5rem;">
+                        {% if profile.type_profil == 'jeune' %}
+                            <a href="{% url 'emploi:modifier_jeune' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mes informations</a>
+                        {% elif profile.type_profil == 'retraite' %}
+                            <a href="{% url 'emploi:modifier_retraite' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mes informations</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <p>Aucun profil spécifique associé.</p>
+                <a href="{% url 'enregistrement' %}" class="btn btn-primary" style="margin-top: 1rem;">Compléter mon profil</a>
+            {% endif %}
         </div>
 
-        <a href="{% url 'comptes:deconnexion' %}" class="btn btn-secondary">Déconnexion</a>
-    </div>
-</body>
-</html>
+        <!-- Carte Notifications -->
+        <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <span><span style="margin-right: 10px;">🔔</span> Notifications de la mairie</span>
+                {% if notifications_unread_count and notifications_unread_count > 0 %}
+                <span style="background: #ffebee; color: #c62828; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem;">
+                    {{ notifications_unread_count }} non lue(s)
+                </span>
+                {% endif %}
+            </h2>
+            
+            {% if notifications %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <form method="post" action="{% url 'comptes:notifications_mark_all_read' %}" style="margin-bottom: 0.5rem; text-align: right;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">Marquer tout comme lu</button>
+                    </form>
+                    {% for n in notifications %}
+                        <div class="notif-card {% if not n.is_read %}notif-unread{% endif %}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <strong style="color: var(--dark);">{{ n.title }}</strong>
+                                <span style="color: #666; font-size: 0.85rem;">{{ n.created_at|date:"d/m/Y H:i" }}</span>
+                            </div>
+                            <div style="margin-bottom: 0.5rem; color: #555;">
+                                {% if n.type == 'document' %}
+                                    <span style="background: #ffebee; color: #c62828; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem;">Document non conforme</span>
+                                {% elif n.type == 'rendezvous' %}
+                                    <span style="background: #e3f2fd; color: #1565c0; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem;">Rendez-vous</span>
+                                {% else %}
+                                    <span style="background: #e8f5e9; color: #2e7d32; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem;">Information</span>
+                                {% endif %}
+                            </div>
+                            <p style="margin: 0; color: #333; line-height: 1.6;">{{ n.message }}</p>
+                            {% if n.rendezvous_datetime %}
+                                <p style="margin-top: 0.5rem; color: #1565c0;"><strong>📅 Rendez-vous :</strong> {{ n.rendezvous_datetime|date:"d/m/Y H:i" }}</p>
+                            {% endif %}
+                            {% if not n.is_read %}
+                            <form method="post" action="{% url 'comptes:notification_mark_read' n.pk %}" style="margin-top: 0.8rem; text-align: right;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">Marquer comme lu</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; color: #666; padding: 1rem 0;">
+                    <p>Aucune notification pour le moment.</p>
+                </div>
+            {% endif %}
+        </div>
 
+        <!-- Carte Suivi des Candidatures -->
+        <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+                <span style="margin-right: 10px;">📄</span> Mes Candidatures
+            </h2>
+
+            {% if candidatures %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for cand in candidatures %}
+                        <div style="border: 1px solid #eee; padding: 1rem; border-radius: 8px; transition: transform 0.2s;">
+                            <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--dark);">
+                                <a href="{% url 'mairie:appel_offre_detail' cand.appel_offre.id %}" style="text-decoration: none; color: inherit;">
+                                    {{ cand.appel_offre.titre }}
+                                </a>
+                            </h3>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                                <span style="color: #666;">{{ cand.date_soumission|date:"d/m/Y" }}</span>
+                                
+                                {% if cand.statut == 'acceptee' %}
+                                    <span style="color: #2e7d32; font-weight: 600;">Acceptée</span>
+                                {% elif cand.statut == 'refusee' %}
+                                    <span style="color: #c62828; font-weight: 600;">Refusée</span>
+                                {% else %}
+                                    <span style="color: #ef6c00; font-weight: 600;">En attente</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; color: #666; padding: 2rem 0;">
+                    <p>Vous n'avez postulé à aucun appel d'offres pour le moment.</p>
+                    <a href="{% url 'mairie:appels_offres' %}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Voir les offres</a>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

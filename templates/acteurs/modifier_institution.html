@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modification Profil Institution Financière - Mairie de Kloto 1</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .back-link {
+            display: inline-block; margin-bottom: 1rem; color: var(--primary);
+            text-decoration: none; font-weight: 600; padding: 0.5rem 1rem;
+            background: var(--white); border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .back-link:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); color: var(--primary); }
+        header {
+            background: linear-gradient(135deg, var(--primary), #004d28); color: var(--white);
+            padding: 2rem; border-radius: 15px 15px 0 0; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .logo {
+            width: 80px; height: 80px; background: var(--white); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+            color: var(--primary); font-size: 2rem; margin: 0 auto 1rem;
+        }
+        header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        header p { opacity: 0.95; font-size: 1.1rem; }
+        .form-container {
+            background: var(--white); padding: 3rem; border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .section-title {
+            color: var(--primary); font-size: 1.5rem; margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem; border-bottom: 3px solid var(--secondary);
+        }
+        .form-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem; margin-bottom: 2rem;
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label {
+            display: block; margin-bottom: 0.5rem; color: var(--dark);
+            font-weight: 600; font-size: 0.95rem;
+        }
+        .required { color: var(--accent); margin-left: 0.2rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.9rem; border: 2px solid #ddd; border-radius: 8px;
+            font-size: 1rem; transition: all 0.3s; font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+        }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-group input[type="file"] { padding: 0.6rem; border-style: dashed; }
+        .helper-text { font-size: 0.85rem; color: #666; margin-top: 0.3rem; }
+        .checkbox-group { margin-top: 1.5rem; padding: 1.5rem; background: var(--light); border-radius: 10px; }
+        .checkbox-item { display: flex; align-items: flex-start; margin-bottom: 1rem; }
+        .checkbox-item input[type="checkbox"] { width: 20px; height: 20px; margin-right: 0.8rem; flex-shrink: 0; }
+        .checkbox-item label { margin: 0; font-weight: normal; line-height: 1.5; }
+        .btn {
+            display: block; width: 100%; padding: 1rem; border: none; border-radius: 8px;
+            background: var(--primary); color: var(--white); font-size: 1.1rem;
+            font-weight: bold; cursor: pointer; transition: all 0.3s; margin-top: 2rem;
+        }
+        .btn:hover { background: #004d28; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,98,51,0.3); }
+        .alert { padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; font-weight: 500; }
+        .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'comptes:profil' %}" class="back-link">← Retour au profil</a>
+        
+        <header>
+            <div class="logo">MK1</div>
+            <h1>Modification Profil</h1>
+            <p>Mettez à jour les informations de l'institution financière</p>
+        </header>
+
+        <div class="form-container">
+            {% if form.errors %}
+            <div class="alert alert-error">
+                Veuillez corriger les erreurs ci-dessous.
+            </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="section-title">1. Informations de l'Institution</div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Nom de l'institution <span class="required">*</span></label>
+                        {{ form.nom_institution }}
+                    </div>
+                    <div class="form-group">
+                        <label>Type d'institution <span class="required">*</span></label>
+                        {{ form.type_institution }}
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone <span class="required">*</span></label>
+                        {{ form.telephone }}
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Adresse du siège <span class="required">*</span></label>
+                        {{ form.adresse_siege }}
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Site web</label>
+                        {{ form.site_web }}
+                    </div>
+                </div>
+
+                <div class="section-title">2. Personne à Contacter</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom du contact <span class="required">*</span></label>
+                        {{ form.nom_contact }}
+                    </div>
+                    <div class="form-group">
+                        <label>Prénom(s) du contact <span class="required">*</span></label>
+                        {{ form.prenom_contact }}
+                    </div>
+                    <div class="form-group">
+                        <label>Fonction <span class="required">*</span></label>
+                        {{ form.fonction_contact }}
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone contact <span class="required">*</span></label>
+                        {{ form.telephone_contact }}
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Email contact <span class="required">*</span></label>
+                        {{ form.email_contact }}
+                    </div>
+                </div>
+
+                <div class="section-title">3. Services et Offres</div>
+                
+                <div class="checkbox-group">
+                    <label style="display: block; margin-bottom: 1rem; font-weight: 600;">Types de services proposés :</label>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="services" value="microcredit" id="service_microcredit" 
+                        {% if 'microcredit' in form.instance.types_services %}checked{% endif %}>
+                        <label for="service_microcredit">Micro-crédit</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="services" value="epargne" id="service_epargne"
+                        {% if 'epargne' in form.instance.types_services %}checked{% endif %}>
+                        <label for="service_epargne">Épargne</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="services" value="assurance" id="service_assurance"
+                        {% if 'assurance' in form.instance.types_services %}checked{% endif %}>
+                        <label for="service_assurance">Assurance / Micro-assurance</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="services" value="formation" id="service_formation"
+                        {% if 'formation' in form.instance.types_services %}checked{% endif %}>
+                        <label for="service_formation">Formation financière</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="services" value="autre" id="service_autre"
+                        {% if 'autre' in form.instance.types_services %}checked{% endif %}>
+                        <label for="service_autre">Autres services financiers</label>
+                    </div>
+                </div>
+
+                <div class="form-grid" style="margin-top: 1.5rem;">
+                    <div class="form-group full-width">
+                        <label>Conditions générales d'accès (PDF/Image)</label>
+                        {{ form.conditions_generales }}
+                        <p class="helper-text">Laissez vide si vous ne souhaitez pas modifier le document existant.</p>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Grille tarifaire (PDF/Image)</label>
+                        {{ form.grille_tarifaire }}
+                        <p class="helper-text">Laissez vide si vous ne souhaitez pas modifier le document existant.</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Enregistrer les modifications</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
