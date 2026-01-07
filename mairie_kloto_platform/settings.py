@@ -23,9 +23,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-6o61dhf@=_%a3f2wnnowoko-qojozah)-!jdg%$28#-f*#a0g3'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Détecter si on est sur PythonAnywhere
+import os
+ON_PYTHONANYWHERE = 'PYTHONANYWHERE_DOMAIN' in os.environ or 'pythonanywhere.com' in os.environ.get('HTTP_HOST', '')
 
-ALLOWED_HOSTS = []
+DEBUG = not ON_PYTHONANYWHERE  # False sur PythonAnywhere, True en local
+
+if ON_PYTHONANYWHERE:
+    ALLOWED_HOSTS = ['mariekloto1tg.pythonanywhere.com', 'www.mariekloto1tg.pythonanywhere.com']
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -135,12 +142,18 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = '/static/'
+if ON_PYTHONANYWHERE:
+    STATIC_ROOT = '/home/mariekloto1tg/MairieKloto1/staticfiles'
+else:
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (Uploaded files)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+if ON_PYTHONANYWHERE:
+    MEDIA_ROOT = '/home/mariekloto1tg/MairieKloto1/media'
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Email configuration (development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
