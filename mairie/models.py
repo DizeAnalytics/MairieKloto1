@@ -359,6 +359,50 @@ class ConfigurationMairie(models.Model):
     logo = models.ImageField(upload_to="mairie/logo/", blank=True, null=True, validators=[validate_file_size])
     favicon = models.FileField(upload_to="mairie/favicon/", blank=True, null=True, validators=[validate_file_size])
     est_active = models.BooleanField(default=True)
+    
+    # Informations de contact
+    adresse = models.CharField(
+        max_length=255,
+        blank=True,
+        default="Hôtel de Ville de Kpalimé",
+        help_text="Adresse de la mairie (ex: Hôtel de Ville de Kpalimé)"
+    )
+    telephone = models.CharField(
+        max_length=50,
+        blank=True,
+        default="+228 XX XX XX XX",
+        help_text="Numéro de téléphone (ex: +228 XX XX XX XX)"
+    )
+    email = models.EmailField(
+        blank=True,
+        default="contact@mairiekloto1.tg",
+        help_text="Adresse email de contact"
+    )
+    horaires = models.CharField(
+        max_length=255,
+        blank=True,
+        default="Lundi - Vendredi : 08h00 - 17h00",
+        help_text="Horaires d'ouverture (ex: Lundi - Vendredi : 08h00 - 17h00)"
+    )
+    
+    # Réseaux sociaux
+    url_facebook = models.URLField(
+        blank=True,
+        help_text="URL de la page Facebook"
+    )
+    url_twitter = models.URLField(
+        blank=True,
+        help_text="URL du compte Twitter/X"
+    )
+    url_instagram = models.URLField(
+        blank=True,
+        help_text="URL du compte Instagram"
+    )
+    url_youtube = models.URLField(
+        blank=True,
+        help_text="URL de la chaîne YouTube"
+    )
+    
     date_creation = models.DateTimeField(auto_now_add=True)
     date_modification = models.DateTimeField(auto_now=True)
 

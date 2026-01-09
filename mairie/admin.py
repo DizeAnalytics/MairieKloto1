@@ -131,10 +131,22 @@ class AppelOffreAdmin(admin.ModelAdmin):
 class ConfigurationMairieAdmin(admin.ModelAdmin):
     list_display = ("nom_commune", "est_active", "date_modification")
     list_filter = ("est_active",)
-    search_fields = ("nom_commune",)
+    search_fields = ("nom_commune", "email", "telephone")
     fieldsets = (
-        ("Identité", {"fields": ("nom_commune", "logo", "favicon", "est_active")}),
-        ("Dates", {"fields": ("date_creation", "date_modification")}),
+        ("Identité", {
+            "fields": ("nom_commune", "logo", "favicon", "est_active")
+        }),
+        ("Informations de contact", {
+            "fields": ("adresse", "telephone", "email", "horaires"),
+            "description": "Ces informations seront affichées dans le footer du site."
+        }),
+        ("Réseaux sociaux", {
+            "fields": ("url_facebook", "url_twitter", "url_instagram", "url_youtube"),
+            "description": "URLs des réseaux sociaux. Laissez vide si vous ne souhaitez pas afficher un réseau social."
+        }),
+        ("Dates", {
+            "fields": ("date_creation", "date_modification")
+        }),
     )
     readonly_fields = ("date_creation", "date_modification")
 

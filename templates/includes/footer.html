@@ -9,20 +9,47 @@
         <div class="footer-column">
             <h4>Contacts</h4>
             <ul>
+                {% if mairie_config and mairie_config.adresse %}
+                <li>📍 {{ mairie_config.adresse }}</li>
+                {% else %}
                 <li>📍 Hôtel de Ville de Kpalimé</li>
+                {% endif %}
+                {% if mairie_config and mairie_config.telephone %}
+                <li>📞 Standard : {{ mairie_config.telephone }}</li>
+                {% else %}
                 <li>📞 Standard : +228 XX XX XX XX</li>
+                {% endif %}
+                {% if mairie_config and mairie_config.email %}
+                <li>📧 Email : <a href="mailto:{{ mairie_config.email }}">{{ mairie_config.email }}</a></li>
+                {% else %}
                 <li>📧 Email : contact@mairiekloto1.tg</li>
+                {% endif %}
+                {% if mairie_config and mairie_config.horaires %}
+                <li>🕒 {{ mairie_config.horaires }}</li>
+                {% else %}
                 <li>🕒 Lundi - Vendredi : 08h00 - 17h00</li>
+                {% endif %}
             </ul>
         </div>
         <div class="footer-column">
             <h4>Réseaux Sociaux</h4>
             <p>Suivez l'actualité de la Mairie :</p>
             <div class="footer-social">
-                <a href="#" aria-label="Facebook">f</a>
-                <a href="#" aria-label="Twitter">X</a>
-                <a href="#" aria-label="Instagram">I</a>
-                <a href="#" aria-label="YouTube">▶</a>
+                {% if mairie_config and mairie_config.url_facebook %}
+                <a href="{{ mairie_config.url_facebook }}" target="_blank" rel="noopener noreferrer" aria-label="Facebook">f</a>
+                {% endif %}
+                {% if mairie_config and mairie_config.url_twitter %}
+                <a href="{{ mairie_config.url_twitter }}" target="_blank" rel="noopener noreferrer" aria-label="Twitter">X</a>
+                {% endif %}
+                {% if mairie_config and mairie_config.url_instagram %}
+                <a href="{{ mairie_config.url_instagram }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram">I</a>
+                {% endif %}
+                {% if mairie_config and mairie_config.url_youtube %}
+                <a href="{{ mairie_config.url_youtube }}" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a>
+                {% endif %}
+                {% if not mairie_config or not mairie_config.url_facebook and not mairie_config.url_twitter and not mairie_config.url_instagram and not mairie_config.url_youtube %}
+                <p style="font-size: 0.85rem; opacity: 0.8;">Aucun réseau social configuré</p>
+                {% endif %}
             </div>
         </div>
         <div class="footer-column">
