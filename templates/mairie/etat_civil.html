@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .etat-civil-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .etat-civil-header h1 {
+        font-size: 2.2rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    .etat-civil-header p {
+        color: var(--dark);
+        opacity: 0.9;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .rubriques-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    .rubrique-card {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.8rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        border-left: 4px solid var(--primary);
+    }
+    .rubrique-card h2 {
+        font-size: 1.3rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    .rubrique-resume {
+        color: #555;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+    .rubrique-contenu {
+        font-size: 0.98rem;
+        line-height: 1.7;
+        color: var(--dark);
+        opacity: 0.95;
+    }
+    .rubrique-contenu p {
+        margin-bottom: 0.5rem;
+    }
+    .rubrique-anchor {
+        font-size: 0.8rem;
+        color: #888;
+        margin-bottom: 0.5rem;
+    }
+    @media (max-width: 768px) {
+        .etat-civil-header h1 {
+            font-size: 1.7rem;
+        }
+        .rubrique-card {
+            padding: 1.4rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="etat-civil-header">
+        <h1>État civil</h1>
+        <p>
+            Retrouvez ici l’ensemble des démarches d’état civil assurées par la Mairie de Kloto&nbsp;1 :
+            actes de naissance, transcriptions, actes de mariage, actes de décès, et autres documents officiels.
+        </p>
+    </div>
+
+    {% if rubriques %}
+    <div class="rubriques-grid">
+        {% for rubrique in rubriques %}
+        <article id="{{ rubrique.slug }}" class="rubrique-card">
+            <div class="rubrique-anchor">Référence : #{{ rubrique.slug }}</div>
+            <h2>{{ rubrique.titre }}</h2>
+            {% if rubrique.resume %}
+            <div class="rubrique-resume">
+                {{ rubrique.resume }}
+            </div>
+            {% endif %}
+            <div class="rubrique-contenu">
+                {{ rubrique.contenu|linebreaks }}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>Aucune information d’état civil n’est encore publiée. Merci de revenir ultérieurement.</p>
+    {% endif %}
+</div>
+{% endblock %}
+

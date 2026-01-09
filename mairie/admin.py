@@ -1,7 +1,15 @@
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 
-from .models import MotMaire, Collaborateur, InformationMairie, AppelOffre, ImageCarousel, ConfigurationMairie
+from .models import (
+    MotMaire,
+    Collaborateur,
+    InformationMairie,
+    EtatCivilPage,
+    AppelOffre,
+    ImageCarousel,
+    ConfigurationMairie,
+)
 
 
 @admin.register(MotMaire)
@@ -248,6 +256,32 @@ class InformationMairieAdmin(admin.ModelAdmin):
         }),
     )
     
+    readonly_fields = ("date_creation", "date_modification")
+
+
+@admin.register(EtatCivilPage)
+class EtatCivilPageAdmin(admin.ModelAdmin):
+    """Administration des rubriques d'état civil."""
+
+    list_display = (
+        "titre",
+        "slug",
+        "ordre_affichage",
+        "est_visible",
+        "date_modification",
+    )
+
+    list_filter = ("est_visible",)
+
+    search_fields = ("titre", "resume", "contenu")
+
+    prepopulated_fields = {"slug": ("titre",)}
+
+    fieldsets = (
+        ("Contenu", {"fields": ("titre", "slug", "resume", "contenu")}),
+        ("Affichage", {"fields": ("ordre_affichage", "est_visible")}),
+    )
+
     readonly_fields = ("date_creation", "date_modification")
 
 

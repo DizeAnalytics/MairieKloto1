@@ -218,6 +218,12 @@
             color: var(--primary);
         }
 
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
         /* Hamburger Styles */
         .hamburger {
             display: none;
@@ -539,8 +545,15 @@
 
         <div class="stats-section" style="margin-top: 2rem;">
             <h2>Suivi des Inscriptions (30 derniers jours)</h2>
-            <div style="position: relative; height: 400px; width: 100%;">
+            <div class="chart-container">
                 <canvas id="inscriptionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stats-section" style="margin-top: 2rem;">
+            <h2>Nombre de visiteurs du site (30 derniers jours)</h2>
+            <div class="chart-container">
+                <canvas id="visitesChart"></canvas>
             </div>
         </div>
     </div>
@@ -548,10 +561,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('inscriptionChart').getContext('2d');
             const data = JSON.parse('{{ chart_data_json|escapejs }}');
-            
-            new Chart(ctx, {
+
+            const ctxInscription = document.getElementById('inscriptionChart').getContext('2d');
+            new Chart(ctxInscription, {
                 type: 'line',
                 data: {
                     labels: data.labels,
@@ -620,6 +633,58 @@
                     }
                 }
             });
+
+            const visitesCanvas = document.getElementById('visitesChart');
+            if (visitesCanvas && data.visites) {
+                const ctxVisites = visitesCanvas.getContext('2d');
+                new Chart(ctxVisites, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            {
+                                label: 'Visiteurs (toutes pages confondues)',
+                                data: data.visites,
+                                backgroundColor: 'rgba(0, 98, 51, 0.2)',
+                                borderColor: '#006233',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Nombre de visites'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         });
     </script>
 </body>

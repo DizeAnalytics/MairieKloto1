@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .contact-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .contact-header h1 {
+        font-size: 2.2rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+    .contact-header p {
+        color: var(--dark);
+        opacity: 0.9;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    .contact-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr);
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    .contact-card {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.8rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .contact-card h2 {
+        font-size: 1.3rem;
+        color: var(--primary);
+        margin-bottom: 0.75rem;
+    }
+    .contact-item {
+        margin-bottom: 0.75rem;
+        font-size: 0.98rem;
+        color: var(--dark);
+    }
+    .contact-item strong {
+        display: inline-block;
+        min-width: 110px;
+    }
+    .contact-extra ul {
+        padding-left: 1.2rem;
+    }
+    .contact-extra li {
+        margin-bottom: 0.4rem;
+    }
+    @media (max-width: 900px) {
+        .contact-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="contact-header">
+        <h1>Contactez-nous</h1>
+        <p>
+            Pour toute question relative aux démarches administratives, à l’état civil, aux services municipaux
+            ou à la plateforme, vous pouvez joindre la Mairie de Kloto&nbsp;1 via les coordonnées ci-dessous.
+        </p>
+    </div>
+
+    <div class="contact-grid">
+        <section class="contact-card">
+            <h2>Coordonnées de la mairie</h2>
+            {% if mairie_config %}
+            <div class="contact-item">
+                <strong>Adresse :</strong> {{ mairie_config.adresse }}
+            </div>
+            <div class="contact-item">
+                <strong>Téléphone :</strong> {{ mairie_config.telephone }}
+            </div>
+            <div class="contact-item">
+                <strong>Email :</strong>
+                <a href="mailto:{{ mairie_config.email }}">{{ mairie_config.email }}</a>
+            </div>
+            <div class="contact-item">
+                <strong>Horaires :</strong> {{ mairie_config.horaires }}
+            </div>
+            {% endif %}
+
+            {% if informations_contact %}
+            <div class="contact-extra" style="margin-top: 1rem;">
+                <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Informations complémentaires</h2>
+                <ul>
+                    {% for info in informations_contact %}
+                    <li>
+                        {% if info.icone %}{{ info.icone }} {% endif %}
+                        <strong>{{ info.titre }} :</strong> {{ info.contenu }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="contact-card">
+            <h2>Remarque</h2>
+            <p>
+                Cette plateforme permet principalement la consultation d’informations économiques,
+                la gestion des appels d’offres et des inscriptions en ligne.
+            </p>
+            <p style="margin-top: 0.75rem;">
+                Pour les demandes nécessitant un traitement officiel (ex&nbsp;: dépôt de dossier
+                d’état civil, réclamations, demandes particulières), merci de vous adresser
+                directement aux services de la mairie aux horaires d’ouverture indiqués.
+            </p>
+        </section>
+    </div>
+</div>
+{% endblock %}
+

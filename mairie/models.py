@@ -175,6 +175,42 @@ class InformationMairie(models.Model):
         return f"{self.get_type_info_display()}: {self.titre}"
 
 
+class EtatCivilPage(models.Model):
+    """Contenus éditoriaux pour l'état civil (actes, démarches, etc.)."""
+
+    titre = models.CharField(max_length=255, help_text="Ex: Acte de naissance, Transcription, Acte de mariage…")
+    slug = models.SlugField(
+        max_length=255,
+        unique=True,
+        help_text="Identifiant technique (ex: acte-naissance). Utilisé pour l’ancrage sur la page publique.",
+    )
+    resume = models.TextField(
+        blank=True,
+        help_text="Petit résumé qui apparaîtra sous le titre (facultatif).",
+    )
+    contenu = models.TextField(
+        help_text="Description détaillée de la démarche : pièces à fournir, coût, délais, service compétent, etc.",
+    )
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage sur la page (0 = en haut).",
+    )
+    est_visible = models.BooleanField(
+        default=True,
+        help_text="Cocher pour afficher cette rubrique dans l’onglet État civil.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Page d'état civil"
+        verbose_name_plural = "Pages d'état civil"
+        ordering = ["ordre_affichage", "titre"]
+
+    def __str__(self) -> str:
+        return self.titre
+
+
 class AppelOffre(models.Model):
     """Appel d'offres lancé par la mairie, ouvert à un ou plusieurs publics cibles."""
 
@@ -413,3 +449,21 @@ class ConfigurationMairie(models.Model):
 
     def __str__(self):
         return self.nom_commune
+
+
+class VisiteSite(models.Model):
+    """Enregistre une visite sur le site (à des fins de statistiques)."""
+    
+    date = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    path = models.CharField(max_length=255, blank=True)
+    session_key = models.CharField(max_length=40, blank=True)
+    
+    class Meta:
+        verbose_name = "Visite du site"
+        verbose_name_plural = "Visites du site"
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"Visite le {self.date.strftime('%d/%m/%Y %H:%M')} sur {self.path or '/'}"

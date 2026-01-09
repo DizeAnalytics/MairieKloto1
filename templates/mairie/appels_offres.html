@@ -29,6 +29,7 @@
         display: block;
         flex: 0 0 calc((100% - 4rem) / 3);
         max-width: calc((100% - 4rem) / 3);
+        cursor: pointer;
     }
     .appel-card {
         background: var(--white);
@@ -88,6 +89,15 @@
     .badge-jeunes { background: #f3e5f5; color: #7b1fa2; }
     .badge-retraites { background: #e8f5e9; color: #388e3c; }
     .badge-tous { background: #fce4ec; color: #c2185b; }
+    .appel-detail-link {
+        background: transparent;
+        color: var(--primary);
+        border: 1px solid var(--primary);
+    }
+    .appel-detail-link:hover {
+        background: var(--primary);
+        color: var(--white);
+    }
     @media (max-width: 1200px) {
         .appel-card-link { flex: 0 0 calc(50% - 2rem); max-width: calc(50% - 2rem); }
     }
@@ -106,7 +116,7 @@
     <h2 class="section-title">Appels d'Offres Ouverts</h2>
     <div class="appels-grid">
         {% for appel in appels_ouverts %}
-        <a href="{% url 'mairie:appel_offre_detail' appel.pk %}" class="appel-card-link">
+        <div class="appel-card-link" onclick="window.location='{% url 'mairie:appel_offre_detail' appel.pk %}'">
             <div class="appel-card">
                 <div class="appel-header">
                     {% if appel.reference %}
@@ -142,6 +152,9 @@
                     {% endif %}
                     <div class="appel-footer">
                         <span class="appel-statut statut-ouvert">Ouvert</span>
+                        <a href="{% url 'mairie:appel_offre_detail' appel.pk %}" class="appel-link appel-detail-link" onclick="event.stopPropagation();">
+                            Détail sur l'offre
+                        </a>
                         {% if appel.document_officiel %}
                         <a href="{{ appel.document_officiel.url }}" class="appel-link" target="_blank" onclick="event.stopPropagation();">
                             📄 Télécharger le dossier
@@ -150,7 +163,7 @@
                     </div>
                 </div>
             </div>
-        </a>
+        </div>
         {% endfor %}
     </div>
     {% endif %}
@@ -158,7 +171,7 @@
     <h2 class="section-title">Appels d'Offres Clôturés</h2>
     <div class="appels-grid">
         {% for appel in appels_clotures %}
-        <a href="{% url 'mairie:appel_offre_detail' appel.pk %}" class="appel-card-link">
+        <div class="appel-card-link" onclick="window.location='{% url 'mairie:appel_offre_detail' appel.pk %}'">
             <div class="appel-card cloture">
                 <div class="appel-header">
                     {% if appel.reference %}
@@ -188,6 +201,9 @@
                     </div>
                     <div class="appel-footer">
                         <span class="appel-statut statut-cloture">Clôturé</span>
+                        <a href="{% url 'mairie:appel_offre_detail' appel.pk %}" class="appel-link appel-detail-link" onclick="event.stopPropagation();">
+                            Détail sur l'offre
+                        </a>
                         {% if appel.document_officiel %}
                         <a href="{{ appel.document_officiel.url }}" class="appel-link cloture" target="_blank" onclick="event.stopPropagation();">
                             📄 Consulter le dossier
@@ -196,7 +212,7 @@
                     </div>
                 </div>
             </div>
-        </a>
+        </div>
         {% endfor %}
     </div>
     {% endif %}

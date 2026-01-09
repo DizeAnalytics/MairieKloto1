@@ -9,7 +9,15 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 
-from .models import MotMaire, Collaborateur, InformationMairie, AppelOffre, Candidature, ImageCarousel
+from .models import (
+    MotMaire,
+    Collaborateur,
+    InformationMairie,
+    EtatCivilPage,
+    AppelOffre,
+    Candidature,
+    ImageCarousel,
+)
 from .forms import CandidatureForm
 from acteurs.models import ActeurEconomique, InstitutionFinanciere
 from emploi.models import ProfilEmploi
@@ -35,6 +43,33 @@ def accueil(request):
     }
     
     return render(request, 'mairie/accueil.html', context)
+
+
+def etat_civil(request):
+    """Page listant toutes les démarches d'état civil (actes de naissance, mariage, décès, etc.)."""
+
+    rubriques = EtatCivilPage.objects.filter(est_visible=True).order_by("ordre_affichage", "titre")
+
+    context = {
+        "rubriques": rubriques,
+    }
+    return render(request, "mairie/etat_civil.html", context)
+
+
+def contactez_nous(request):
+    """Page de contact simple (coordonnées de la mairie)."""
+
+    # Les informations principales (adresse, téléphone, email, horaires)
+    # viennent de ConfigurationMairie via le context processor `mairie_config`.
+    # Ici on se contente d'afficher une belle page de synthèse.
+    informations_contact = InformationMairie.objects.filter(
+        type_info__in=["contact", "adresse", "horaire"]
+    ).order_by("ordre_affichage", "type_info")
+
+    context = {
+        "informations_contact": informations_contact,
+    }
+    return render(request, "mairie/contactez_nous.html", context)
 
 
 def liste_appels_offres(request):

@@ -15,7 +15,7 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas as pdfcanvas
-from mairie.models import ConfigurationMairie
+from mairie.models import ConfigurationMairie, VisiteSite
 
 from acteurs.models import ActeurEconomique, InstitutionFinanciere
 from emploi.models import ProfilEmploi
@@ -92,13 +92,20 @@ def tableau_bord(request):
     labels = [d.strftime('%d/%m') for d in dates]
     
     def get_counts(queryset, date_field):
-        data = queryset.filter(**{f"{date_field}__gte": start_date})\
-            .annotate(date=TruncDay(date_field))\
-            .values('date')\
-            .annotate(count=Count('id'))\
-            .order_by('date')
-        
-        count_dict = {item['date'].date(): item['count'] for item in data if item['date']}
+        """
+        Retourne une liste de 31 valeurs (une par jour) correspondant au nombre
+        d'objets du queryset par jour entre start_date et end_date (inclus).
+        Utilise un alias 'day' pour éviter les conflits avec d'éventuels champs 'date'.
+        """
+        data = (
+            queryset.filter(**{f"{date_field}__gte": start_date})
+            .annotate(day=TruncDay(date_field))
+            .values("day")
+            .annotate(count=Count("id"))
+            .order_by("day")
+        )
+
+        count_dict = {item["day"].date(): item["count"] for item in data if item["day"]}
         return [count_dict.get(d, 0) for d in dates]
 
     chart_data = {
@@ -107,6 +114,7 @@ def tableau_bord(request):
         'institutions': get_counts(InstitutionFinanciere.objects.all(), 'date_enregistrement'),
         'jeunes': get_counts(ProfilEmploi.objects.filter(type_profil='jeune'), 'date_inscription'),
         'retraites': get_counts(ProfilEmploi.objects.filter(type_profil='retraite'), 'date_inscription'),
+        'visites': get_counts(VisiteSite.objects.all(), 'date'),
     }
     
     context = {

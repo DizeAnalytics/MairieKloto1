@@ -227,12 +227,11 @@
             <ul>
                 <li><a href="{% url 'mairie:accueil' %}" {% if request.resolver_match.url_name == 'accueil' %}class="active"{% endif %}>Accueil</a></li>
                 <li><a href="{% url 'enregistrement' %}" {% if request.resolver_match.url_name == 'enregistrement' and not request.resolver_match.namespace %}class="active"{% endif %}>Enregistrement</a></li>
-                <li><a href="{% url 'acteurs:enregistrement' %}" {% if request.resolver_match.namespace == 'acteurs' and request.resolver_match.url_name == 'enregistrement' %}class="active"{% endif %}>Entreprises</a></li>
-                <li><a href="{% url 'acteurs:inscription_institutions' %}" {% if request.resolver_match.url_name == 'inscription_institutions' %}class="active"{% endif %}>Institutions Financières</a></li>
+                <li><a href="{% url 'mairie:etat_civil' %}" {% if request.resolver_match.url_name == 'etat_civil' %}class="active"{% endif %}>État civil</a></li>
                 <li><a href="{% url 'acteurs:sites_public' %}" {% if request.resolver_match.url_name == 'sites_public' %}class="active"{% endif %}>Sites touristiques</a></li>
-                <li><a href="{% url 'emploi:inscription_jeunes' %}" {% if request.resolver_match.url_name == 'inscription_jeunes' %}class="active"{% endif %}>Emploi</a></li>
                 <li><a href="{% url 'actualites:liste' %}" {% if request.resolver_match.url_name == 'liste' %}class="active"{% endif %}>Actualités</a></li>
                 <li><a href="{% url 'mairie:appels_offres' %}" {% if request.resolver_match.url_name == 'appels_offres' %}class="active"{% endif %}>Appels d'offres</a></li>
+                <li><a href="{% url 'mairie:contactez_nous' %}" {% if request.resolver_match.url_name == 'contactez_nous' %}class="active"{% endif %}>Contactez-nous</a></li>
                 {% if user.is_staff or user.is_superuser %}
                 <li><a href="{% url 'tableau_bord' %}" {% if request.resolver_match.url_name == 'tableau_bord' %}class="active"{% endif %}>Tableau de Bord</a></li>
                 {% endif %}

@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'mairie_kloto_platform.middleware.TrackVisitorMiddleware',
 ]
 
 ROOT_URLCONF = 'mairie_kloto_platform.urls'
