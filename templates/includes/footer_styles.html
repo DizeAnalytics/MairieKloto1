@@ -69,12 +69,18 @@
         justify-content: center;
         font-weight: bold;
         transition: all 0.3s;
+        text-decoration: none;
+        color: var(--white, #ffffff);
+        /* Masquer tout texte d'URL qui pourrait apparaître */
+        overflow: hidden;
+        text-indent: 0;
     }
 
     .footer-social a:hover {
         background: var(--secondary, #FFCD00);
         color: var(--primary, #006233);
         transform: translateY(-3px);
+        text-decoration: none;
     }
 
     .footer-bottom {
