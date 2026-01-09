@@ -32,7 +32,7 @@
             <img src="{{ actualite.photo1.url }}" alt="{{ actualite.titre }}" class="actualite-image">
             {% endif %}
             <div class="actualite-content">
-                <div class="actualite-date">📅 {{ actualite.date_publication|date:"d F Y" }}</div>
+                <div class="actualite-date">📅 {{ actualite.date_publication|date:"d/m/Y" }}</div>
                 <h2 class="actualite-title">{{ actualite.titre }}</h2>
                 {% if actualite.resume %}
                 <p class="actualite-resume">{{ actualite.resume|truncatewords:30 }}</p>

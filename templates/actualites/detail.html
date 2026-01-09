@@ -63,7 +63,7 @@
         <div>
             <div class="actualite-header">
                 <div class="actualite-date">
-                    📅 {{ actualite.date_publication|date:"d F Y à H:i" }}
+                    📅 {{ actualite.date_publication|date:"d/m/Y à H:i" }}
                 </div>
                 <h1 class="actualite-title">{{ actualite.titre }}</h1>
             </div>
@@ -118,7 +118,7 @@
             {% for autre in actualites_recentes %}
             <div class="sidebar-actualite">
                 <a href="{% url 'actualites:detail' autre.pk %}">{{ autre.titre }}</a>
-                <div class="sidebar-actualite-date">{{ autre.date_publication|date:"d F Y" }}</div>
+                <div class="sidebar-actualite-date">{{ autre.date_publication|date:"d/m/Y" }}</div>
             </div>
             {% endfor %}
         </div>
