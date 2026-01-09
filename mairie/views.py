@@ -78,10 +78,29 @@ def detail_appel_offre(request, pk: int):
     )
 
     maintenant = timezone.now()
+    # Un appel est ouvert si :
+    # 1. Il est publié sur le site (est_publie_sur_site=True)
+    # 2. Le statut est "publie" (ou "cloture" mais pas encore expiré)
+    # 3. La date actuelle est entre date_debut et date_fin
+    # Note: Si est_publie_sur_site=True, on considère l'appel comme ouvert si les dates sont valides,
+    # même si le statut n'est pas exactement "publie" (mais pas "archive" ou "brouillon")
     est_ouvert = (
-        appel.statut == "publie"
+        appel.est_publie_sur_site
+        and appel.statut in ["publie", "cloture"]  # Permettre aussi "cloture" si pas encore expiré
         and appel.date_debut <= maintenant <= appel.date_fin
     )
+    
+    # Déterminer la raison pour laquelle l'appel est fermé (pour debug/admin)
+    raison_fermeture = None
+    if not est_ouvert:
+        if not appel.est_publie_sur_site:
+            raison_fermeture = "L'appel d'offres n'est pas publié sur le site."
+        elif appel.statut not in ["publie", "cloture"]:
+            raison_fermeture = f"Le statut est '{appel.get_statut_display()}' (doit être 'Publié' ou 'Clôturé')."
+        elif maintenant < appel.date_debut:
+            raison_fermeture = f"L'appel d'offres n'a pas encore commencé. Il débutera le {appel.date_debut.strftime('%d/%m/%Y à %H:%M')}."
+        elif maintenant > appel.date_fin:
+            raison_fermeture = f"L'appel d'offres est terminé depuis le {appel.date_fin.strftime('%d/%m/%Y à %H:%M')}."
     
     # Vérifier si l'utilisateur a un profil (acteur économique, institution financière, jeune ou retraité)
     # Vérification directe dans la base de données pour éviter les exceptions RelatedObjectDoesNotExist
@@ -95,6 +114,8 @@ def detail_appel_offre(request, pk: int):
         "appel": appel,
         "est_ouvert": est_ouvert,
         "has_profile": has_profile,
+        "raison_fermeture": raison_fermeture,
+        "maintenant": maintenant,
     }
     return render(request, "mairie/appel_offre_detail.html", context)
 
