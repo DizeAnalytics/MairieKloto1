@@ -191,7 +191,15 @@
             margin-top: 1.5rem;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 1rem;
+        }
+
+        .actions h4 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
         }
 
         .btn {
@@ -224,6 +232,59 @@
             color: var(--white);
         }
 
+        /* Boutons d'action document - plus visibles */
+        .btn-download {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            border: 2px solid var(--primary);
+            padding: 1rem 1.5rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 98, 51, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .btn-download:hover {
+            background: linear-gradient(135deg, #004d28, var(--primary));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 98, 51, 0.4);
+            color: var(--white);
+        }
+
+        .btn-download:active {
+            transform: translateY(0);
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, var(--accent), #b00d26);
+            color: var(--white);
+            border: 2px solid var(--accent);
+            padding: 1rem 1.5rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(210, 16, 52, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .btn-pdf:hover {
+            background: linear-gradient(135deg, #b00d26, var(--accent));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(210, 16, 52, 0.4);
+            color: var(--white);
+        }
+
+        .btn-pdf:active {
+            transform: translateY(0);
+        }
+
         .btn-disabled {
             background: var(--dark);
             color: var(--white);
@@ -231,9 +292,29 @@
             cursor: not-allowed;
         }
 
+        /* Amélioration de la visibilité des boutons d'action */
+        .side-card {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .side-card h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
         @media (max-width: 900px) {
             .detail-body {
                 grid-template-columns: 1fr;
+            }
+
+            .btn-download,
+            .btn-pdf {
+                font-size: 0.95rem;
+                padding: 0.9rem 1.2rem;
             }
         }
     </style>
@@ -303,17 +384,20 @@
                         <h4>Dossier et Candidature</h4>
                         <div class="actions">
                             {% if appel.document_officiel %}
-                            <a href="{{ appel.document_officiel.url }}" target="_blank" class="btn btn-secondary">
-                                📄 Télécharger le dossier complet
+                            <a href="{{ appel.document_officiel.url }}" target="_blank" class="btn btn-download">
+                                <span style="font-size: 1.2rem;">📄</span>
+                                <span>Télécharger le dossier complet</span>
                             </a>
                             {% else %}
-                            <div class="btn btn-disabled">
-                                Dossier à venir (sera mis en ligne prochainement)
+                            <div class="btn btn-disabled" style="width: 100%; padding: 1rem; text-align: center;">
+                                <span style="font-size: 1.2rem;">📄</span>
+                                <span>Dossier à venir (sera mis en ligne prochainement)</span>
                             </div>
                             {% endif %}
 
-                            <a href="{% url 'mairie:appel_offre_pdf' appel.pk %}" target="_blank" class="btn btn-secondary">
-                                📑 Générer le PDF de l'appel d'offres
+                            <a href="{% url 'mairie:appel_offre_pdf' appel.pk %}" target="_blank" class="btn btn-pdf">
+                                <span style="font-size: 1.2rem;">📑</span>
+                                <span>Générer le PDF de l'appel d'offres</span>
                             </a>
 
                             {% if est_ouvert %}

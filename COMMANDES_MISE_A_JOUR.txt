@@ -1,0 +1,35 @@
+====================================
+COMMANDES DE MISE À JOUR PYTHONANYWHERE
+====================================
+
+Connectez-vous à https://www.pythonanywhere.com
+Ouvrez une Console Bash, puis exécutez ces commandes dans l'ordre :
+
+1. Aller dans le répertoire du projet
+   cd /home/mariekloto1tg/MairieKloto1
+
+2. Activer l'environnement virtuel
+   source venv/bin/activate
+
+3. Récupérer les modifications depuis GitHub
+   git pull origin main
+
+4. Mettre à jour les dépendances
+   pip install --upgrade -r requirements.txt
+
+5. Appliquer les migrations
+   python manage.py migrate
+
+6. Collecter les fichiers statiques
+   python manage.py collectstatic --noinput
+
+7. Vérifier la configuration
+   python manage.py check
+
+8. RELOADER L'APPLICATION (via l'interface Web)
+   - Retournez sur https://www.pythonanywhere.com
+   - Onglet "Web" → Bouton vert "Reload"
+
+====================================
+FIN DE LA MISE À JOUR
+====================================
