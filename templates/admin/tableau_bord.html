@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de Bord - Administration</title>
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% endif %}
     <style>
         * {
             margin: 0;
@@ -43,8 +47,42 @@
             align-items: center;
         }
 
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        .logo-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--white);
+        }
+
+        .header-title-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
         .header h1 {
             font-size: 1.8rem;
+            margin: 0;
         }
 
         .header-user {
@@ -263,9 +301,27 @@
                 position: relative;
             }
 
+            .header-title-section {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .logo-section {
+                flex-shrink: 0;
+            }
+
+            .logo, .logo-image {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
             .header h1 {
                 font-size: 1.2rem;
-                max-width: 70%;
+                max-width: calc(100% - 60px);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
 
             .header-user {
@@ -293,7 +349,16 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <h1>📊 Tableau de Bord</h1>
+            <div class="header-title-section">
+                <div class="logo-section">
+                    {% if mairie_config and mairie_config.logo %}
+                    <img src="{{ mairie_config.logo.url }}" alt="Logo" class="logo-image">
+                    {% else %}
+                    <div class="logo">K1</div>
+                    {% endif %}
+                </div>
+                <h1>📊 Tableau de Bord</h1>
+            </div>
             
             <div class="header-user">
                 <span>Bonjour, {{ user.username }}</span>
@@ -313,6 +378,7 @@
             <div class="menu-header">Bonjour, {{ user.username }}</div>
             
             <a href="{% url 'liste_candidatures' %}">📂 Candidatures</a>
+            <a href="{% url 'notifications_candidats' %}">📧 Notifications Candidats</a>
             <a href="{% url 'liste_acteurs' %}">🏢 Acteurs Économiques</a>
             <a href="{% url 'liste_institutions' %}">🏦 Institutions Financières</a>
             <a href="{% url 'liste_jeunes' %}">👨‍🎓 Jeunes Demandeurs</a>
@@ -390,6 +456,12 @@
                 <h2>Candidatures</h2>
                 <p>Gérer les candidatures aux appels d'offres</p>
                 <div class="menu-card-count">{{ stats.candidatures }}</div>
+            </a>
+
+            <a href="{% url 'notifications_candidats' %}" class="menu-card">
+                <div class="menu-card-icon">📧</div>
+                <h2>Notifications Candidats</h2>
+                <p>Envoyer des notifications aux candidats acceptés</p>
             </a>
 
             <a href="{% url 'liste_acteurs' %}" class="menu-card">

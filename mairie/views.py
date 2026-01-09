@@ -11,6 +11,8 @@ from reportlab.lib import colors
 
 from .models import MotMaire, Collaborateur, InformationMairie, AppelOffre, Candidature, ImageCarousel
 from .forms import CandidatureForm
+from acteurs.models import ActeurEconomique, InstitutionFinanciere
+from emploi.models import ProfilEmploi
 
 
 def accueil(request):
@@ -80,10 +82,19 @@ def detail_appel_offre(request, pk: int):
         appel.statut == "publie"
         and appel.date_debut <= maintenant <= appel.date_fin
     )
+    
+    # Vérifier si l'utilisateur a un profil (acteur économique, institution financière, jeune ou retraité)
+    # Vérification directe dans la base de données pour éviter les exceptions RelatedObjectDoesNotExist
+    has_profile = (
+        ActeurEconomique.objects.filter(user=request.user).exists() or
+        InstitutionFinanciere.objects.filter(user=request.user).exists() or
+        ProfilEmploi.objects.filter(user=request.user).exists()
+    )
 
     context = {
         "appel": appel,
         "est_ouvert": est_ouvert,
+        "has_profile": has_profile,
     }
     return render(request, "mairie/appel_offre_detail.html", context)
 
@@ -208,6 +219,21 @@ def generer_pdf_appel_offre(request, pk: int):
 def soumettre_candidature(request, pk: int):
     """Permet à un utilisateur de soumettre une candidature pour un appel d'offres."""
     appel = get_object_or_404(AppelOffre, pk=pk, est_publie_sur_site=True)
+    
+    # Vérifier si l'utilisateur a un profil (acteur économique, institution financière, jeune ou retraité)
+    # Vérification directe dans la base de données pour éviter les exceptions RelatedObjectDoesNotExist
+    has_profile = (
+        ActeurEconomique.objects.filter(user=request.user).exists() or
+        InstitutionFinanciere.objects.filter(user=request.user).exists() or
+        ProfilEmploi.objects.filter(user=request.user).exists()
+    )
+    
+    if not has_profile:
+        messages.error(
+            request, 
+            "Vous devez d'abord remplir un formulaire d'inscription (Acteur économique, Institution financière, Jeune ou Retraité) avant de pouvoir postuler à un appel d'offres."
+        )
+        return redirect('mairie:appel_offre_detail', pk=pk)
     
     # Vérifier si l'appel est ouvert
     maintenant = timezone.now()

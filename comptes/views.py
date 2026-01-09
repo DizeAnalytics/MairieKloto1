@@ -3,9 +3,27 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+from django.http import JsonResponse
+from django.views import View
 from .models import Notification
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
+
+User = get_user_model()
+
+
+def get_recipient_display_name(user):
+    """Retourne le nom d'affichage approprié selon le type de profil de l'utilisateur."""
+    if hasattr(user, 'acteur_economique') and user.acteur_economique:
+        return user.acteur_economique.raison_sociale
+    elif hasattr(user, 'institution_financiere') and user.institution_financiere:
+        return user.institution_financiere.nom_institution
+    elif hasattr(user, 'profil_emploi') and user.profil_emploi:
+        profil = user.profil_emploi
+        return f"{profil.nom} {profil.prenoms}"
+    return user.get_username()
 
 
 def inscription(request):
@@ -111,3 +129,43 @@ def notifications_mark_all_read(request):
     Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
     messages.success(request, "Toutes les notifications ont été marquées comme lues.")
     return redirect('comptes:profil')
+
+
+class UserAutocompleteView(View):
+    """Vue d'autocomplete personnalisée pour User avec affichage des noms corrects."""
+    
+    def get(self, request):
+        """Gère les requêtes GET pour l'autocomplete."""
+        term = request.GET.get('term', '') or request.GET.get('q', '')
+        
+        # Filtrer pour n'inclure que les utilisateurs avec un profil
+        qs = User.objects.filter(
+            Q(acteur_economique__isnull=False) |
+            Q(institution_financiere__isnull=False) |
+            Q(profil_emploi__isnull=False)
+        ).select_related("acteur_economique", "institution_financiere", "profil_emploi").distinct()
+        
+        # Recherche
+        if term:
+            qs = qs.filter(
+                Q(username__icontains=term) |
+                Q(email__icontains=term) |
+                Q(acteur_economique__raison_sociale__icontains=term) |
+                Q(institution_financiere__nom_institution__icontains=term) |
+                Q(profil_emploi__nom__icontains=term) |
+                Q(profil_emploi__prenoms__icontains=term)
+            )
+        
+        # Limiter les résultats
+        qs = qs[:20]
+        
+        # Formater les résultats au format attendu par Django Admin
+        # Django Admin utilise Select2 qui attend: {'results': [{'id': ..., 'text': ...}]}
+        results = []
+        for user in qs:
+            results.append({
+                'id': str(user.pk),
+                'text': get_recipient_display_name(user)
+            })
+        
+        return JsonResponse({'results': results})

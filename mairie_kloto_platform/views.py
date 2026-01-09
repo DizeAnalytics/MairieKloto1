@@ -19,7 +19,8 @@ from mairie.models import ConfigurationMairie
 
 from acteurs.models import ActeurEconomique, InstitutionFinanciere
 from emploi.models import ProfilEmploi
-from mairie.models import Candidature
+from mairie.models import Candidature, AppelOffre
+from comptes.models import Notification
 
 
 class NumberedCanvas(pdfcanvas.Canvas):
@@ -449,6 +450,78 @@ def export_pdf_acteurs(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+def notifications_candidats(request):
+    """Liste des appels d'offres avec candidats acceptés pour envoyer des notifications."""
+    
+    # Récupérer tous les appels d'offres qui ont au moins une candidature acceptée
+    appels_offres = AppelOffre.objects.filter(
+        candidatures__statut='acceptee'
+    ).distinct().annotate(
+        nb_candidats_acceptes=Count('candidatures', filter=Q(candidatures__statut='acceptee'))
+    ).order_by('-date_debut')
+    
+    context = {
+        'appels_offres': appels_offres,
+    }
+    
+    return render(request, "admin/notifications_candidats.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def envoyer_notifications_candidats(request, appel_offre_id):
+    """Affiche le formulaire et traite l'envoi de notifications aux candidats acceptés."""
+    
+    appel_offre = get_object_or_404(AppelOffre, pk=appel_offre_id)
+    
+    # Récupérer uniquement les candidats acceptés pour cet appel d'offres
+    candidats_acceptes = Candidature.objects.filter(
+        appel_offre=appel_offre,
+        statut='acceptee'
+    ).select_related('candidat')
+    
+    if not candidats_acceptes.exists():
+        messages.warning(request, "Aucun candidat accepté trouvé pour cet appel d'offres.")
+        return redirect('notifications_candidats')
+    
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '')
+        message = request.POST.get('message', '')
+        type_notification = request.POST.get('type', Notification.TYPE_INFO)
+        
+        if not titre or not message:
+            messages.error(request, "Le titre et le message sont obligatoires.")
+        else:
+            # Créer une notification pour chaque candidat accepté
+            notifications_creees = 0
+            for candidature in candidats_acceptes:
+                Notification.objects.create(
+                    recipient=candidature.candidat,
+                    title=titre,
+                    message=message,
+                    type=type_notification,
+                    created_by=request.user,
+                )
+                notifications_creees += 1
+            
+            messages.success(
+                request, 
+                f"Notifications envoyées avec succès à {notifications_creees} candidat(s) accepté(s)."
+            )
+            return redirect('notifications_candidats')
+    
+    context = {
+        'appel_offre': appel_offre,
+        'candidats_acceptes': candidats_acceptes,
+        'nb_candidats': candidats_acceptes.count(),
+        'type_choices': Notification.TYPE_CHOICES,
+    }
+    
+    return render(request, "admin/envoyer_notifications_candidats.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
 def export_pdf_entreprises(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
@@ -520,6 +593,78 @@ def export_pdf_entreprises(request):
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def notifications_candidats(request):
+    """Liste des appels d'offres avec candidats acceptés pour envoyer des notifications."""
+    
+    # Récupérer tous les appels d'offres qui ont au moins une candidature acceptée
+    appels_offres = AppelOffre.objects.filter(
+        candidatures__statut='acceptee'
+    ).distinct().annotate(
+        nb_candidats_acceptes=Count('candidatures', filter=Q(candidatures__statut='acceptee'))
+    ).order_by('-date_debut')
+    
+    context = {
+        'appels_offres': appels_offres,
+    }
+    
+    return render(request, "admin/notifications_candidats.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def envoyer_notifications_candidats(request, appel_offre_id):
+    """Affiche le formulaire et traite l'envoi de notifications aux candidats acceptés."""
+    
+    appel_offre = get_object_or_404(AppelOffre, pk=appel_offre_id)
+    
+    # Récupérer uniquement les candidats acceptés pour cet appel d'offres
+    candidats_acceptes = Candidature.objects.filter(
+        appel_offre=appel_offre,
+        statut='acceptee'
+    ).select_related('candidat')
+    
+    if not candidats_acceptes.exists():
+        messages.warning(request, "Aucun candidat accepté trouvé pour cet appel d'offres.")
+        return redirect('notifications_candidats')
+    
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '')
+        message = request.POST.get('message', '')
+        type_notification = request.POST.get('type', Notification.TYPE_INFO)
+        
+        if not titre or not message:
+            messages.error(request, "Le titre et le message sont obligatoires.")
+        else:
+            # Créer une notification pour chaque candidat accepté
+            notifications_creees = 0
+            for candidature in candidats_acceptes:
+                Notification.objects.create(
+                    recipient=candidature.candidat,
+                    title=titre,
+                    message=message,
+                    type=type_notification,
+                    created_by=request.user,
+                )
+                notifications_creees += 1
+            
+            messages.success(
+                request, 
+                f"Notifications envoyées avec succès à {notifications_creees} candidat(s) accepté(s)."
+            )
+            return redirect('notifications_candidats')
+    
+    context = {
+        'appel_offre': appel_offre,
+        'candidats_acceptes': candidats_acceptes,
+        'nb_candidats': candidats_acceptes.count(),
+        'type_choices': Notification.TYPE_CHOICES,
+    }
+    
+    return render(request, "admin/envoyer_notifications_candidats.html", context)
 
 
 @login_required
@@ -601,6 +746,78 @@ def export_pdf_jeunes(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+def notifications_candidats(request):
+    """Liste des appels d'offres avec candidats acceptés pour envoyer des notifications."""
+    
+    # Récupérer tous les appels d'offres qui ont au moins une candidature acceptée
+    appels_offres = AppelOffre.objects.filter(
+        candidatures__statut='acceptee'
+    ).distinct().annotate(
+        nb_candidats_acceptes=Count('candidatures', filter=Q(candidatures__statut='acceptee'))
+    ).order_by('-date_debut')
+    
+    context = {
+        'appels_offres': appels_offres,
+    }
+    
+    return render(request, "admin/notifications_candidats.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def envoyer_notifications_candidats(request, appel_offre_id):
+    """Affiche le formulaire et traite l'envoi de notifications aux candidats acceptés."""
+    
+    appel_offre = get_object_or_404(AppelOffre, pk=appel_offre_id)
+    
+    # Récupérer uniquement les candidats acceptés pour cet appel d'offres
+    candidats_acceptes = Candidature.objects.filter(
+        appel_offre=appel_offre,
+        statut='acceptee'
+    ).select_related('candidat')
+    
+    if not candidats_acceptes.exists():
+        messages.warning(request, "Aucun candidat accepté trouvé pour cet appel d'offres.")
+        return redirect('notifications_candidats')
+    
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '')
+        message = request.POST.get('message', '')
+        type_notification = request.POST.get('type', Notification.TYPE_INFO)
+        
+        if not titre or not message:
+            messages.error(request, "Le titre et le message sont obligatoires.")
+        else:
+            # Créer une notification pour chaque candidat accepté
+            notifications_creees = 0
+            for candidature in candidats_acceptes:
+                Notification.objects.create(
+                    recipient=candidature.candidat,
+                    title=titre,
+                    message=message,
+                    type=type_notification,
+                    created_by=request.user,
+                )
+                notifications_creees += 1
+            
+            messages.success(
+                request, 
+                f"Notifications envoyées avec succès à {notifications_creees} candidat(s) accepté(s)."
+            )
+            return redirect('notifications_candidats')
+    
+    context = {
+        'appel_offre': appel_offre,
+        'candidats_acceptes': candidats_acceptes,
+        'nb_candidats': candidats_acceptes.count(),
+        'type_choices': Notification.TYPE_CHOICES,
+    }
+    
+    return render(request, "admin/envoyer_notifications_candidats.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
 def export_pdf_retraites(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
@@ -674,3 +891,75 @@ def export_pdf_retraites(request):
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def notifications_candidats(request):
+    """Liste des appels d'offres avec candidats acceptés pour envoyer des notifications."""
+    
+    # Récupérer tous les appels d'offres qui ont au moins une candidature acceptée
+    appels_offres = AppelOffre.objects.filter(
+        candidatures__statut='acceptee'
+    ).distinct().annotate(
+        nb_candidats_acceptes=Count('candidatures', filter=Q(candidatures__statut='acceptee'))
+    ).order_by('-date_debut')
+    
+    context = {
+        'appels_offres': appels_offres,
+    }
+    
+    return render(request, "admin/notifications_candidats.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def envoyer_notifications_candidats(request, appel_offre_id):
+    """Affiche le formulaire et traite l'envoi de notifications aux candidats acceptés."""
+    
+    appel_offre = get_object_or_404(AppelOffre, pk=appel_offre_id)
+    
+    # Récupérer uniquement les candidats acceptés pour cet appel d'offres
+    candidats_acceptes = Candidature.objects.filter(
+        appel_offre=appel_offre,
+        statut='acceptee'
+    ).select_related('candidat')
+    
+    if not candidats_acceptes.exists():
+        messages.warning(request, "Aucun candidat accepté trouvé pour cet appel d'offres.")
+        return redirect('notifications_candidats')
+    
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '')
+        message = request.POST.get('message', '')
+        type_notification = request.POST.get('type', Notification.TYPE_INFO)
+        
+        if not titre or not message:
+            messages.error(request, "Le titre et le message sont obligatoires.")
+        else:
+            # Créer une notification pour chaque candidat accepté
+            notifications_creees = 0
+            for candidature in candidats_acceptes:
+                Notification.objects.create(
+                    recipient=candidature.candidat,
+                    title=titre,
+                    message=message,
+                    type=type_notification,
+                    created_by=request.user,
+                )
+                notifications_creees += 1
+            
+            messages.success(
+                request, 
+                f"Notifications envoyées avec succès à {notifications_creees} candidat(s) accepté(s)."
+            )
+            return redirect('notifications_candidats')
+    
+    context = {
+        'appel_offre': appel_offre,
+        'candidats_acceptes': candidats_acceptes,
+        'nb_candidats': candidats_acceptes.count(),
+        'type_choices': Notification.TYPE_CHOICES,
+    }
+    
+    return render(request, "admin/envoyer_notifications_candidats.html", context)

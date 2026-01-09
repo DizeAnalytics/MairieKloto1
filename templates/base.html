@@ -238,10 +238,15 @@
                 {% endif %}
                 {% if user.is_authenticated %}
                 <li><a href="{% url 'comptes:profil' %}" {% if request.resolver_match.namespace == 'comptes' and request.resolver_match.url_name == 'profil' %}class="active"{% endif %}>Mon Compte</a></li>
-                {% endif %}
-                {% if user.is_authenticated %}
                 <li class="mobile-only">
                     <a href="{% url 'comptes:deconnexion' %}">Déconnexion{% if user.username %} ({{ user.username }}){% endif %}</a>
+                </li>
+                {% else %}
+                <li class="mobile-only">
+                    <a href="{% url 'comptes:connexion' %}" {% if request.resolver_match.namespace == 'comptes' and request.resolver_match.url_name == 'connexion' %}class="active"{% endif %}>Se connecter</a>
+                </li>
+                <li class="mobile-only">
+                    <a href="{% url 'comptes:inscription' %}" {% if request.resolver_match.namespace == 'comptes' and request.resolver_match.url_name == 'inscription' %}class="active"{% endif %}>Inscription</a>
                 </li>
                 {% endif %}
             </ul>

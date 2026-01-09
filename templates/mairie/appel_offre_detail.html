@@ -464,9 +464,24 @@
                             </a>
 
                             {% if est_ouvert %}
-                            <a href="{% url 'mairie:soumettre_candidature' appel.pk %}" class="btn btn-primary">
-                                Soumettre une candidature
-                            </a>
+                                {% if has_profile %}
+                                <a href="{% url 'mairie:soumettre_candidature' appel.pk %}" class="btn btn-primary">
+                                    Soumettre une candidature
+                                </a>
+                                {% else %}
+                                <div class="btn btn-disabled" style="background: #f0f0f0; color: #666; cursor: not-allowed;" title="Vous devez d'abord remplir un formulaire d'inscription">
+                                    ⚠️ Inscription requise pour candidater
+                                </div>
+                                <div style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px; color: #856404;">
+                                    <strong>⚠️ Attention :</strong> Pour pouvoir postuler à un appel d'offres, vous devez d'abord remplir un formulaire d'inscription :
+                                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+                                        <li><a href="{% url 'acteurs:enregistrement' %}" style="color: #006233; text-decoration: underline;">Acteur économique</a></li>
+                                        <li><a href="{% url 'acteurs:inscription_institutions' %}" style="color: #006233; text-decoration: underline;">Institution financière</a></li>
+                                        <li><a href="{% url 'emploi:inscription_jeunes' %}" style="color: #006233; text-decoration: underline;">Jeune en quête d'emploi</a></li>
+                                        <li><a href="{% url 'emploi:inscription_retraites' %}" style="color: #006233; text-decoration: underline;">Retraité actif</a></li>
+                                    </ul>
+                                </div>
+                                {% endif %}
                             {% else %}
                             <div class="btn btn-disabled">
                                 Candidature fermée
