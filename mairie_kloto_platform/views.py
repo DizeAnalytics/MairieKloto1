@@ -217,9 +217,13 @@ def tableau_bord(request):
         'visites': get_counts(VisiteSite.objects.all(), 'date'),
     }
     
+    # Nombre total de visites sur les 30 derniers jours (toutes pages confondues)
+    total_visites_30j = VisiteSite.objects.filter(date__gte=start_date, date__lte=end_date).count()
+
     context = {
         'stats': stats,
         'chart_data_json': json.dumps(chart_data, cls=DjangoJSONEncoder),
+        'total_visites_30j': total_visites_30j,
     }
     
     return render(request, "admin/tableau_bord.html", context)
