@@ -432,9 +432,17 @@ def liste_candidatures(request):
         if candidature.statut == 'acceptee':
             appels_offres_avec_candidatures[appel_id]['nb_acceptees'] += 1
     
+    # Créer une liste triée des appels d'offres avec candidatures acceptées pour faciliter l'affichage
+    appels_avec_acceptees = [
+        (appel_id, info) 
+        for appel_id, info in appels_offres_avec_candidatures.items() 
+        if info['nb_acceptees'] > 0
+    ]
+    
     context = {
         'candidatures': candidatures,
         'appels_offres_avec_candidatures': appels_offres_avec_candidatures,
+        'appels_avec_acceptees': appels_avec_acceptees,
         'titre': 'Candidatures aux Appels d\'Offres',
         'statut_choices': Candidature.STATUT_CANDIDATURE,
         'current_filters': {
