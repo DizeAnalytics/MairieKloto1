@@ -420,8 +420,21 @@ def liste_candidatures(request):
     if statut:
         candidatures = candidatures.filter(statut=statut)
     
+    # Grouper les candidatures par appel d'offres et compter les acceptées
+    appels_offres_avec_candidatures = {}
+    for candidature in candidatures:
+        appel_id = candidature.appel_offre.id
+        if appel_id not in appels_offres_avec_candidatures:
+            appels_offres_avec_candidatures[appel_id] = {
+                'appel_offre': candidature.appel_offre,
+                'nb_acceptees': 0
+            }
+        if candidature.statut == 'acceptee':
+            appels_offres_avec_candidatures[appel_id]['nb_acceptees'] += 1
+    
     context = {
         'candidatures': candidatures,
+        'appels_offres_avec_candidatures': appels_offres_avec_candidatures,
         'titre': 'Candidatures aux Appels d\'Offres',
         'statut_choices': Candidature.STATUT_CANDIDATURE,
         'current_filters': {
@@ -435,47 +448,28 @@ def liste_candidatures(request):
 
 @login_required
 @user_passes_test(is_staff_user)
-def export_pdf_candidatures(request):
+def export_pdf_candidatures(request, appel_offre_id):
     """
-    Génère un PDF des candidatures acceptées.
-    Tient compte des filtres de recherche (q, statut) de la liste.
+    Génère un PDF des candidatures acceptées pour un appel d'offres spécifique.
     """
-
-    candidatures = Candidature.objects.filter(statut="acceptee").select_related(
-        "appel_offre", "candidat"
-    )
-
-    # Récupération éventuelle des filtres pour rester cohérent avec la liste
-    q = request.GET.get("q", "")
-    statut = request.GET.get("statut", "")
-
-    if q:
-        candidatures = candidatures.filter(
-            Q(appel_offre__titre__icontains=q)
-            | Q(appel_offre__reference__icontains=q)
-            | Q(candidat__first_name__icontains=q)
-            | Q(candidat__last_name__icontains=q)
-            | Q(candidat__email__icontains=q)
-        )
-
-    # Le PDF est réservé aux candidatures acceptées, on ignore un éventuel filtre différent
-    if statut and statut != "acceptee":
-        candidatures = candidatures.none()
-
-    candidatures = candidatures.order_by("-date_soumission")
+    appel_offre = get_object_or_404(AppelOffre, pk=appel_offre_id)
+    
+    candidatures = Candidature.objects.filter(
+        appel_offre=appel_offre,
+        statut="acceptee"
+    ).select_related("appel_offre", "candidat").order_by("-date_soumission")
 
     if not candidatures.exists():
         messages.warning(
             request,
-            "Aucun dossier accepté ne correspond aux filtres actuels.",
+            f"Aucun dossier accepté pour l'appel d'offres '{appel_offre.titre}'.",
         )
         return redirect("liste_candidatures")
 
     conf = ConfigurationMairie.objects.filter(est_active=True).first()
     response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = (
-        'attachment; filename="candidatures_acceptees.pdf"'
-    )
+    filename = _make_pdf_filename("candidatures-acceptees", appel_offre.reference or appel_offre.titre)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     doc = SimpleDocTemplate(response, pagesize=landscape(A4))
     styles = getSampleStyleSheet()
@@ -488,21 +482,15 @@ def export_pdf_candidatures(request):
         spaceAfter=12,
     )
     story = [
-        Paragraph("Candidatures acceptées aux appels d'offres", title_style),
-        Spacer(1, 0.4 * cm),
+        Paragraph("Candidatures acceptées", title_style),
+        Paragraph(f"Appel d'offres : {escape(appel_offre.titre)}", styles["Heading2"]),
+        Spacer(1, 0.2 * cm),
     ]
-
-    # En-tête rappelant les filtres utilisés
-    if q or statut:
-        filtres_text = []
-        if q:
-            filtres_text.append(f"Recherche : {escape(q)}")
-        if statut:
-            # On affiche le libellé si possible
-            statut_label = dict(Candidature.STATUT_CANDIDATURE).get(statut, statut)
-            filtres_text.append(f"Statut filtré : {escape(statut_label)}")
-        story.append(Paragraph("Filtres : " + " | ".join(filtres_text), styles["Normal"]))
-        story.append(Spacer(1, 0.2 * cm))
+    
+    if appel_offre.reference:
+        story.append(Paragraph(f"Référence : {escape(appel_offre.reference)}", styles["Normal"]))
+    
+    story.append(Spacer(1, 0.4 * cm))
 
     # Tableau : Nom de l'entreprise ou Nom & Prénoms du candidat, Email, Date soumission, Téléphone
     data = [["Nom / Raison sociale", "Email", "Date de soumission", "Téléphone"]]

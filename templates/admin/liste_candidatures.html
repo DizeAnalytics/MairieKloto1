@@ -318,10 +318,22 @@
 
                 <button type="submit" class="btn-search">Filtrer</button>
                 <a href="{% url 'liste_candidatures' %}" class="btn-reset">Réinitialiser</a>
-                <a href="{% url 'export_pdf_candidatures' %}?q={{ current_filters.q }}&statut={{ current_filters.statut }}" class="btn-reset btn-export">
-                    📄 PDF dossiers acceptés
-                </a>
             </form>
+            
+            {% if appels_offres_avec_candidatures %}
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
+                <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.1rem;">📄 Générer PDF des dossiers acceptés par appel d'offres</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                    {% for appel_id, info in appels_offres_avec_candidatures.items %}
+                        {% if info.nb_acceptees > 0 %}
+                        <a href="{% url 'export_pdf_candidatures' appel_id %}" class="btn-reset btn-export" style="margin: 0;">
+                            📄 {{ info.appel_offre.titre|truncatewords:5 }} ({{ info.nb_acceptees }} accepté{{ info.nb_acceptees|pluralize:"e,és" }})
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="table-container">
