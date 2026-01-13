@@ -590,10 +590,16 @@
                 </div>
 
                 <!-- Section 4: Localisation -->
-                <div class="section-title">4. Localisation</div>
+                <div class="section-title">4. Localisation et Présence</div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Quartier <span class="required">*</span></label>
+                        <label>Situation géographique <span class="required">*</span></label>
+                        {{ form.situation }}
+                        <span class="helper-text">Précisez si l'entreprise est située dans la commune ou hors commune.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quartier <span class="required">*</span> <small>(obligatoire si dans la commune)</small></label>
                         {{ form.quartier }}
                         <span class="error-message">Ce champ est obligatoire</span>
                     </div>

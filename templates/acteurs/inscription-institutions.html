@@ -597,7 +597,13 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Quartier <span class="required">*</span></label>
+                        <label>Situation géographique <span class="required">*</span></label>
+                        {{ form.situation }}
+                        <span class="helper-text">Indiquez si l'institution est basée dans la commune ou hors commune.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quartier <span class="required">*</span> <small>(obligatoire si dans la commune)</small></label>
                         {{ form.quartier }}
                     </div>
 

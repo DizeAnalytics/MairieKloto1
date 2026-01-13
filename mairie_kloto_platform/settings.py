@@ -38,8 +38,9 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',          # Thème moderne pour l'admin Django
     'admin_interface',  # Doit être avant django.contrib.admin
-    'colorfield',  # Dépendance de admin_interface
+    'colorfield',       # Dépendance de admin_interface
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

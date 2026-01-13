@@ -46,6 +46,7 @@ class ActeurEconomiqueForm(forms.ModelForm):
             "quartier",
             "canton",
             "adresse_complete",
+            "situation",
             "nombre_employes",
             "chiffre_affaires",
             "doc_registre",
@@ -73,18 +74,26 @@ class ActeurEconomiqueForm(forms.ModelForm):
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
         username = cleaned_data.get("username")
+        situation = cleaned_data.get("situation")
+        quartier = cleaned_data.get("quartier")
+        situation = cleaned_data.get("situation")
+        quartier = cleaned_data.get("quartier")
 
         if username and User.objects.filter(username=username).exists():
             self.add_error('username', "Ce nom d'utilisateur est déjà utilisé.")
 
         if password and confirm_password and password != confirm_password:
             self.add_error('confirm_password', "Les mots de passe ne correspondent pas.")
+
+        if situation == "dans_commune" and not quartier:
+            self.add_error("quartier", "Veuillez renseigner le quartier pour une entreprise dans la commune.")
         
         return cleaned_data
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        self.fields["quartier"].required = False
         if self.user and self.user.is_authenticated:
             if 'username' in self.fields:
                 del self.fields['username']
@@ -132,6 +141,7 @@ class ActeurEconomiqueEditForm(forms.ModelForm):
             "quartier",
             "canton",
             "adresse_complete",
+            "situation",
             "nombre_employes",
             "chiffre_affaires",
             "doc_registre",
@@ -153,6 +163,20 @@ class ActeurEconomiqueEditForm(forms.ModelForm):
             "numero_carte_operateur": "N° Carte d'Opérateur économique",
             "nif": "NIF",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["quartier"].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        situation = cleaned_data.get("situation")
+        quartier = cleaned_data.get("quartier")
+
+        if situation == "dans_commune" and not quartier:
+            self.add_error("quartier", "Veuillez renseigner le quartier pour une entreprise dans la commune.")
+
+        return cleaned_data
 
 
 class InstitutionFinanciereForm(forms.ModelForm):
@@ -219,6 +243,7 @@ class InstitutionFinanciereForm(forms.ModelForm):
             "quartier",
             "canton",
             "adresse_complete",
+            "situation",
             "nombre_agences",
             "horaires",
             "doc_agrement",
@@ -255,12 +280,16 @@ class InstitutionFinanciereForm(forms.ModelForm):
 
         if password and confirm_password and password != confirm_password:
             self.add_error('confirm_password', "Les mots de passe ne correspondent pas.")
+
+        if situation == "dans_commune" and not quartier:
+            self.add_error("quartier", "Veuillez renseigner le quartier pour une institution située dans la commune.")
         
         return cleaned_data
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        self.fields["quartier"].required = False
         if self.user and self.user.is_authenticated:
             if 'username' in self.fields:
                 del self.fields['username']
@@ -319,6 +348,7 @@ class InstitutionFinanciereEditForm(forms.ModelForm):
             "quartier",
             "canton",
             "adresse_complete",
+            "situation",
             "nombre_agences",
             "horaires",
             "doc_agrement",
@@ -346,8 +376,19 @@ class InstitutionFinanciereEditForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["quartier"].required = False
         if self.instance and self.instance.pk and self.instance.services:
             self.initial['services'] = self.instance.services.split(',')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        situation = cleaned_data.get("situation")
+        quartier = cleaned_data.get("quartier")
+
+        if situation == "dans_commune" and not quartier:
+            self.add_error("quartier", "Veuillez renseigner le quartier pour une institution située dans la commune.")
+
+        return cleaned_data
 
 
 class SiteTouristiqueForm(forms.ModelForm):

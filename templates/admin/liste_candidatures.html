@@ -210,6 +210,16 @@
             background: #d32f2f;
         }
 
+        .btn-export {
+            background: var(--secondary);
+            color: var(--dark);
+            margin-left: 0.5rem;
+        }
+
+        .btn-export:hover {
+            background: #e6b800;
+        }
+
         .btn-action {
             width: 30px;
             height: 30px;
@@ -235,6 +245,15 @@
 
         .btn-reject {
             background-color: var(--accent);
+        }
+
+        .btn-pdf {
+            background-color: #6c757d;
+            text-decoration: none;
+        }
+
+        .btn-pdf:hover {
+            background-color: #5a6268;
         }
 
         .btn-download:hover {
@@ -299,6 +318,9 @@
 
                 <button type="submit" class="btn-search">Filtrer</button>
                 <a href="{% url 'liste_candidatures' %}" class="btn-reset">Réinitialiser</a>
+                <a href="{% url 'export_pdf_candidatures' %}?q={{ current_filters.q }}&statut={{ current_filters.statut }}" class="btn-reset btn-export">
+                    📄 PDF dossiers acceptés
+                </a>
             </form>
         </div>
 

@@ -232,6 +232,15 @@
             background-color: var(--accent);
         }
 
+        .btn-pdf {
+            background-color: #6c757d;
+            text-decoration: none;
+        }
+
+        .btn-pdf:hover {
+            background-color: #5a6268;
+        }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -342,6 +351,11 @@
                                     {% csrf_token %}
                                     <button type="submit" class="btn-action btn-reject" title="Refuser">✗</button>
                                 </form>
+                                {% if type_profil == 'jeune' %}
+                                <a href="{% url 'export_pdf_jeune_detail' profil.pk %}" class="btn-action btn-pdf" title="Générer PDF">📄</a>
+                                {% elif type_profil == 'retraite' %}
+                                <a href="{% url 'export_pdf_retraite_detail' profil.pk %}" class="btn-action btn-pdf" title="Générer PDF">📄</a>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

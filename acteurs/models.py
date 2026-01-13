@@ -75,6 +75,11 @@ class ActeurEconomique(models.Model):
         ("100M+", "Plus de 100 millions"),
     ]
 
+    SITUATION_CHOICES = [
+        ("dans_commune", "Dans la commune"),
+        ("hors_commune", "Hors commune"),
+    ]
+
     raison_sociale = models.CharField(max_length=255)
     sigle = models.CharField(max_length=50, blank=True)
     type_acteur = models.CharField(max_length=20, choices=TYPE_ACTEUR_CHOICES)
@@ -101,6 +106,9 @@ class ActeurEconomique(models.Model):
     quartier = models.CharField(max_length=255)
     canton = models.CharField(max_length=100, blank=True)
     adresse_complete = models.TextField()
+    situation = models.CharField(
+        max_length=20, choices=SITUATION_CHOICES, default="dans_commune"
+    )
 
     nombre_employes = models.CharField(
         max_length=20, choices=NB_EMPLOYES_CHOICES, blank=True
@@ -148,6 +156,7 @@ class InstitutionFinanciere(models.Model):
         ("investissement", "Société d'investissement"),
         ("autre", "Autre"),
     ]
+    SITUATION_CHOICES = ActeurEconomique.SITUATION_CHOICES
 
     type_institution = models.CharField(max_length=30, choices=TYPE_INSTITUTION_CHOICES)
     nom_institution = models.CharField(max_length=255)
@@ -174,6 +183,9 @@ class InstitutionFinanciere(models.Model):
     quartier = models.CharField(max_length=255)
     canton = models.CharField(max_length=100, blank=True)
     adresse_complete = models.TextField()
+    situation = models.CharField(
+        max_length=20, choices=SITUATION_CHOICES, default="dans_commune"
+    )
     nombre_agences = models.PositiveIntegerField(blank=True, null=True)
     horaires = models.CharField(max_length=255)
 

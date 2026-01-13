@@ -276,18 +276,48 @@ def soumettre_candidature(request, pk: int):
     """Permet à un utilisateur de soumettre une candidature pour un appel d'offres."""
     appel = get_object_or_404(AppelOffre, pk=pk, est_publie_sur_site=True)
     
-    # Vérifier si l'utilisateur a un profil (acteur économique, institution financière, jeune ou retraité)
-    # Vérification directe dans la base de données pour éviter les exceptions RelatedObjectDoesNotExist
-    has_profile = (
-        ActeurEconomique.objects.filter(user=request.user).exists() or
-        InstitutionFinanciere.objects.filter(user=request.user).exists() or
-        ProfilEmploi.objects.filter(user=request.user).exists()
-    )
+    # Récupérer les profils éventuels de l'utilisateur
+    acteur = ActeurEconomique.objects.filter(user=request.user).first()
+    institution = InstitutionFinanciere.objects.filter(user=request.user).first()
+    profil_emploi = ProfilEmploi.objects.filter(user=request.user).first()
+
+    # Vérifier si l'utilisateur a AU MOINS un profil (acteur économique, institution financière, jeune ou retraité)
+    has_profile = any([acteur, institution, profil_emploi])
     
     if not has_profile:
         messages.error(
             request, 
             "Vous devez d'abord remplir un formulaire d'inscription (Acteur économique, Institution financière, Jeune ou Retraité) avant de pouvoir postuler à un appel d'offres."
+        )
+        return redirect('mairie:appel_offre_detail', pk=pk)
+
+    # Vérifier que le type de profil correspond au public cible de l'appel d'offres
+    public = appel.public_cible
+    autorise = False
+
+    if public == "tous":
+        autorise = True
+    elif public == "entreprises":
+        # Réservé aux acteurs économiques (entreprises / acteurs économiques)
+        autorise = acteur is not None
+    elif public == "institutions":
+        # Réservé aux institutions financières
+        autorise = institution is not None
+    elif public == "entreprises_institutions":
+        # Réservé aux acteurs économiques ET/OU institutions financières
+        autorise = (acteur is not None) or (institution is not None)
+    elif public == "jeunes":
+        # Réservé aux profils emploi de type "jeune"
+        autorise = profil_emploi is not None and profil_emploi.type_profil == "jeune"
+    elif public == "retraites":
+        # Réservé aux profils emploi de type "retraite"
+        autorise = profil_emploi is not None and profil_emploi.type_profil == "retraite"
+
+    if not autorise:
+        messages.error(
+            request,
+            f"Cet appel d'offres est réservé au public suivant : {appel.get_public_cible_display()}. "
+            "Votre type de profil ne correspond pas."
         )
         return redirect('mairie:appel_offre_detail', pk=pk)
     
@@ -297,6 +327,7 @@ def soumettre_candidature(request, pk: int):
         messages.error(request, "Cet appel d'offres n'est plus ouvert aux candidatures.")
         return redirect('mairie:appel_offre_detail', pk=pk)
 
+    # Empêcher plusieurs candidatures du même utilisateur pour le même appel d'offres
     if Candidature.objects.filter(appel_offre=appel, candidat=request.user).exists():
         messages.warning(request, "Vous avez déjà soumis une candidature pour cet appel d'offres.")
         return redirect('mairie:appel_offre_detail', pk=pk)

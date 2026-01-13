@@ -217,6 +217,7 @@ class AppelOffre(models.Model):
     PUBLIC_CIBLE_CHOICES = [
         ("entreprises", "Entreprises / Acteurs économiques"),
         ("institutions", "Institutions financières"),
+        ("entreprises_institutions", "Entreprises et Institutions financières"),
         ("jeunes", "Jeunes en quête d'emploi"),
         ("retraites", "Retraités actifs"),
         ("tous", "Tout le monde"),
@@ -240,7 +241,7 @@ class AppelOffre(models.Model):
     )
 
     public_cible = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=PUBLIC_CIBLE_CHOICES,
         default="tous",
         help_text="Public principalement visé par cet appel d'offres.",

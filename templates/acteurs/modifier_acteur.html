@@ -185,10 +185,14 @@
                     </div>
                 </div>
 
-                <div class="section-title">4. Localisation</div>
+                <div class="section-title">4. Localisation et Présence</div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Quartier <span class="required">*</span></label>
+                        <label>Situation géographique <span class="required">*</span></label>
+                        {{ form.situation }}
+                    </div>
+                    <div class="form-group">
+                        <label>Quartier <span class="required">*</span> <small>(obligatoire si dans la commune)</small></label>
                         {{ form.quartier }}
                     </div>
                     <div class="form-group">
