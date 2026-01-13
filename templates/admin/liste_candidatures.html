@@ -320,39 +320,28 @@
                 <a href="{% url 'liste_candidatures' %}" class="btn-reset">Réinitialiser</a>
             </form>
             
-            {% if appels_offres_avec_candidatures %}
-            {% with has_acceptees=False %}
-                {% for appel_id, info in appels_offres_avec_candidatures.items %}
-                    {% if info.nb_acceptees > 0 %}
-                        {% with has_acceptees=True %}{% endwith %}
+            {% if appels_avec_acceptees %}
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
+                <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.1rem;">
+                    📄 Générer PDF des dossiers acceptés par appel d'offres
+                    {% if current_filters.q %}
+                        <span style="font-size: 0.9rem; font-weight: normal; color: #666;">(filtré: "{{ current_filters.q }}")</span>
                     {% endif %}
-                {% endfor %}
-            {% endwith %}
-            {% for appel_id, info in appels_offres_avec_candidatures.items %}
-                {% if info.nb_acceptees > 0 %}
-                    {% if forloop.first %}
-                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
-                        <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.1rem;">
-                            📄 Générer PDF des dossiers acceptés par appel d'offres
-                            {% if current_filters.q %}
-                                <span style="font-size: 0.9rem; font-weight: normal; color: #666;">(filtré: "{{ current_filters.q }}")</span>
-                            {% endif %}
-                        </h3>
-                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-                    {% endif %}
-                            <a href="{% url 'export_pdf_candidatures' appel_id %}" class="btn-reset btn-export" style="margin: 0;">
-                                📄 {{ info.appel_offre.titre|truncatewords:5 }} ({{ info.nb_acceptees }} accepté{{ info.nb_acceptees|pluralize:"e,és" }})
-                            </a>
-                {% endif %}
-            {% endfor %}
-            {% for appel_id, info in appels_offres_avec_candidatures.items %}
-                {% if info.nb_acceptees > 0 %}
-                    {% if forloop.last %}
-                        </div>
-                    </div>
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
+                </h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                    {% for appel_id, info in appels_avec_acceptees %}
+                        <a href="{% url 'export_pdf_candidatures' appel_id %}" class="btn-reset btn-export" style="margin: 0;">
+                            📄 {{ info.appel_offre.titre|truncatewords:5 }} ({{ info.nb_acceptees }} accepté{{ info.nb_acceptees|pluralize:"e,és" }})
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% elif current_filters.q %}
+            <div style="margin-top: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                <p style="color: #856404; margin: 0;">
+                    ℹ️ Aucun appel d'offres avec candidatures acceptées trouvé pour "{{ current_filters.q }}".
+                </p>
+            </div>
             {% endif %}
         </div>
 
