@@ -1,15 +1,16 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views import View
-from .models import Notification
 from django.views.decorators.http import require_http_methods
-from django.shortcuts import get_object_or_404
+
+from .models import Notification
+from mairie.models import CampagnePublicitaire
+from mairie.forms import CampagnePublicitaireForm, PubliciteForm
 
 User = get_user_model()
 
@@ -78,23 +79,52 @@ def profil(request):
     """Vue pour afficher le profil de l'utilisateur (Mon compte)."""
     user = request.user
     context = {}
-    
+
+    can_request_ads = False
+    campagne_publicitaire = None
+    can_create_ads = False
+    campagne_peut_renouveler = False
+
     # Vérifier les profils liés
-    if hasattr(user, 'acteur_economique'):
+    if hasattr(user, 'acteur_economique') and user.acteur_economique:
         context['profile'] = user.acteur_economique
         context['profile_type'] = 'Acteur Économique'
         context['status'] = user.acteur_economique.est_valide_par_mairie
-    elif hasattr(user, 'institution_financiere'):
+        can_request_ads = bool(user.acteur_economique.est_valide_par_mairie)
+    elif hasattr(user, 'institution_financiere') and user.institution_financiere:
         context['profile'] = user.institution_financiere
         context['profile_type'] = 'Institution Financière'
         context['status'] = user.institution_financiere.est_valide_par_mairie
-    elif hasattr(user, 'profil_emploi'):
+        can_request_ads = bool(user.institution_financiere.est_valide_par_mairie)
+    elif hasattr(user, 'profil_emploi') and user.profil_emploi:
         context['profile'] = user.profil_emploi
         context['profile_type'] = user.profil_emploi.get_type_profil_display()
         context['status'] = user.profil_emploi.est_valide_par_mairie
     else:
         context['profile'] = None
         context['profile_type'] = 'Utilisateur standard'
+
+    # Campagne publicitaire éventuelle pour ce compte
+    if can_request_ads:
+        campagne_publicitaire = (
+            CampagnePublicitaire.objects.filter(proprietaire=user)
+            .order_by('-date_demande')
+            .first()
+        )
+        if campagne_publicitaire and campagne_publicitaire.peut_creer_publicites:
+            can_create_ads = True
+        # Une campagne peut être renouvelée si elle est terminée ou si sa période est échue
+        if campagne_publicitaire:
+            from django.utils import timezone
+            maintenant = timezone.now()
+            if (
+                campagne_publicitaire.statut == "terminee"
+                or (
+                    campagne_publicitaire.date_fin
+                    and campagne_publicitaire.date_fin < maintenant
+                )
+            ):
+                campagne_peut_renouveler = True
 
     # Récupérer les candidatures aux appels d'offres
     # On importe ici pour éviter les imports circulaires
@@ -106,7 +136,12 @@ def profil(request):
     notifications = Notification.objects.filter(recipient=user).order_by('-created_at')
     context['notifications'] = notifications
     context['notifications_unread_count'] = notifications.filter(is_read=False).count()
-    
+
+    context['can_request_ads'] = can_request_ads
+    context['campagne_publicitaire'] = campagne_publicitaire
+    context['can_create_ads'] = can_create_ads
+    context['campagne_peut_renouveler'] = campagne_peut_renouveler
+
     return render(request, 'comptes/profil.html', context)
 
 
@@ -169,3 +204,105 @@ class UserAutocompleteView(View):
             })
         
         return JsonResponse({'results': results})
+
+
+@login_required
+def demander_campagne_publicitaire(request):
+    """Permet à une entreprise / institution financière de demander une campagne de publicité."""
+
+    user = request.user
+
+    # Vérifier le type de profil et la validation par la mairie
+    profil_valide = False
+    if hasattr(user, "acteur_economique") and user.acteur_economique:
+        profil_valide = bool(user.acteur_economique.est_valide_par_mairie)
+    elif hasattr(user, "institution_financiere") and user.institution_financiere:
+        profil_valide = bool(user.institution_financiere.est_valide_par_mairie)
+
+    if not profil_valide:
+        messages.error(
+            request,
+            "Votre compte doit être validé par la mairie pour pouvoir demander une campagne de publicité.",
+        )
+        return redirect("comptes:profil")
+
+    # Empêcher plusieurs campagnes simultanées non terminées
+    campagne_existante = CampagnePublicitaire.objects.filter(
+        proprietaire=user
+    ).exclude(statut="terminee").first()
+    if campagne_existante:
+        messages.warning(
+            request,
+            "Vous avez déjà une campagne de publicité en cours ou en attente. "
+            "Merci de contacter la mairie si vous souhaitez la modifier.",
+        )
+        return redirect("comptes:profil")
+
+    if request.method == "POST":
+        form = CampagnePublicitaireForm(request.POST)
+        if form.is_valid():
+            campagne = form.save(commit=False)
+            campagne.proprietaire = user
+            campagne.statut = "demande"
+            campagne.save()
+            messages.success(
+                request,
+                "Votre demande de campagne publicitaire a été transmise à la mairie. "
+                "Vous serez informé(e) lorsque le maire l'aura validée.",
+            )
+            return redirect("comptes:profil")
+    else:
+        form = CampagnePublicitaireForm()
+
+    return render(request, "comptes/demande_publicite.html", {"form": form})
+
+
+@login_required
+def creer_publicite(request):
+    """Permet de créer une publicité une fois la campagne payée / active."""
+
+    user = request.user
+
+    campagne = (
+        CampagnePublicitaire.objects.filter(
+            proprietaire=user,
+            statut__in=["payee", "active"],
+        )
+        .order_by("-date_demande")
+        .first()
+    )
+
+    if not campagne or not campagne.peut_creer_publicites:
+        messages.error(
+            request,
+            "Vous ne pouvez pas encore créer de publicité. "
+            "La mairie doit d'abord accepter votre demande et enregistrer votre paiement.",
+        )
+        return redirect("comptes:profil")
+
+    if request.method == "POST":
+        form = PubliciteForm(request.POST, request.FILES)
+        if form.is_valid():
+            pub = form.save(commit=False)
+            pub.campagne = campagne
+            if not pub.date_debut:
+                pub.date_debut = timezone.now()
+            if not pub.date_fin and campagne.duree_jours:
+                pub.date_fin = pub.date_debut + timezone.timedelta(days=campagne.duree_jours)
+            pub.save()
+            messages.success(
+                request,
+                "Votre publicité a été créée avec succès. Elle sera affichée sur le site durant la période définie.",
+            )
+            return redirect("comptes:profil")
+    else:
+        form = PubliciteForm()
+
+    return render(
+        request,
+        "comptes/creer_publicite.html",
+        {
+            "form": form,
+            "campagne": campagne,
+        },
+    )

@@ -9,6 +9,8 @@ from .models import (
     AppelOffre,
     ImageCarousel,
     ConfigurationMairie,
+    CampagnePublicitaire,
+    Publicite,
 )
 
 
@@ -333,3 +335,109 @@ class ImageCarouselAdmin(admin.ModelAdmin):
                     "Désactivez d'abord une image existante."
                 )
         super().save_model(request, obj, form, change)
+
+
+@admin.register(CampagnePublicitaire)
+class CampagnePublicitaireAdmin(admin.ModelAdmin):
+    """Administration des campagnes publicitaires achetées par les entreprises / institutions."""
+
+    list_display = (
+        "titre",
+        "proprietaire",
+        "statut",
+        "montant",
+        "duree_jours",
+        "date_demande",
+        "date_debut",
+        "date_fin",
+    )
+    list_filter = ("statut", "date_demande", "date_debut", "date_fin")
+    search_fields = ("titre", "proprietaire__username", "proprietaire__email")
+
+    fieldsets = (
+        (
+            "Informations générales",
+            {
+                "fields": (
+                    "proprietaire",
+                    "titre",
+                    "description",
+                )
+            },
+        ),
+        (
+            "Paramètres de diffusion",
+            {
+                "fields": (
+                    "duree_jours",
+                    "montant",
+                    "statut",
+                    "date_debut",
+                    "date_fin",
+                )
+            },
+        ),
+        (
+            "Suivi",
+            {
+                "fields": (
+                    "date_demande",
+                )
+            },
+        ),
+    )
+
+    readonly_fields = ("date_demande",)
+
+
+@admin.register(Publicite)
+class PubliciteAdmin(admin.ModelAdmin):
+    """Administration des publicités affichées sur le site."""
+
+    list_display = (
+        "titre",
+        "campagne",
+        "est_active",
+        "ordre_priorite",
+        "date_debut",
+        "date_fin",
+        "date_creation",
+    )
+    list_filter = ("est_active", "date_debut", "date_fin", "campagne__statut")
+    search_fields = ("titre", "campagne__titre", "campagne__proprietaire__username")
+
+    fieldsets = (
+        (
+            "Contenu",
+            {
+                "fields": (
+                    "campagne",
+                    "titre",
+                    "texte",
+                    "image",
+                    "url_cible",
+                )
+            },
+        ),
+        (
+            "Diffusion",
+            {
+                "fields": (
+                    "est_active",
+                    "ordre_priorite",
+                    "date_debut",
+                    "date_fin",
+                )
+            },
+        ),
+        (
+            "Suivi",
+            {
+                "fields": (
+                    "date_creation",
+                )
+            },
+        ),
+    )
+
+    readonly_fields = ("date_creation",)

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 2.5rem auto; padding: 0 1.5rem;">
+    <div style="display:flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="color: var(--primary); margin-bottom: 0.3rem; font-size: 1.8rem;">
+                Demande de campagne publicitaire
+            </h1>
+            <p style="color: #666; max-width: 600px; font-size: 0.95rem;">
+                Mettez en avant votre entreprise ou institution financière sur le portail de la mairie.
+                La mairie validera votre demande et vous communiquera les modalités de paiement.
+            </p>
+        </div>
+        <div style="background: #e8f5e9; border-radius: 999px; padding: 0.6rem 1.1rem; font-size: 0.9rem; color: #1b5e20; display:flex; align-items:center; gap:0.4rem;">
+            <span>✅</span>
+            <span>Compte déjà validé par la mairie</span>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: minmax(0, 2.3fr) minmax(0, 1.7fr); gap: 1.75rem;">
+        <!-- Formulaire -->
+        <div style="background: #ffffff; padding: 2rem 1.75rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid #f1f5f9;">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div style="margin-bottom: 1.4rem;">
+                    <label for="{{ form.titre.id_for_label }}" style="display:block; font-weight:600; color:#111827; margin-bottom:0.35rem; font-size:0.95rem;">
+                        Titre de la campagne
+                    </label>
+                    <div style="position:relative;">
+                        {{ form.titre }}
+                    </div>
+                    <small style="display:block; color:#6b7280; margin-top:0.25rem; font-size:0.8rem;">
+                        Exemple&nbsp;: «&nbsp;Campagne rentrée scolaire 2026&nbsp;», «&nbsp;Offre spéciale fin d’année&nbsp;», etc.
+                    </small>
+                    {% if form.titre.errors %}
+                        <div style="color:#b91c1c; margin-top:0.3rem; font-size:0.8rem;">
+                            {{ form.titre.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 1.4rem;">
+                    <label for="{{ form.description.id_for_label }}" style="display:block; font-weight:600; color:#111827; margin-bottom:0.35rem; font-size:0.95rem;">
+                        Description de la campagne
+                    </label>
+                    {{ form.description }}
+                    <small style="display:block; color:#6b7280; margin-top:0.25rem; font-size:0.8rem;">
+                        Présentez en quelques lignes l’objectif de la campagne, les produits ou services concernés, la période souhaitée, etc.
+                    </small>
+                    {% if form.description.errors %}
+                        <div style="color:#b91c1c; margin-top:0.3rem; font-size:0.8rem;">
+                            {{ form.description.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div style="margin-bottom: 1.4rem;">
+                    <label for="{{ form.duree_jours.id_for_label }}" style="display:block; font-weight:600; color:#111827; margin-bottom:0.35rem; font-size:0.95rem;">
+                        Durée souhaitée (en jours)
+                    </label>
+                    <div style="display:flex; align-items:center; gap:0.5rem; max-width: 220px;">
+                        {{ form.duree_jours }}
+                        <span style="font-size:0.85rem; color:#6b7280;">jours</span>
+                    </div>
+                    <small style="display:block; color:#6b7280; margin-top:0.25rem; font-size:0.8rem;">
+                        La durée exacte et le montant seront confirmés par la mairie.
+                    </small>
+                    {% if form.duree_jours.errors %}
+                        <div style="color:#b91c1c; margin-top:0.3rem; font-size:0.8rem;">
+                            {{ form.duree_jours.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top: 2rem;">
+                    <a href="{% url 'comptes:profil' %}"
+                       class="btn btn-secondary"
+                       style="padding:0.55rem 1.3rem; font-size:0.9rem;">
+                        Annuler
+                    </a>
+                    <button type="submit"
+                            class="btn btn-primary"
+                            style="padding:0.55rem 1.5rem; font-size:0.9rem; font-weight:600;">
+                        Envoyer la demande
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Panneau d'information -->
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div style="background: linear-gradient(135deg, #006233, #059669); color:#ecfdf5; border-radius:16px; padding:1.5rem 1.6rem; box-shadow:0 10px 25px rgba(4, 120, 87, 0.35);">
+                <h2 style="font-size:1.1rem; margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
+                    <span>ℹ️</span>
+                    <span>Comment ça marche&nbsp;?</span>
+                </h2>
+                <ol style="margin:0; padding-left:1.2rem; font-size:0.9rem;">
+                    <li style="margin-bottom:0.25rem;">Vous envoyez votre demande de campagne via ce formulaire.</li>
+                    <li style="margin-bottom:0.25rem;">La mairie étudie votre demande et la valide si elle est conforme.</li>
+                    <li style="margin-bottom:0.25rem;">Vous réglez le montant indiqué à la mairie.</li>
+                    <li>Vous pourrez ensuite créer vos publicités qui s’afficheront sur le site.</li>
+                </ol>
+            </div>
+
+            <div style="background:#f9fafb; border-radius:16px; padding:1.3rem 1.4rem; border:1px dashed #d1d5db; font-size:0.9rem; color:#4b5563;">
+                <p style="margin:0 0 0.4rem 0; font-weight:600; color:#111827;">Conseils pour une bonne campagne</p>
+                <ul style="margin:0; padding-left:1.1rem;">
+                    <li>Choisissez un titre clair et accrocheur.</li>
+                    <li>Précisez vos offres (promotion, nouveauté, événement, etc.).</li>
+                    <li>Indiquez la période idéale (ex.&nbsp;: fêtes, vacances, rentrée…).</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

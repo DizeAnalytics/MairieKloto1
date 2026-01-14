@@ -613,6 +613,183 @@
         {% endif %}
     </div>
 
+    {# Modale de publicité aléatoire (désormais injectée globalement via base.html) #}
+    {% if publicite_aleatoire %}
+    <style>
+        .pub-modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .pub-modal {
+            background: #ffffff;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: pubModalFadeIn 0.4s ease-out;
+        }
+        .pub-modal-header {
+            background: var(--primary);
+            color: #ffffff;
+            padding: 1rem 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pub-modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .pub-modal-close {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+        .pub-modal-body {
+            padding: 1.2rem;
+        }
+        .pub-modal-main {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            margin-bottom: 0.8rem;
+        }
+        .pub-modal-image {
+            flex: 0 0 120px;
+        }
+        .pub-modal-image img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .pub-modal-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .pub-modal-company-name {
+            font-weight: 600;
+            color: #111827;
+        }
+        .pub-modal-contacts {
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+        .pub-modal-logo {
+            max-width: 80px;
+            max-height: 40px;
+            object-fit: contain;
+        }
+        @media (max-width: 480px) {
+            .pub-modal-main {
+                flex-direction: column;
+            }
+            .pub-modal-image {
+                flex: none;
+                width: 100%;
+            }
+        }
+        .pub-modal-actions {
+            padding: 0 1.2rem 1.2rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        .pub-modal-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .pub-modal-btn-primary {
+            background: var(--secondary);
+            color: var(--dark);
+            font-weight: 600;
+        }
+        .pub-modal-btn-secondary {
+            background: #f0f0f0;
+            color: #555;
+        }
+        @keyframes pubModalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <div class="pub-modal-backdrop" id="pubModalBackdrop">
+        <div class="pub-modal" role="dialog" aria-modal="true" aria-labelledby="pubModalTitle">
+            <div class="pub-modal-header">
+                <div class="pub-modal-title" id="pubModalTitle">
+                    {{ publicite_aleatoire.titre }}
+                </div>
+                <button type="button" class="pub-modal-close" aria-label="Fermer" onclick="closePubModal()">&times;</button>
+            </div>
+            <div class="pub-modal-body">
+                <div class="pub-modal-main">
+                    {% if publicite_aleatoire.image %}
+                        <div class="pub-modal-image">
+                            <img src="{{ publicite_aleatoire.image.url }}" alt="{{ publicite_aleatoire.titre }}">
+                        </div>
+                    {% endif %}
+                    <div class="pub-modal-info">
+                        {% if publicite_entreprise %}
+                            <div class="pub-modal-company-name">
+                                {{ publicite_entreprise.nom }}
+                            </div>
+                            {% if publicite_entreprise.telephone_principal or publicite_entreprise.telephone_secondaire %}
+                                <div class="pub-modal-contacts">
+                                    {% if publicite_entreprise.telephone_principal %}
+                                        📞 {{ publicite_entreprise.telephone_principal }}
+                                    {% endif %}
+                                    {% if publicite_entreprise.telephone_secondaire %}
+                                        {% if publicite_entreprise.telephone_principal %} &nbsp;•&nbsp;{% endif %}
+                                        {{ publicite_entreprise.telephone_secondaire }}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            {% if publicite_entreprise.logo_url %}
+                                <div>
+                                    <img src="{{ publicite_entreprise.logo_url }}" alt="Logo {{ publicite_entreprise.nom }}" class="pub-modal-logo">
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                <p style="margin: 0; color: #333; line-height: 1.6;">
+                    {{ publicite_aleatoire.texte|linebreaks }}
+                </p>
+            </div>
+            <div class="pub-modal-actions">
+                <button type="button" class="pub-modal-btn pub-modal-btn-secondary" onclick="closePubModal()">Fermer</button>
+                {% if publicite_aleatoire.url_cible %}
+                    <button type="button" class="pub-modal-btn pub-modal-btn-primary" onclick="openPubLink()">
+                        En savoir plus
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const slides = document.querySelectorAll('.carousel-slide');
@@ -676,7 +853,37 @@
                     startCarousel();
                 }
             }
+
+            // Gestion de la modale de publicité (si présente)
+            const pubBackdrop = document.getElementById('pubModalBackdrop');
+            if (pubBackdrop) {
+                // Afficher la modale quelques secondes après le chargement
+                setTimeout(function() {
+                    pubBackdrop.style.display = 'flex';
+                }, 3000);
+
+                pubBackdrop.addEventListener('click', function(event) {
+                    if (event.target === pubBackdrop) {
+                        closePubModal();
+                    }
+                });
+            }
         });
+
+        function closePubModal() {
+            const pubBackdrop = document.getElementById('pubModalBackdrop');
+            if (pubBackdrop) {
+                pubBackdrop.style.display = 'none';
+            }
+        }
+
+        function openPubLink() {
+            const url = "{{ publicite_aleatoire.url_cible|default:'' }}";
+            if (url) {
+                window.open(url, '_blank');
+            }
+            closePubModal();
+        }
     </script>
 
 {% endblock %}

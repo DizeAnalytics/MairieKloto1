@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinLengthValidator
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 def validate_file_size(value):
@@ -468,3 +469,144 @@ class VisiteSite(models.Model):
 
     def __str__(self):
         return f"Visite le {self.date.strftime('%d/%m/%Y %H:%M')} sur {self.path or '/'}"
+
+
+class CampagnePublicitaire(models.Model):
+    """Campagne de publicité achetée par une entreprise ou institution financière."""
+
+    STATUT_CHOICES = [
+        ("demande", "Demande en attente de validation"),
+        ("acceptee", "Acceptée par la mairie (en attente de paiement)"),
+        ("payee", "Payée (en attente d'activation)"),
+        ("active", "Active"),
+        ("terminee", "Terminée"),
+    ]
+
+    proprietaire = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="campagnes_publicitaires",
+        help_text="Utilisateur propriétaire de la campagne (entreprise ou institution financière).",
+    )
+    titre = models.CharField(max_length=255)
+    description = models.TextField(
+        blank=True,
+        help_text="Objectif de la campagne, produits ou services mis en avant…",
+    )
+    duree_jours = models.PositiveIntegerField(
+        default=30, help_text="Durée standard de diffusion des publicités (en jours)."
+    )
+    montant = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Montant payé pour cette campagne (rempli par la mairie).",
+    )
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default="demande",
+        help_text="Statut de la campagne dans le circuit mairie / paiement.",
+    )
+    date_demande = models.DateTimeField(
+        auto_now_add=True, help_text="Date de création de la demande de campagne."
+    )
+    date_debut = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date de début effective de diffusion (optionnelle, fixée par la mairie).",
+    )
+    date_fin = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date de fin effective de diffusion (optionnelle, fixée par la mairie).",
+    )
+
+    class Meta:
+        verbose_name = "Campagne publicitaire"
+        verbose_name_plural = "Campagnes publicitaires"
+        ordering = ["-date_demande"]
+
+    def __str__(self) -> str:
+        return f"{self.titre} - {self.proprietaire.username}"
+
+    @property
+    def est_en_cours(self) -> bool:
+        """Retourne True si la campagne est active et dans sa période de diffusion."""
+        if self.statut not in ["active", "payee"]:
+            return False
+        maintenant = timezone.now()
+        if self.date_debut and self.date_fin:
+            return self.date_debut <= maintenant <= self.date_fin
+        return True
+
+    @property
+    def peut_creer_publicites(self) -> bool:
+        """Autorise la création de publicités une fois la campagne payée ou active."""
+        return self.statut in ["payee", "active"]
+
+
+class Publicite(models.Model):
+    """Publicité individuelle affichée sur le site (modale aléatoire)."""
+
+    campagne = models.ForeignKey(
+        CampagnePublicitaire,
+        on_delete=models.CASCADE,
+        related_name="publicites",
+        help_text="Campagne à laquelle cette publicité est rattachée.",
+    )
+    titre = models.CharField(max_length=255)
+    texte = models.TextField(
+        help_text="Texte du message publicitaire qui sera affiché dans la fenêtre modale."
+    )
+    image = models.ImageField(
+        upload_to="mairie/publicites/",
+        blank=True,
+        null=True,
+        validators=[validate_file_size],
+        help_text="Visuel de la publicité (optionnel).",
+    )
+    url_cible = models.URLField(
+        blank=True,
+        help_text="Lien vers le site ou la page de l'entreprise (optionnel).",
+    )
+    est_active = models.BooleanField(
+        default=True,
+        help_text="Seules les publicités actives peuvent être affichées sur le site.",
+    )
+    date_debut = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date de début de diffusion de cette publicité (facultatif).",
+    )
+    date_fin = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date de fin de diffusion de cette publicité (facultatif).",
+    )
+    ordre_priorite = models.PositiveIntegerField(
+        default=0,
+        help_text="Permet de donner la priorité à certaines pubs (0 = priorité normale).",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Publicité"
+        verbose_name_plural = "Publicités"
+        ordering = ["ordre_priorite", "-date_creation"]
+
+    def __str__(self) -> str:
+        return self.titre
+
+    @property
+    def est_diffusable(self) -> bool:
+        """Retourne True si la publicité est active et dans sa période de diffusion."""
+        if not self.est_active:
+            return False
+        if not self.campagne or not self.campagne.est_en_cours:
+            return False
+        maintenant = timezone.now()
+        if self.date_debut and self.date_fin:
+            return self.date_debut <= maintenant <= self.date_fin
+        return True

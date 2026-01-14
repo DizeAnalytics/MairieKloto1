@@ -71,6 +71,88 @@
                     </div>
                 {% endif %}
 
+                {% if profile_type == 'Acteur Économique' or profile_type == 'Institution Financière' %}
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;">
+                    <h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 0.75rem;">
+                        📢 Publicité sur le site de la mairie
+                    </h3>
+
+                    {% if not can_request_ads %}
+                        <p style="color: #777; margin: 0;">
+                            Votre compte doit d'abord être <strong>validé par la mairie</strong> pour pouvoir demander une campagne publicitaire.
+                        </p>
+                    {% else %}
+                        {% if not campagne_publicitaire %}
+                            <p style="color: #555; margin-bottom: 0.75rem;">
+                                Vous pouvez demander une <strong>campagne de publicité</strong> pour mettre en avant vos produits ou services
+                                sur le portail de la Mairie de Kloto 1.
+                            </p>
+                            <a href="{% url 'comptes:demande_publicite' %}"
+                               class="btn btn-primary"
+                               style="font-size: 0.9rem;">
+                                📝 Demander une campagne publicitaire
+                            </a>
+                        {% else %}
+                            <p style="color: #555; margin-bottom: 0.5rem;">
+                                <strong>Campagne actuelle :</strong> {{ campagne_publicitaire.titre }}
+                            </p>
+                            <p style="color: #555; margin-bottom: 0.75rem;">
+                                <strong>Statut :</strong> {{ campagne_publicitaire.get_statut_display }}
+                            </p>
+
+                            {% if campagne_publicitaire.date_debut and campagne_publicitaire.date_fin %}
+                                <p style="color: #555; margin-bottom: 0.75rem;">
+                                    <strong>Période de diffusion :</strong>
+                                    du {{ campagne_publicitaire.date_debut|date:"d/m/Y H:i" }}
+                                    au {{ campagne_publicitaire.date_fin|date:"d/m/Y H:i" }}
+                                </p>
+                            {% endif %}
+
+                            {% if campagne_publicitaire.statut == 'demande' %}
+                                <p style="color: #777; margin-bottom: 0.5rem;">
+                                    Votre demande a été transmise à la mairie et est en attente de validation par le Maire.
+                                </p>
+                            {% elif campagne_publicitaire.statut == 'acceptee' %}
+                                <p style="color: #777; margin-bottom: 0.5rem;">
+                                    Votre demande a été <strong>acceptée</strong>. Veuillez régler le montant indiqué auprès de la mairie.
+                                    Une fois le paiement enregistré, vous pourrez créer vos publicités.
+                                </p>
+                            {% elif campagne_publicitaire.statut == 'payee' %}
+                                <p style="color: #777; margin-bottom: 0.5rem;">
+                                    Votre paiement a été enregistré. Vous pouvez dès maintenant créer vos publicités.
+                                </p>
+                            {% elif campagne_publicitaire.statut == 'active' %}
+                                <p style="color: #777; margin-bottom: 0.5rem;">
+                                    Votre campagne est actuellement <strong>active</strong> sur le site.
+                                </p>
+                            {% elif campagne_publicitaire.statut == 'terminee' %}
+                                <p style="color: #777; margin-bottom: 0.5rem;">
+                                    Votre précédente campagne est <strong>terminée</strong>. Vous pouvez contacter la mairie pour en lancer une nouvelle.
+                                </p>
+                            {% endif %}
+
+                            {% if can_create_ads %}
+                                <a href="{% url 'comptes:creer_publicite' %}"
+                                   class="btn btn-primary"
+                                   style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                    ➕ Créer une publicité
+                                </a>
+                            {% elif campagne_peut_renouveler %}
+                                <p style="color: #777; margin-top: 0.75rem;">
+                                    La période de votre campagne est <strong>échue</strong>. Vous pouvez contacter la mairie
+                                    pour <strong>renouveler</strong> votre campagne ou déposer une <strong>nouvelle demande de publicité</strong>.
+                                </p>
+                                <a href="{% url 'comptes:demande_publicite' %}"
+                                   class="btn btn-primary"
+                                   style="font-size: 0.9rem; margin-top: 0.5rem;">
+                                    📝 Faire une nouvelle demande de campagne
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endif %}
+
             {% else %}
                 <p>Aucun profil spécifique associé.</p>
                 <a href="{% url 'enregistrement' %}" class="btn btn-primary" style="margin-top: 1rem;">Compléter mon profil</a>

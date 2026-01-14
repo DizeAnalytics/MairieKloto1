@@ -16,7 +16,12 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas as pdfcanvas
-from mairie.models import ConfigurationMairie, VisiteSite
+from mairie.models import (
+    ConfigurationMairie,
+    VisiteSite,
+    CampagnePublicitaire,
+    Publicite,
+)
 
 from acteurs.models import ActeurEconomique, InstitutionFinanciere
 from emploi.models import ProfilEmploi
@@ -227,6 +232,99 @@ def tableau_bord(request):
     }
     
     return render(request, "admin/tableau_bord.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def gestion_publicites(request):
+    """Gestion des campagnes publicitaires (validation, paiement, activation)."""
+
+    # Filtrage par statut optionnel
+    statut = request.GET.get("statut", "")
+
+    campagnes = CampagnePublicitaire.objects.select_related("proprietaire").order_by(
+        "-date_demande"
+    )
+    if statut:
+        campagnes = campagnes.filter(statut=statut)
+
+    if request.method == "POST":
+        campagne_id = request.POST.get("campagne_id")
+        action = request.POST.get("action")
+        campagne = get_object_or_404(CampagnePublicitaire, pk=campagne_id)
+
+        if action == "set_statut":
+            nouveau_statut = request.POST.get("nouveau_statut")
+            if nouveau_statut in dict(CampagnePublicitaire.STATUT_CHOICES):
+                campagne.statut = nouveau_statut
+                campagne.save()
+                messages.success(
+                    request,
+                    f"Le statut de la campagne « {campagne.titre} » a été mis à jour ({campagne.get_statut_display()}).",
+                )
+        elif action == "update_montant":
+            montant = request.POST.get("montant") or ""
+            try:
+                campagne.montant = float(montant.replace(",", ".") or 0)
+                campagne.save()
+                messages.success(
+                    request,
+                    f"Le montant de la campagne « {campagne.titre} » a été mis à jour.",
+                )
+            except ValueError:
+                messages.error(request, "Montant invalide.")
+        elif action == "set_dates":
+            date_debut = request.POST.get("date_debut") or ""
+            date_fin = request.POST.get("date_fin") or ""
+            try:
+                campagne.date_debut = (
+                    datetime.strptime(date_debut, "%Y-%m-%dT%H:%M")
+                    if date_debut
+                    else None
+                )
+                campagne.date_fin = (
+                    datetime.strptime(date_fin, "%Y-%m-%dT%H:%M") if date_fin else None
+                )
+                campagne.save()
+                messages.success(
+                    request,
+                    f"Les dates de diffusion de la campagne « {campagne.titre} » ont été mises à jour.",
+                )
+            except ValueError:
+                messages.error(request, "Format de date invalide.")
+        elif action == "renew_campaign":
+            # Renouveler une campagne terminée : on crée une nouvelle période à partir
+            # de maintenant (ou de l'ancienne date de fin si elle est dans le futur)
+            maintenant = timezone.now()
+            point_depart = campagne.date_fin or maintenant
+            if point_depart < maintenant:
+                point_depart = maintenant
+
+            # Utilise la durée de la campagne pour recalculer la nouvelle date de fin
+            duree = campagne.duree_jours or 30
+            campagne.date_debut = point_depart
+            campagne.date_fin = point_depart + timedelta(days=duree)
+            campagne.statut = "active"
+            campagne.save()
+            messages.success(
+                request,
+                (
+                    f"La campagne « {campagne.titre} » a été renouvelée. "
+                    f"Nouvelle période du {campagne.date_debut.strftime('%d/%m/%Y %H:%M')} "
+                    f"au {campagne.date_fin.strftime('%d/%m/%Y %H:%M')}."
+                ),
+            )
+
+        return redirect("gestion_publicites")
+
+    # Pré-calcul du nombre de publicités par campagne
+    campagnes = campagnes.annotate(nb_publicites=Count("publicites"))
+
+    context = {
+        "campagnes": campagnes,
+        "statut": statut,
+    }
+    return render(request, "admin/gestion_publicites.html", context)
 
 
 @login_required

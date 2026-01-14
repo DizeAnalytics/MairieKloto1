@@ -53,6 +53,7 @@ urlpatterns = [
     path("tableau-bord/export/entreprises/", views.export_pdf_entreprises, name="export_pdf_entreprises"),
     path("tableau-bord/export/jeunes/", views.export_pdf_jeunes, name="export_pdf_jeunes"),
     path("tableau-bord/export/retraites/", views.export_pdf_retraites, name="export_pdf_retraites"),
+    path("tableau-bord/publicites/", views.gestion_publicites, name="gestion_publicites"),
 ]
 
 # Servir les fichiers média en développement

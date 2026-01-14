@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des publicités - Tableau de Bord</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+        }
+
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            opacity: 0.9;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-header h2 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: #4b5563;
+            font-size: 0.95rem;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1.2rem;
+            background: #f8f9fa;
+            padding: 1.3rem;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-control {
+            padding: 0.7rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            width: 100%;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 98, 51, 0.2);
+        }
+
+        .btn-search {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            align-self: flex-end;
+            transition: background 0.2s;
+        }
+
+        .btn-search:hover {
+            background: #004d28;
+        }
+
+        .btn-reset {
+            background: #6b7280;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            align-self: flex-end;
+        }
+
+        .btn-reset:hover {
+            background: #4b5563;
+        }
+
+        .table-container {
+            background: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+
+        thead {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        th {
+            padding: 0.85rem 0.9rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 0.85rem 0.9rem;
+            border-bottom: 1px solid var(--light);
+            font-size: 0.9rem;
+            vertical-align: top;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-demande {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .badge-acceptee {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        .badge-payee {
+            background: #ecfeff;
+            color: #155e75;
+        }
+
+        .badge-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-terminee {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .actions-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .actions-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .btn-pill {
+            border-radius: 999px;
+            border: none;
+            padding: 0.25rem 0.7rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .btn-pill-accept {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-pill-pay {
+            background: #f97316;
+            color: white;
+        }
+
+        .btn-pill-activate {
+            background: #0ea5e9;
+            color: white;
+        }
+
+        .btn-pill-end {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-pill:hover {
+            opacity: 0.95;
+        }
+
+        .small-input {
+            width: 100%;
+            max-width: 140px;
+            padding: 0.3rem 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            font-size: 0.8rem;
+        }
+
+        .small-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px rgba(0, 98, 51, 0.3);
+        }
+
+        .small-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 0.2rem;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>Gestion des campagnes publicitaires</h1>
+            <div>
+                <a href="{% url 'tableau_bord' %}" class="back-link">← Retour au tableau de bord</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>Campagnes publicitaires</h2>
+            <p>Total : {{ campagnes.count }} campagne(s)</p>
+
+            <form method="get" class="search-form">
+                <div class="form-group">
+                    <label for="statut">Filtrer par statut</label>
+                    <select name="statut" id="statut" class="form-control">
+                        <option value="">Tous les statuts</option>
+                        <option value="demande" {% if statut == 'demande' %}selected{% endif %}>Demande en attente</option>
+                        <option value="acceptee" {% if statut == 'acceptee' %}selected{% endif %}>Acceptée (en attente de paiement)</option>
+                        <option value="payee" {% if statut == 'payee' %}selected{% endif %}>Payée</option>
+                        <option value="active" {% if statut == 'active' %}selected{% endif %}>Active</option>
+                        <option value="terminee" {% if statut == 'terminee' %}selected{% endif %}>Terminée</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-search">Filtrer</button>
+                <a href="{% url 'gestion_publicites' %}" class="btn-reset">Réinitialiser</a>
+            </form>
+        </div>
+
+        <div class="table-container">
+            {% if campagnes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Campagne</th>
+                        <th>Compte</th>
+                        <th>Statut</th>
+                        <th>Montant</th>
+                        <th>Période</th>
+                        <th>Publicités</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for campagne in campagnes %}
+                    <tr>
+                        <td>
+                            <strong>{{ campagne.titre }}</strong><br>
+                            <span style="font-size:0.8rem; color:#6b7280;">
+                                Demandée le {{ campagne.date_demande|date:"d/m/Y H:i" }}
+                            </span><br>
+                            {% if campagne.description %}
+                                <span style="font-size:0.8rem; color:#4b5563;">
+                                    {{ campagne.description|truncatewords:15 }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ campagne.proprietaire.username }}<br>
+                            <span style="font-size:0.8rem; color:#6b7280;">
+                                {{ campagne.proprietaire.email }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if campagne.statut == 'demande' %}
+                                <span class="badge badge-demande">Demande en attente</span>
+                            {% elif campagne.statut == 'acceptee' %}
+                                <span class="badge badge-acceptee">Acceptée (en attente de paiement)</span>
+                            {% elif campagne.statut == 'payee' %}
+                                <span class="badge badge-payee">Payée</span>
+                            {% elif campagne.statut == 'active' %}
+                                <span class="badge badge-active">Active</span>
+                            {% else %}
+                                <span class="badge badge-terminee">Terminée</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="campagne_id" value="{{ campagne.id }}">
+                                <input type="hidden" name="action" value="update_montant">
+                                <label class="small-label" for="montant-{{ campagne.id }}">Montant (FCFA)</label>
+                                <input id="montant-{{ campagne.id }}"
+                                       type="number"
+                                       name="montant"
+                                       step="0.01"
+                                       class="small-input"
+                                       value="{{ campagne.montant|default_if_none:'' }}">
+                                <button type="submit" class="btn-pill" style="margin-top:0.25rem; background:#e5e7eb; color:#374151;">
+                                    💾 Enregistrer
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <form method="post" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="campagne_id" value="{{ campagne.id }}">
+                                <input type="hidden" name="action" value="set_dates">
+                                <label class="small-label" for="date-debut-{{ campagne.id }}">Début</label>
+                                <input id="date-debut-{{ campagne.id }}"
+                                       type="datetime-local"
+                                       name="date_debut"
+                                       class="small-input"
+                                       value="{% if campagne.date_debut %}{{ campagne.date_debut|date:'Y-m-d\\TH:i' }}{% endif %}">
+                                <label class="small-label" for="date-fin-{{ campagne.id }}" style="margin-top:0.25rem;">Fin</label>
+                                <input id="date-fin-{{ campagne.id }}"
+                                       type="datetime-local"
+                                       name="date_fin"
+                                       class="small-input"
+                                       value="{% if campagne.date_fin %}{{ campagne.date_fin|date:'Y-m-d\\TH:i' }}{% endif %}">
+                                <button type="submit" class="btn-pill" style="margin-top:0.25rem; background:#e5e7eb; color:#374151;">
+                                    💾 Enregistrer
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <span style="font-size:0.9rem;">{{ campagne.nb_publicites }} publicité(s)</span>
+                        </td>
+                        <td>
+                            <div class="actions-col">
+                                <div class="actions-row">
+                                    {% if campagne.statut == 'demande' %}
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campagne_id" value="{{ campagne.id }}">
+                                            <input type="hidden" name="action" value="set_statut">
+                                            <input type="hidden" name="nouveau_statut" value="acceptee">
+                                            <button type="submit" class="btn-pill btn-pill-accept">
+                                                ✅ Accepter
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if campagne.statut == 'acceptee' %}
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campagne_id" value="{{ campagne.id }}">
+                                            <input type="hidden" name="action" value="set_statut">
+                                            <input type="hidden" name="nouveau_statut" value="payee">
+                                            <button type="submit" class="btn-pill btn-pill-pay">
+                                                💰 Marquer payée
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if campagne.statut in 'payee,acceptee' or campagne.statut == 'payee' %}
+                                        {# Permet au maire d'activer explicitement #}
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campagne_id" value="{{ campagne.id }}">
+                                            <input type="hidden" name="action" value="set_statut">
+                                            <input type="hidden" name="nouveau_statut" value="active">
+                                            <button type="submit" class="btn-pill btn-pill-activate">
+                                                🚀 Activer
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if campagne.statut in 'active,payee,acceptee,demande' or campagne.statut == 'active' %}
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campagne_id" value="{{ campagne.id }}">
+                                            <input type="hidden" name="action" value="set_statut">
+                                            <input type="hidden" name="nouveau_statut" value="terminee">
+                                            <button type="submit" class="btn-pill btn-pill-end">
+                                                ⏹ Terminer
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if campagne.statut == 'terminee' %}
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campagne_id" value="{{ campagne.id }}">
+                                            <input type="hidden" name="action" value="renew_campaign">
+                                            <button type="submit" class="btn-pill btn-pill-activate">
+                                                🔁 Renouveler
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                Aucune campagne publicitaire pour le moment.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+

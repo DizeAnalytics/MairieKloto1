@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
+    <h1 style="color: var(--primary); margin-bottom: 0.5rem;">Créer une publicité</h1>
+    {% if campagne %}
+        <p style="color: #555; margin-bottom: 1rem;">
+            Campagne actuelle : <strong>{{ campagne.titre }}</strong> (statut : {{ campagne.get_statut_display }})
+        </p>
+    {% endif %}
+    <p style="color: #777; margin-bottom: 1.5rem;">
+        La publicité sera affichée sur le site de la mairie sous forme de fenêtre modale aléatoire pour les visiteurs.
+    </p>
+
+    <div style="background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="{{ form.titre.id_for_label }}" class="form-label"><strong>Titre de la publicité</strong></label>
+                {{ form.titre }}
+                {% if form.titre.errors %}
+                    <div class="text-danger" style="margin-top: 0.25rem;">{{ form.titre.errors|striptags }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.texte.id_for_label }}" class="form-label"><strong>Texte du message</strong></label>
+                {{ form.texte }}
+                {% if form.texte.errors %}
+                    <div class="text-danger" style="margin-top: 0.25rem;">{{ form.texte.errors|striptags }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.image.id_for_label }}" class="form-label"><strong>Image (optionnelle)</strong></label>
+                {{ form.image }}
+                {% if form.image.errors %}
+                    <div class="text-danger" style="margin-top: 0.25rem;">{{ form.image.errors|striptags }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.url_cible.id_for_label }}" class="form-label"><strong>Lien cible (optionnel)</strong></label>
+                {{ form.url_cible }}
+                <small style="display:block; color:#777; margin-top:0.25rem;">
+                    Si renseigné, un bouton « En savoir plus » ouvrira ce lien dans un nouvel onglet.
+                </small>
+                {% if form.url_cible.errors %}
+                    <div class="text-danger" style="margin-top: 0.25rem;">{{ form.url_cible.errors|striptags }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><strong>Période de diffusion (optionnelle)</strong></label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                    <div>
+                        <label for="{{ form.date_debut.id_for_label }}" class="form-label">Date de début</label>
+                        {{ form.date_debut }}
+                    </div>
+                    <div>
+                        <label for="{{ form.date_fin.id_for_label }}" class="form-label">Date de fin</label>
+                        {{ form.date_fin }}
+                    </div>
+                </div>
+                <small style="display:block; color:#777; margin-top:0.25rem;">
+                    Si vous laissez ces champs vides, la mairie utilisera la durée définie pour la campagne.
+                </small>
+                {% if form.date_debut.errors or form.date_fin.errors %}
+                    <div class="text-danger" style="margin-top: 0.25rem;">
+                        {{ form.date_debut.errors|striptags }} {{ form.date_fin.errors|striptags }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+                <a href="{% url 'comptes:profil' %}" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">Enregistrer la publicité</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

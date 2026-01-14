@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import models
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
@@ -17,6 +18,7 @@ from .models import (
     AppelOffre,
     Candidature,
     ImageCarousel,
+    Publicite,
 )
 from .forms import CandidatureForm
 from acteurs.models import ActeurEconomique, InstitutionFinanciere
@@ -34,7 +36,7 @@ def accueil(request):
     # Récupérer les images actives du carousel (max 5) et les mélanger aléatoirement
     images_carousel = list(ImageCarousel.objects.filter(est_actif=True).order_by('ordre_affichage', '-date_creation')[:5])
     random.shuffle(images_carousel)
-    
+
     context = {
         'mot_maire': mot_maire,
         'collaborateurs': collaborateurs,

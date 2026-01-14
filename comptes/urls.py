@@ -11,4 +11,6 @@ urlpatterns = [
     path('profil/', views.profil, name='profil'),
     path('notifications/mark-all-read/', views.notifications_mark_all_read, name='notifications_mark_all_read'),
     path('notifications/<int:pk>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
+    path('publicites/demander/', views.demander_campagne_publicitaire, name='demande_publicite'),
+    path('publicites/creer/', views.creer_publicite, name='creer_publicite'),
 ]
