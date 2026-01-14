@@ -256,8 +256,31 @@ def gestion_publicites(request):
         if action == "set_statut":
             nouveau_statut = request.POST.get("nouveau_statut")
             if nouveau_statut in dict(CampagnePublicitaire.STATUT_CHOICES):
+                ancien_statut = campagne.statut
                 campagne.statut = nouveau_statut
                 campagne.save()
+
+                # Notification automatique au demandeur quand la mairie accepte la demande
+                if ancien_statut != "acceptee" and nouveau_statut == "acceptee":
+                    montant_txt = (
+                        f"{campagne.montant:,.0f} FCFA".replace(",", " ")
+                        if campagne.montant is not None
+                        else "le montant indiqué par la mairie"
+                    )
+                    Notification.objects.create(
+                        recipient=campagne.proprietaire,
+                        title="Votre campagne publicitaire a été acceptée",
+                        message=(
+                            f"Bonjour,\n\n"
+                            f"Votre demande de campagne publicitaire « {campagne.titre} » a été acceptée par la mairie.\n\n"
+                            f"Prochaine étape : paiement des frais de publicité ({montant_txt}).\n"
+                            f"Merci de vous rapprocher du service compétent de la mairie pour effectuer le paiement et "
+                            f"faire enregistrer votre règlement.\n\n"
+                            f"Après enregistrement du paiement, vous pourrez créer vos publicités depuis votre compte."
+                        ),
+                        type=Notification.TYPE_INFO,
+                        created_by=request.user,
+                    )
                 messages.success(
                     request,
                     f"Le statut de la campagne « {campagne.titre} » a été mis à jour ({campagne.get_statut_display()}).",
@@ -325,6 +348,71 @@ def gestion_publicites(request):
         "statut": statut,
     }
     return render(request, "admin/gestion_publicites.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def detail_campagne_publicite(request, pk: int):
+    """Détail d'une demande/campagne publicitaire (vue admin tableau de bord)."""
+
+    campagne = get_object_or_404(
+        CampagnePublicitaire.objects.select_related("proprietaire"), pk=pk
+    )
+    publicites = Publicite.objects.filter(campagne=campagne).order_by("-date_creation")
+
+    # Envoi optionnel d'instructions de paiement personnalisées
+    if request.method == "POST":
+        titre = request.POST.get("titre", "").strip() or "Paiement de votre campagne publicitaire"
+        message_libre = request.POST.get("message", "").strip()
+        moyens = []
+        if request.POST.get("tmoney"):
+            moyens.append("Tmoney")
+        if request.POST.get("flooz"):
+            moyens.append("Flooz")
+        if request.POST.get("carte"):
+            moyens.append("Carte bancaire")
+
+        if not message_libre:
+            messages.error(request, "Le message d'explication du paiement est obligatoire.")
+        else:
+            lignes = [
+                "Bonjour,",
+                "",
+                f"Votre campagne publicitaire « {campagne.titre} » est en cours de traitement par la mairie.",
+                "",
+            ]
+            if moyens:
+                lignes.append(
+                    "Vous pouvez effectuer le paiement de vos frais de publicité via : "
+                    + ", ".join(moyens)
+                    + "."
+                )
+                lignes.append("")
+            lignes.append(message_libre)
+            lignes.append("")
+            lignes.append(
+                "Après validation de votre paiement par la mairie, vous pourrez créer vos publicités "
+                "depuis votre compte sur la plateforme."
+            )
+
+            Notification.objects.create(
+                recipient=campagne.proprietaire,
+                title=titre,
+                message="\n".join(lignes),
+                type=Notification.TYPE_INFO,
+                created_by=request.user,
+            )
+            messages.success(
+                request,
+                "Les instructions de paiement ont été envoyées au demandeur dans son espace personnel.",
+            )
+            return redirect("detail_campagne_publicite", pk=campagne.pk)
+
+    context = {
+        "campagne": campagne,
+        "publicites": publicites,
+    }
+    return render(request, "admin/detail_campagne_publicite.html", context)
 
 
 @login_required
@@ -969,8 +1057,17 @@ def export_pdf_retraite_detail(request, pk):
 def export_pdf_acteurs(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
-    qs = ActeurEconomique.objects.all()
+    type_acteur = request.GET.get("type") or ""
+    secteur = request.GET.get("secteur") or ""
+
+    # Uniquement les acteurs validés par la mairie
+    qs = ActeurEconomique.objects.filter(est_valide_par_mairie=True)
     conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    if type_acteur:
+        qs = qs.filter(type_acteur=type_acteur)
+    if secteur:
+        qs = qs.filter(secteur_activite=secteur)
+
     if start:
         try:
             sd = datetime.strptime(start, "%Y-%m-%d").date()
@@ -984,7 +1081,7 @@ def export_pdf_acteurs(request):
         except ValueError:
             pass
     response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="acteurs_economiques.pdf"'
+    response["Content-Disposition"] = 'attachment; filename="acteurs_economiques_valides.pdf"'
     doc = SimpleDocTemplate(response, pagesize=landscape(A4))
     story = []
     styles = getSampleStyleSheet()
@@ -1117,7 +1214,12 @@ def envoyer_notifications_candidats(request, appel_offre_id):
 def export_pdf_entreprises(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
-    qs = ActeurEconomique.objects.filter(type_acteur="entreprise")
+    secteur = request.GET.get("secteur") or ""
+
+    # Uniquement les entreprises validées
+    qs = ActeurEconomique.objects.filter(type_acteur="entreprise", est_valide_par_mairie=True)
+    if secteur:
+        qs = qs.filter(secteur_activite=secteur)
     conf = ConfigurationMairie.objects.filter(est_active=True).first()
     if start:
         try:
@@ -1132,7 +1234,7 @@ def export_pdf_entreprises(request):
         except ValueError:
             pass
     response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="entreprises.pdf"'
+    response["Content-Disposition"] = 'attachment; filename="entreprises_valides.pdf"'
     doc = SimpleDocTemplate(response, pagesize=landscape(A4))
     story = []
     styles = getSampleStyleSheet()
@@ -1180,6 +1282,124 @@ def export_pdf_entreprises(request):
         c.setFont("Helvetica-Bold", 12)
         c.drawString(100, y, f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}")
         
+        c.setFont("Helvetica", 9)
+        c.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_institutions(request):
+    start = request.GET.get("start")
+    end = request.GET.get("end")
+    type_inst = request.GET.get("type") or ""
+
+    # Uniquement les institutions validées
+    qs = InstitutionFinanciere.objects.filter(est_valide_par_mairie=True)
+    if type_inst:
+        qs = qs.filter(type_institution=type_inst)
+
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    if start:
+        try:
+            sd = datetime.strptime(start, "%Y-%m-%d").date()
+            qs = qs.filter(date_enregistrement__date__gte=sd)
+        except ValueError:
+            pass
+    if end:
+        try:
+            ed = datetime.strptime(end, "%Y-%m-%d").date()
+            qs = qs.filter(date_enregistrement__date__lte=ed)
+        except ValueError:
+            pass
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="institutions_financieres_valides.pdf"'
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    story = []
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+    story.append(Paragraph("Institutions Financières Validées", title_style))
+    if start or end:
+        story.append(
+            Paragraph(f"Période: {start or '...'} au {end or '...'}", styles["Normal"])
+        )
+    story.append(Spacer(1, 0.4 * cm))
+    data = [["Nom de l'institution", "Type", "Responsable", "Téléphone", "Quartier"]]
+    for inst in qs.order_by("-date_enregistrement")[:1000]:
+        data.append(
+            [
+                inst.nom_institution,
+                inst.get_type_institution_display(),
+                inst.nom_responsable,
+                inst.telephone1,
+                inst.quartier,
+            ]
+        )
+    table = Table(data, colWidths=[8 * cm, 6 * cm, 6 * cm, 4 * cm, 5 * cm])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    story.append(table)
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(
+        Paragraph(
+            "Date et Signature : ________________________________", styles["Normal"]
+        )
+    )
+
+    def on_page(c, d):
+        width, height = d.pagesize
+        y = height - 40
+        c.saveState()
+        c.translate(width / 2, height / 2)
+        c.rotate(45)
+        c.setFont("Helvetica-Bold", 36)
+        c.setFillColorRGB(0.9, 0.9, 0.9)
+        c.drawCentredString(
+            0,
+            0,
+            (conf.nom_commune if conf else "Mairie de Kloto 1").upper(),
+        )
+        c.restoreState()
+        if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
+            try:
+                c.drawImage(
+                    conf.logo.path,
+                    40,
+                    y - 30,
+                    width=40,
+                    height=40,
+                    preserveAspectRatio=True,
+                    mask="auto",
+                )
+            except Exception:
+                pass
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(
+            100,
+            y,
+            f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}",
+        )
+
         c.setFont("Helvetica", 9)
         c.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
 
@@ -1264,7 +1484,12 @@ def envoyer_notifications_candidats(request, appel_offre_id):
 def export_pdf_jeunes(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
-    qs = ProfilEmploi.objects.filter(type_profil="jeune")
+    niveau = request.GET.get("niveau") or ""
+
+    # Uniquement les profils validés par la mairie
+    qs = ProfilEmploi.objects.filter(type_profil="jeune", est_valide_par_mairie=True)
+    if niveau:
+        qs = qs.filter(niveau_etude=niveau)
     conf = ConfigurationMairie.objects.filter(est_active=True).first()
     if start:
         try:
@@ -1279,7 +1504,7 @@ def export_pdf_jeunes(request):
         except ValueError:
             pass
     response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="jeunes_demandeurs.pdf"'
+    response["Content-Disposition"] = 'attachment; filename="jeunes_demandeurs_valides.pdf"'
     doc = SimpleDocTemplate(response, pagesize=landscape(A4))
     story = []
     styles = getSampleStyleSheet()
@@ -1413,7 +1638,12 @@ def envoyer_notifications_candidats(request, appel_offre_id):
 def export_pdf_retraites(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
-    qs = ProfilEmploi.objects.filter(type_profil="retraite")
+    niveau = request.GET.get("niveau") or ""
+
+    # Uniquement les profils validés par la mairie
+    qs = ProfilEmploi.objects.filter(type_profil="retraite", est_valide_par_mairie=True)
+    if niveau:
+        qs = qs.filter(niveau_etude=niveau)
     conf = ConfigurationMairie.objects.filter(est_active=True).first()
     if start:
         try:
@@ -1428,7 +1658,7 @@ def export_pdf_retraites(request):
         except ValueError:
             pass
     response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="retraites_actifs.pdf"'
+    response["Content-Disposition"] = 'attachment; filename="retraites_actifs_valides.pdf"'
     doc = SimpleDocTemplate(response, pagesize=landscape(A4))
     story = []
     styles = getSampleStyleSheet()

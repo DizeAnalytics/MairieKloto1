@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des publicités - Tableau de Bord</title>
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% endif %}
     <style>
         * {
             margin: 0;
@@ -265,6 +269,12 @@
             color: white;
         }
 
+        .btn-pill-view {
+            background: #111827;
+            color: white;
+            text-decoration: none;
+        }
+
         .btn-pill:hover {
             opacity: 0.95;
         }
@@ -460,7 +470,7 @@
                                         </form>
                                     {% endif %}
 
-                                    {% if campagne.statut in 'payee,acceptee' or campagne.statut == 'payee' %}
+                                    {% if campagne.statut in 'payee,acceptee' %}
                                         {# Permet au maire d'activer explicitement #}
                                         <form method="post">
                                             {% csrf_token %}
@@ -473,7 +483,7 @@
                                         </form>
                                     {% endif %}
 
-                                    {% if campagne.statut in 'active,payee,acceptee,demande' or campagne.statut == 'active' %}
+                                    {% if campagne.statut in 'active,payee,acceptee,demande' %}
                                         <form method="post">
                                             {% csrf_token %}
                                             <input type="hidden" name="campagne_id" value="{{ campagne.id }}">
@@ -495,6 +505,12 @@
                                             </button>
                                         </form>
                                     {% endif %}
+                                </div>
+
+                                <div class="actions-row">
+                                    <a class="btn-pill btn-pill-view" href="{% url 'detail_campagne_publicite' campagne.id %}">
+                                        👁 Voir
+                                    </a>
                                 </div>
                             </div>
                         </td>

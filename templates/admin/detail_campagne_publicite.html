@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détail campagne publicitaire</title>
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% endif %}
+    <style>
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+            margin: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1.2rem 1.6rem;
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .header a {
+            color: var(--white);
+            text-decoration: none;
+            opacity: 0.95;
+        }
+        .header a:hover { opacity: 1; text-decoration: underline; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.6rem;
+        }
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            margin-bottom: 1.2rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 0.8rem 1rem;
+        }
+        .label { font-size: 0.85rem; color: #6b7280; margin-bottom: 0.15rem; }
+        .value { font-weight: 600; color: #111827; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        thead { background: var(--primary); color: var(--white); }
+        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        .muted { color: #6b7280; font-weight: 400; }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: #f3f4f6;
+            color: #374151;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div>
+                <div style="font-size: 1.2rem; font-weight: 700;">Détail campagne publicitaire</div>
+                <div style="opacity: 0.95;">{{ campagne.titre }}</div>
+            </div>
+            <div>
+                <a href="{% url 'gestion_publicites' %}">← Retour à la liste</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="grid">
+                <div>
+                    <div class="label">Propriétaire</div>
+                    <div class="value">{{ campagne.proprietaire.username }} <span class="muted">({{ campagne.proprietaire.email }})</span></div>
+                </div>
+                <div>
+                    <div class="label">Statut</div>
+                    <div class="value"><span class="badge">{{ campagne.get_statut_display }}</span></div>
+                </div>
+                <div>
+                    <div class="label">Montant</div>
+                    <div class="value">
+                        {% if campagne.montant is not None %}{{ campagne.montant }}{% else %}<span class="muted">Non renseigné</span>{% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="label">Date de demande</div>
+                    <div class="value">{{ campagne.date_demande|date:"d/m/Y H:i" }}</div>
+                </div>
+                <div>
+                    <div class="label">Période</div>
+                    <div class="value">
+                        {% if campagne.date_debut and campagne.date_fin %}
+                            du {{ campagne.date_debut|date:"d/m/Y H:i" }} au {{ campagne.date_fin|date:"d/m/Y H:i" }}
+                        {% else %}
+                            <span class="muted">Non définie</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="label">Durée (jours)</div>
+                    <div class="value">{{ campagne.duree_jours }}</div>
+                </div>
+            </div>
+
+            {% if campagne.description %}
+                <div style="margin-top: 1rem;">
+                    <div class="label">Description</div>
+                    <div>{{ campagne.description|linebreaks }}</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top: 0; color: var(--primary); font-size: 1.05rem;">
+                Envoyer des instructions de paiement au demandeur
+            </h2>
+            <form method="post" style="margin-top: 0.6rem; display: grid; gap: 0.7rem;">
+                {% csrf_token %}
+                <div>
+                    <div class="label">Titre de la notification</div>
+                    <input type="text"
+                           name="titre"
+                           value="Paiement de votre campagne publicitaire"
+                           style="width: 100%; padding: 0.45rem 0.6rem; border-radius: 6px; border: 1px solid #d1d5db; font-size: 0.9rem;">
+                </div>
+                <div>
+                    <div class="label">Moyens de paiement proposés</div>
+                    <label style="margin-right: 0.8rem; font-size: 0.9rem;">
+                        <input type="checkbox" name="tmoney" value="1"> Tmoney
+                    </label>
+                    <label style="margin-right: 0.8rem; font-size: 0.9rem;">
+                        <input type="checkbox" name="flooz" value="1"> Flooz
+                    </label>
+                    <label style="font-size: 0.9rem;">
+                        <input type="checkbox" name="carte" value="1"> Carte bancaire
+                    </label>
+                </div>
+                <div>
+                    <div class="label">Message (instructions détaillées, numéros Tmoney / Flooz, références, etc.)</div>
+                    <textarea name="message"
+                              rows="5"
+                              style="width: 100%; padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid #d1d5db; font-size: 0.9rem;"></textarea>
+                </div>
+                <div>
+                    <button type="submit"
+                            style="background: var(--primary); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600; cursor: pointer;">
+                        Envoyer la notification au demandeur
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <h2 style="margin: 1rem 0 0.6rem 0; color: var(--primary);">Publicités de cette campagne</h2>
+        {% if publicites %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Titre</th>
+                        <th>Active</th>
+                        <th>Période</th>
+                        <th>Créée le</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in publicites %}
+                        <tr>
+                            <td>
+                                <strong>{{ p.titre }}</strong><br>
+                                <span class="muted">{{ p.texte|truncatewords:18 }}</span>
+                            </td>
+                            <td>{% if p.est_active %}Oui{% else %}Non{% endif %}</td>
+                            <td>
+                                {% if p.date_debut and p.date_fin %}
+                                    du {{ p.date_debut|date:"d/m/Y" }} au {{ p.date_fin|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="muted">Non définie</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ p.date_creation|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="card">
+                <span class="muted">Aucune publicité rattachée pour le moment.</span>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+

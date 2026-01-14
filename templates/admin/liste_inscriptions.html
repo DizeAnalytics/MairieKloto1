@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ titre }} - Tableau de Bord</title>
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% endif %}
     <style>
         * {
             margin: 0;
@@ -270,6 +274,15 @@
         <div class="page-header">
             <h2>{{ titre }}</h2>
             <p>Total : {{ acteurs.count }} inscription(s)</p>
+            <div style="margin-top: 0.8rem;">
+                <form method="get" action="{% url 'export_pdf_acteurs' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="type" value="{{ current_filters.type }}">
+                    <input type="hidden" name="secteur" value="{{ current_filters.secteur }}">
+                    <button type="submit" class="btn-search" style="padding:0.5rem 1rem;">
+                        📄 Exporter en PDF (validés seulement)
+                    </button>
+                </form>
+            </div>
 
             <form method="get" class="search-form">
                 <div class="form-group">

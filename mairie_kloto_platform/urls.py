@@ -51,9 +51,15 @@ urlpatterns = [
     path("tableau-bord/changer-statut/<str:model_name>/<int:pk>/<str:action>/", views.changer_statut, name="changer_statut"),
     path("tableau-bord/export/acteurs/", views.export_pdf_acteurs, name="export_pdf_acteurs"),
     path("tableau-bord/export/entreprises/", views.export_pdf_entreprises, name="export_pdf_entreprises"),
+    path("tableau-bord/export/institutions/", views.export_pdf_institutions, name="export_pdf_institutions"),
     path("tableau-bord/export/jeunes/", views.export_pdf_jeunes, name="export_pdf_jeunes"),
     path("tableau-bord/export/retraites/", views.export_pdf_retraites, name="export_pdf_retraites"),
     path("tableau-bord/publicites/", views.gestion_publicites, name="gestion_publicites"),
+    path(
+        "tableau-bord/publicites/<int:pk>/",
+        views.detail_campagne_publicite,
+        name="detail_campagne_publicite",
+    ),
 ]
 
 # Servir les fichiers média en développement
