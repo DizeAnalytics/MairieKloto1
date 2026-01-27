@@ -1,0 +1,25 @@
+{
+  "name": "Mairie de Kloto 1",
+  "short_name": "Mairie Kloto 1",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#006233",
+  "background_color": "#ffffff",
+  "description": "Plateforme officielle de la Mairie de Kloto 1 : informations, projets, acteurs économiques, emplois et services aux citoyens.",
+  "icons": [
+    {
+      "src": "/static/mairie/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/mairie/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+

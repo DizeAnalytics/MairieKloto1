@@ -4,9 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mairie de Kloto 1</title>
+    {% load static %}
     {% if mairie_config and mairie_config.favicon %}
     <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
     <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% else %}
+    <link rel="icon" href="{% static 'mairie/icons/icon-192x192.png' %}">
+    <link rel="shortcut icon" href="{% static 'mairie/icons/icon-192x192.png' %}">
+    {% endif %}
+
+    {# Manifest PWA pour installation sur PC / smartphone #}
+    <link rel="manifest" href="{% static 'mairie/manifest.webmanifest' %}">
+    <meta name="theme-color" content="#006233">
+
+    {# Balises Open Graph / WhatsApp preview #}
+    <meta property="og:title" content="Mairie de Kloto 1">
+    <meta property="og:site_name" content="Mairie de Kloto 1">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="Plateforme officielle de la Mairie de Kloto 1 : informations, projets, acteurs économiques, emplois et services aux citoyens.">
+    <meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
+    {% if mairie_config and mairie_config.logo %}
+    <meta property="og:image" content="{{ request.build_absolute_uri|default:''|slice:':-1' }}{{ mairie_config.logo.url }}">
+    {% else %}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'mairie/icons/icon-512x512.png' %}">
     {% endif %}
     {% block extra_css %}{% endblock %}
     <style>
