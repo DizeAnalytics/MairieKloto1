@@ -79,6 +79,8 @@ class ActeurEconomiqueAdmin(admin.ModelAdmin):
                 "quartier",
                 "canton",
                 "adresse_complete",
+                "latitude",
+                "longitude",
             )
         }),
         ("Activité", {
@@ -186,6 +188,8 @@ class InstitutionFinanciereAdmin(admin.ModelAdmin):
                 "quartier",
                 "canton",
                 "adresse_complete",
+                "latitude",
+                "longitude",
                 "nombre_agences",
                 "horaires",
             )

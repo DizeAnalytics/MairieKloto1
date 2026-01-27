@@ -274,7 +274,7 @@
         <div class="page-header">
             <h2>{{ titre }}</h2>
             <p>Total : {{ profils.count }} inscription(s)</p>
-            <div style="margin-top: 0.8rem;">
+            <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
                 {% if type_profil == 'jeune' %}
                 <form method="get" action="{% url 'export_pdf_jeunes' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
                     <input type="hidden" name="niveau" value="{{ current_filters.niveau }}">
@@ -282,11 +282,27 @@
                         📄 Exporter en PDF (validés seulement)
                     </button>
                 </form>
+                <form method="get" action="{% url 'export_excel_jeunes' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="q" value="{{ current_filters.q }}">
+                    <input type="hidden" name="niveau" value="{{ current_filters.niveau }}">
+                    <input type="hidden" name="dispo" value="{{ current_filters.dispo }}">
+                    <button type="submit" class="btn-search btn-export" style="padding:0.5rem 1rem;">
+                        📊 Exporter en Excel (tous les champs)
+                    </button>
+                </form>
                 {% elif type_profil == 'retraite' %}
                 <form method="get" action="{% url 'export_pdf_retraites' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
                     <input type="hidden" name="niveau" value="{{ current_filters.niveau }}">
                     <button type="submit" class="btn-search" style="padding:0.5rem 1rem;">
                         📄 Exporter en PDF (validés seulement)
+                    </button>
+                </form>
+                <form method="get" action="{% url 'export_excel_retraites' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="q" value="{{ current_filters.q }}">
+                    <input type="hidden" name="niveau" value="{{ current_filters.niveau }}">
+                    <input type="hidden" name="dispo" value="{{ current_filters.dispo }}">
+                    <button type="submit" class="btn-search btn-export" style="padding:0.5rem 1rem;">
+                        📊 Exporter en Excel (tous les champs)
                     </button>
                 </form>
                 {% endif %}

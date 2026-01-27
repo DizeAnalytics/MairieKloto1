@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'emploi',
     'actualites',
     'comptes',  # Gestion de l'authentification
+    'diaspora',  # Enregistrement et gestion de la diaspora
 ]
 
 MIDDLEWARE = [

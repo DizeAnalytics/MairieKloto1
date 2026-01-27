@@ -110,6 +110,16 @@ class ActeurEconomique(models.Model):
         max_length=20, choices=SITUATION_CHOICES, default="dans_commune"
     )
 
+    # Géolocalisation (obligatoire à l'enregistrement pour la carte du tableau de bord)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        help_text="Latitude GPS (ex: 6.9057 pour Kpalimé)"
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        help_text="Longitude GPS (ex: 0.6287 pour Kpalimé)"
+    )
+
     nombre_employes = models.CharField(
         max_length=20, choices=NB_EMPLOYES_CHOICES, blank=True
     )
@@ -186,6 +196,17 @@ class InstitutionFinanciere(models.Model):
     situation = models.CharField(
         max_length=20, choices=SITUATION_CHOICES, default="dans_commune"
     )
+
+    # Géolocalisation (obligatoire à l'inscription pour la carte du tableau de bord)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        help_text="Latitude GPS (ex: 6.9057 pour Kpalimé)"
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        help_text="Longitude GPS (ex: 0.6287 pour Kpalimé)"
+    )
+
     nombre_agences = models.PositiveIntegerField(blank=True, null=True)
     horaires = models.CharField(max_length=255)
 

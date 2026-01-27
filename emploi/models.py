@@ -115,6 +115,10 @@ class ProfilEmploi(models.Model):
         default=False,
         help_text="J'accepte d'être contacté par des employeurs via la plateforme.",
     )
+    service_citoyen_obligatoire = models.BooleanField(
+        default=False,
+        help_text="Je m'engage à effectuer le service citoyen obligatoire (requis pour les jeunes diplômés sans emploi).",
+    )
 
     est_valide_par_mairie = models.BooleanField(default=False)
     date_inscription = models.DateTimeField(auto_now_add=True)

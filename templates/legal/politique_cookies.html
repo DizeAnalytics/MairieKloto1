@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div style="background: #ffffff; border-radius: 12px; padding: 2rem; box-shadow: 0 6px 18px rgba(0,0,0,0.06);">
+        <h1 style="margin-bottom: 0.75rem; color: var(--primary);">Politique de cookies</h1>
+        <p style="color: #444; margin-bottom: 1.25rem;">
+            Cette page explique comment la Mairie de Kloto 1 utilise des cookies et technologies similaires sur ce site.
+        </p>
+
+        <h2 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: #111;">1) Qu’est-ce qu’un cookie ?</h2>
+        <p style="color: #444;">
+            Un cookie est un petit fichier texte enregistré sur votre appareil (ordinateur, téléphone) lors de la consultation d’un site.
+            Il permet notamment de mémoriser certaines informations (ex: session, préférences).
+        </p>
+
+        <h2 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: #111;">2) Cookies utilisés sur ce site</h2>
+        <ul style="margin-left: 1.2rem; color: #444; line-height: 1.7;">
+            <li><strong>Cookies nécessaires</strong> : indispensables au fonctionnement du site (sécurité, navigation, formulaires, session). Ils ne peuvent pas être désactivés.</li>
+            <li><strong>Cookies non essentiels</strong> : utilisés pour améliorer l’expérience (ex: mesures d’audience/analytics). Ils sont soumis à votre consentement.</li>
+        </ul>
+
+        <h2 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: #111;">3) Votre choix (consentement)</h2>
+        <p style="color: #444;">
+            Lors de votre première visite, une bannière vous permet d’accepter ou de refuser les cookies non essentiels.
+            Votre choix est enregistré dans un cookie appelé <code>cookie_consent</code> (durée: environ 6 mois).
+        </p>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.25rem;">
+            <button type="button" class="btn btn-primary" onclick="document.cookie='cookie_consent=accepted; path=/; SameSite=Lax; max-age=' + (180*24*60*60); location.reload();">
+                Accepter
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="document.cookie='cookie_consent=declined; path=/; SameSite=Lax; max-age=' + (180*24*60*60); location.reload();">
+                Refuser
+            </button>
+        </div>
+
+        <h2 style="margin-top: 1.5rem; margin-bottom: 0.5rem; color: #111;">4) Données personnelles</h2>
+        <p style="color: #444;">
+            Lorsque vous utilisez certains formulaires (ex: suggestions), des informations personnelles peuvent être traitées.
+            Pour toute question relative à la protection des données, vous pouvez contacter la Mairie via la page “Contactez-nous”.
+        </p>
+
+        <p style="margin-top: 1.5rem; color: #666; font-size: 0.9rem;">
+            Dernière mise à jour : Janvier 2026
+        </p>
+    </div>
+</div>
+{% endblock %}
+

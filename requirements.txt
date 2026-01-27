@@ -17,3 +17,6 @@ django-colorfield>=0.9.0
 # Génération de PDFs
 reportlab>=4.0.0
 
+# Génération de fichiers Excel
+openpyxl>=3.1.0
+

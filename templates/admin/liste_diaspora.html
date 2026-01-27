@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre }} - Tableau de Bord</title>
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% endif %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+        }
+
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            opacity: 0.9;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-header h2 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .table-container {
+            background: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        thead {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--light);
+        }
+
+        tbody tr:hover {
+            background: var(--light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-valide {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-en-attente {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--dark);
+            opacity: 0.7;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-control {
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 98, 51, 0.2);
+        }
+
+        .btn-search {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            align-self: flex-end;
+            transition: background 0.2s;
+        }
+
+        .btn-search:hover {
+            background: #004d28;
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            display: inline-block;
+            align-self: flex-end;
+        }
+
+        .btn-reset:hover {
+            background: #d32f2f;
+        }
+
+        .btn-action {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--white);
+            transition: transform 0.2s;
+            margin: 0 2px;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-accept {
+            background-color: var(--primary);
+        }
+
+        .btn-reject {
+            background-color: var(--accent);
+        }
+
+        .btn-pdf {
+            background-color: #6c757d;
+            text-decoration: none;
+        }
+
+        .btn-pdf:hover {
+            background-color: #5a6268;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>{{ titre }}</h1>
+            <div>
+                <a href="{% url 'tableau_bord' %}" class="back-link">← Retour au tableau de bord</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>{{ titre }}</h2>
+            <p>Total : {{ membres.count }} inscription(s)</p>
+            <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <form method="get" action="{% url 'export_pdf_diaspora' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="pays" value="{{ current_filters.pays }}">
+                    <input type="hidden" name="secteur" value="{{ current_filters.secteur }}">
+                    <button type="submit" class="btn-search" style="padding:0.5rem 1rem;">
+                        📄 Exporter en PDF (validés seulement)
+                    </button>
+                </form>
+                <form method="get" action="{% url 'export_excel_diaspora' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="q" value="{{ current_filters.q }}">
+                    <input type="hidden" name="pays" value="{{ current_filters.pays }}">
+                    <input type="hidden" name="secteur" value="{{ current_filters.secteur }}">
+                    <button type="submit" class="btn-search btn-export" style="padding:0.5rem 1rem;">
+                        📊 Exporter en Excel (tous les champs)
+                    </button>
+                </form>
+            </div>
+
+            <form method="get" class="search-form">
+                <div class="form-group">
+                    <label for="search">Recherche</label>
+                    <input type="text" name="q" id="search" class="form-control" placeholder="Nom, email, profession..." value="{{ current_filters.q }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="pays">Pays de résidence</label>
+                    <input type="text" name="pays" id="pays" class="form-control" placeholder="Ex: France, USA..." value="{{ current_filters.pays }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="secteur">Secteur d'activité</label>
+                    <select name="secteur" id="secteur" class="form-control">
+                        <option value="">Tous les secteurs</option>
+                        {% for value, label in secteur_choices %}
+                        <option value="{{ value }}" {% if current_filters.secteur == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-search">Filtrer</button>
+                <a href="{% url 'liste_diaspora_tableau_bord' %}" class="btn-reset">Réinitialiser</a>
+            </form>
+        </div>
+
+        <div class="table-container">
+            {% if membres %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom et Prénoms</th>
+                        <th>Sexe</th>
+                        <th>Date de naissance</th>
+                        <th>Pays de résidence</th>
+                        <th>Ville</th>
+                        <th>Téléphone</th>
+                        <th>Email</th>
+                        <th>Profession</th>
+                        <th>Secteur</th>
+                        <th>Date d'inscription</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for membre in membres %}
+                    <tr>
+                        <td><strong>{{ membre.nom }} {{ membre.prenoms }}</strong></td>
+                        <td>{{ membre.get_sexe_display }}</td>
+                        <td>{{ membre.date_naissance|date:"d/m/Y" }}</td>
+                        <td>{{ membre.pays_residence_actuelle }}</td>
+                        <td>{{ membre.ville_residence_actuelle }}</td>
+                        <td>{{ membre.telephone_whatsapp }}</td>
+                        <td>{{ membre.email }}</td>
+                        <td>{{ membre.profession_actuelle|truncatewords:5 }}</td>
+                        <td>{{ membre.get_secteur_activite_display }}</td>
+                        <td>{{ membre.date_inscription|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if membre.est_valide_par_mairie %}
+                            <span class="badge badge-valide">Validé</span>
+                            {% else %}
+                            <span class="badge badge-en-attente">En attente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex;">
+                                <form method="post" action="{% url 'changer_statut' 'diaspora' membre.pk 'accepter' %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="redirect_to" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn-action btn-accept" title="Accepter">✓</button>
+                                </form>
+                                <form method="post" action="{% url 'changer_statut' 'diaspora' membre.pk 'refuser' %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="redirect_to" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn-action btn-reject" title="Refuser">✗</button>
+                                </form>
+                                <a href="{% url 'export_pdf_diaspora_detail' membre.pk %}" class="btn-action btn-pdf" title="Générer PDF">📄</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <p>Aucun membre de la diaspora enregistré pour le moment.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

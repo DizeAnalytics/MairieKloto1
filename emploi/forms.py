@@ -49,6 +49,7 @@ class ProfilJeuneForm(forms.ModelForm):
             "salaire_souhaite",
             "accepte_rgpd",
             "accepte_contact",
+            "service_citoyen_obligatoire",
         ]
         widgets = {
             "date_naissance": forms.DateInput(attrs={"type": "date"}),
@@ -96,6 +97,7 @@ class ProfilJeuneForm(forms.ModelForm):
             "disponibilite",
             "accepte_rgpd",
             "accepte_contact",
+            "service_citoyen_obligatoire",
         ]:
             if name in self.fields:
                 self.fields[name].required = True
@@ -140,6 +142,7 @@ class ProfilJeuneEditForm(forms.ModelForm):
             "salaire_souhaite",
             "accepte_rgpd",
             "accepte_contact",
+            "service_citoyen_obligatoire",
         ]
         widgets = {
             "date_naissance": forms.DateInput(attrs={"type": "date"}),
@@ -164,6 +167,7 @@ class ProfilJeuneEditForm(forms.ModelForm):
             "disponibilite",
             "accepte_rgpd",
             "accepte_contact",
+            "service_citoyen_obligatoire",
         ]:
             if name in self.fields:
                 self.fields[name].required = True

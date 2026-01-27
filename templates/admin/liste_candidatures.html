@@ -324,6 +324,16 @@
                 <a href="{% url 'liste_candidatures' %}" class="btn-reset">Réinitialiser</a>
             </form>
             
+            <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <form method="get" action="{% url 'export_excel_candidatures' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="q" value="{{ current_filters.q }}">
+                    <input type="hidden" name="statut" value="{{ current_filters.statut }}">
+                    <button type="submit" class="btn-search btn-export" style="padding:0.5rem 1rem;">
+                        📊 Exporter en Excel (tous les champs)
+                    </button>
+                </form>
+            </div>
+            
             {% if appels_avec_acceptees %}
             <div style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
                 <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.1rem;">

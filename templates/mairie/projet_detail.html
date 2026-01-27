@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+    .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 3rem 2rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        color: var(--dark);
+        opacity: 0.7;
+    }
+
+    .breadcrumb a {
+        color: var(--primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .detail-card {
+        background: var(--white);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 2.5rem;
+    }
+
+    .detail-header {
+        border-bottom: 1px solid var(--light);
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-title {
+        font-size: 2rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .statut-chip {
+        padding: 0.3rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--white);
+    }
+
+    .statut-en_cours {
+        background: var(--secondary);
+        color: var(--dark);
+    }
+
+    .statut-realise {
+        background: #28a745;
+        color: var(--white);
+    }
+
+    .projet-image {
+        width: 100%;
+        max-height: 500px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+
+    .projet-image-placeholder {
+        width: 100%;
+        height: 400px;
+        background: linear-gradient(135deg, var(--primary), #004d28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+
+    .galerie-photos {
+        margin-bottom: 2rem;
+    }
+
+    .galerie-photos h3 {
+        font-size: 1.3rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+    }
+
+    .galerie-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .galerie-item {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin: 0;
+    }
+
+    .galerie-item-img {
+        aspect-ratio: 4/3;
+        overflow: hidden;
+    }
+
+    .galerie-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .galerie-item figcaption {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        color: var(--dark);
+        opacity: 0.85;
+        background: var(--light);
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .galerie-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .detail-body {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+
+    .detail-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-section h3 {
+        font-size: 1.2rem;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-section p {
+        line-height: 1.7;
+    }
+
+    .side-card {
+        background: var(--light);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .side-card h4 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--primary);
+    }
+
+    .side-card p {
+        font-size: 0.95rem;
+        margin: 0.2rem 0;
+    }
+
+    .side-card strong {
+        font-weight: 600;
+    }
+
+    .autres-projets {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px solid var(--light);
+    }
+
+    .autres-projets h3 {
+        font-size: 1.5rem;
+        color: var(--primary);
+        margin-bottom: 1.5rem;
+    }
+
+    .autres-projets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .autre-projet-card {
+        background: var(--white);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .autre-projet-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .autre-projet-image {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        background: var(--light);
+    }
+
+    .autre-projet-body {
+        padding: 1rem;
+    }
+
+    .autre-projet-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .autre-projet-statut {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+        .detail-body {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container" style="background: var(--light); min-height: calc(100vh - 200px);">
+    <div class="breadcrumb">
+        <a href="{% url 'mairie:accueil' %}">Accueil</a> &gt;
+        <a href="{% url 'mairie:projets' %}">Nos Projets</a> &gt;
+        <span>Détail</span>
+    </div>
+
+    <div class="detail-card">
+        <div class="detail-header">
+            <h1 class="detail-title">{{ projet.titre }}</h1>
+            <div class="detail-meta">
+                <span class="statut-chip statut-{{ projet.statut }}">
+                    {{ projet.get_statut_display }}
+                </span>
+            </div>
+        </div>
+
+        {% if projet.photo_principale %}
+        <img src="{{ projet.photo_principale.url }}" alt="{{ projet.titre }}" class="projet-image">
+        {% else %}
+        <div class="projet-image-placeholder">
+            {% if projet.statut == 'realise' %}✅{% else %}🏗️{% endif %}
+        </div>
+        {% endif %}
+
+        {% if projet.photos.all %}
+        <div class="galerie-photos">
+            <h3>En images</h3>
+            <div class="galerie-grid">
+                {% for photo in projet.photos.all %}
+                <figure class="galerie-item">
+                    <div class="galerie-item-img">
+                        <img src="{{ photo.image.url }}" alt="{% if photo.legende %}{{ photo.legende }}{% else %}{{ projet.titre }} - Photo {{ forloop.counter }}{% endif %}">
+                    </div>
+                    {% if photo.legende %}
+                    <figcaption>{{ photo.legende }}</figcaption>
+                    {% endif %}
+                </figure>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="detail-body">
+            <div>
+                <div class="detail-section">
+                    <h3>Description du projet</h3>
+                    <p>{{ projet.description|linebreaks }}</p>
+                </div>
+            </div>
+
+            <div>
+                <div class="side-card">
+                    <h4>Informations clés</h4>
+                    <p><strong>Statut :</strong> {{ projet.get_statut_display }}</p>
+                    <p><strong>Date de début :</strong> {{ projet.date_debut|date:"d/m/Y" }}</p>
+                    {% if projet.date_fin %}
+                    <p><strong>Date de fin :</strong> {{ projet.date_fin|date:"d/m/Y" }}</p>
+                    {% endif %}
+                    {% if projet.budget %}
+                    <p><strong>Budget :</strong> {{ projet.budget|floatformat:0 }} FCFA</p>
+                    {% endif %}
+                    {% if projet.localisation %}
+                    <p><strong>Localisation :</strong> {{ projet.localisation }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if autres_projets %}
+    <div class="autres-projets">
+        <h3>Autres projets à découvrir</h3>
+        <div class="autres-projets-grid">
+            {% for autre in autres_projets %}
+            <a href="{% url 'mairie:projet_detail' autre.slug %}" class="autre-projet-card">
+                {% if autre.photo_principale %}
+                <img src="{{ autre.photo_principale.url }}" alt="{{ autre.titre }}" class="autre-projet-image">
+                {% else %}
+                <div class="autre-projet-image" style="display: flex; align-items: center; justify-content: center; font-size: 3rem;">
+                    {% if autre.statut == 'realise' %}✅{% else %}🏗️{% endif %}
+                </div>
+                {% endif %}
+                <div class="autre-projet-body">
+                    <div class="autre-projet-title">{{ autre.titre }}</div>
+                    <span class="autre-projet-statut statut-{{ autre.statut }}">
+                        {{ autre.get_statut_display }}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

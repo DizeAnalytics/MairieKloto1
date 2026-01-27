@@ -33,6 +33,7 @@ class ProfilEmploiAdmin(admin.ModelAdmin):
         "niveau_etude",
         "situation_actuelle",
         "disponibilite",
+        "service_citoyen_obligatoire",
         "est_valide_par_mairie",
         "date_inscription",
     )
@@ -112,6 +113,7 @@ class ProfilEmploiAdmin(admin.ModelAdmin):
             "fields": (
                 "accepte_rgpd",
                 "accepte_contact",
+                "service_citoyen_obligatoire",
                 "est_valide_par_mairie",
                 "date_inscription",
             )

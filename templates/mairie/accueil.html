@@ -206,6 +206,18 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
+        .carousel-buttons {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .carousel-buttons a {
+            min-width: 160px;
+        }
+
         .carousel-dots {
             position: absolute;
             bottom: 20px;
@@ -520,6 +532,25 @@
             <div class="carousel-content">
                 <h2>{{ image.titre|default:"Bienvenue sur le Portail de la Mairie de Kloto 1" }}</h2>
                 <p>{{ image.description|default:"Une administration proche des citoyens, engagée pour le développement" }}</p>
+                {% if image.bouton1_url or image.bouton2_url or image.bouton3_url %}
+                <div class="carousel-buttons">
+                    {% if image.bouton1_url %}
+                    <a href="{{ image.bouton1_url }}" class="btn btn-primary">
+                        {{ image.bouton1_texte|default:"En savoir plus" }}
+                    </a>
+                    {% endif %}
+                    {% if image.bouton2_url %}
+                    <a href="{{ image.bouton2_url }}" class="btn btn-secondary">
+                        {{ image.bouton2_texte|default:"Découvrir" }}
+                    </a>
+                    {% endif %}
+                    {% if image.bouton3_url %}
+                    <a href="{{ image.bouton3_url }}" class="btn btn-primary">
+                        {{ image.bouton3_texte|default:"Voir les détails" }}
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
         {% endfor %}

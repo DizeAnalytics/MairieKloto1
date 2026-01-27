@@ -47,6 +47,8 @@ class ActeurEconomiqueForm(forms.ModelForm):
             "canton",
             "adresse_complete",
             "situation",
+            "latitude",
+            "longitude",
             "nombre_employes",
             "chiffre_affaires",
             "doc_registre",
@@ -61,12 +63,16 @@ class ActeurEconomiqueForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 4}),
             "adresse_complete": forms.Textarea(attrs={"rows": 3}),
             "date_creation": forms.DateInput(attrs={"type": "date"}),
+            "latitude": forms.NumberInput(attrs={"step": "any", "placeholder": "ex: 6.9057"}),
+            "longitude": forms.NumberInput(attrs={"step": "any", "placeholder": "ex: 0.6287"}),
         }
         
         labels = {
             "cfe": "N° CFE",
             "numero_carte_operateur": "N° Carte d'Opérateur économique",
             "nif": "NIF",
+            "latitude": "Latitude (GPS)",
+            "longitude": "Longitude (GPS)",
         }
 
     def clean(self):
@@ -94,17 +100,8 @@ class ActeurEconomiqueForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields["quartier"].required = False
-        if self.user and self.user.is_authenticated:
-            if 'username' in self.fields:
-                del self.fields['username']
-            if 'password' in self.fields:
-                del self.fields['password']
-            if 'confirm_password' in self.fields:
-                del self.fields['confirm_password']
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
+        self.fields["latitude"].required = True
+        self.fields["longitude"].required = True
         if self.user and self.user.is_authenticated:
             if 'username' in self.fields:
                 del self.fields['username']
@@ -142,6 +139,8 @@ class ActeurEconomiqueEditForm(forms.ModelForm):
             "canton",
             "adresse_complete",
             "situation",
+            "latitude",
+            "longitude",
             "nombre_employes",
             "chiffre_affaires",
             "doc_registre",
@@ -156,17 +155,23 @@ class ActeurEconomiqueEditForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 4}),
             "adresse_complete": forms.Textarea(attrs={"rows": 3}),
             "date_creation": forms.DateInput(attrs={"type": "date"}),
+            "latitude": forms.NumberInput(attrs={"step": "any", "placeholder": "ex: 6.9057"}),
+            "longitude": forms.NumberInput(attrs={"step": "any", "placeholder": "ex: 0.6287"}),
         }
         
         labels = {
             "cfe": "N° CFE",
             "numero_carte_operateur": "N° Carte d'Opérateur économique",
             "nif": "NIF",
+            "latitude": "Latitude (GPS)",
+            "longitude": "Longitude (GPS)",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["quartier"].required = False
+        self.fields["latitude"].required = True
+        self.fields["longitude"].required = True
 
     def clean(self):
         cleaned_data = super().clean()
@@ -244,6 +249,8 @@ class InstitutionFinanciereForm(forms.ModelForm):
             "canton",
             "adresse_complete",
             "situation",
+            "latitude",
+            "longitude",
             "nombre_agences",
             "horaires",
             "doc_agrement",
@@ -262,6 +269,8 @@ class InstitutionFinanciereForm(forms.ModelForm):
             "adresse_complete": forms.Textarea(attrs={"rows": 3}),
             "conditions_eligibilite": forms.Textarea(attrs={"rows": 3}),
             "public_cible": forms.Textarea(attrs={"rows": 3}),
+            "latitude": forms.NumberInput(attrs={"step": "any", "placeholder": "ex: 6.9057"}),
+            "longitude": forms.NumberInput(attrs={"step": "any", "placeholder": "ex: 0.6287"}),
         }
 
     def clean_services(self):
@@ -274,6 +283,8 @@ class InstitutionFinanciereForm(forms.ModelForm):
         password = cleaned_data.get("password")
         confirm_password = cleaned_data.get("confirm_password")
         username = cleaned_data.get("username")
+        situation = cleaned_data.get("situation")
+        quartier = cleaned_data.get("quartier")
 
         if username and User.objects.filter(username=username).exists():
             self.add_error('username', "Ce nom d'utilisateur est déjà utilisé.")
@@ -290,6 +301,8 @@ class InstitutionFinanciereForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields["quartier"].required = False
+        self.fields["latitude"].required = True
+        self.fields["longitude"].required = True
         if self.user and self.user.is_authenticated:
             if 'username' in self.fields:
                 del self.fields['username']
@@ -349,6 +362,8 @@ class InstitutionFinanciereEditForm(forms.ModelForm):
             "canton",
             "adresse_complete",
             "situation",
+            "latitude",
+            "longitude",
             "nombre_agences",
             "horaires",
             "doc_agrement",
@@ -367,6 +382,8 @@ class InstitutionFinanciereEditForm(forms.ModelForm):
             "adresse_complete": forms.Textarea(attrs={"rows": 3}),
             "conditions_eligibilite": forms.Textarea(attrs={"rows": 3}),
             "public_cible": forms.Textarea(attrs={"rows": 3}),
+            "latitude": forms.NumberInput(attrs={"step": "any", "placeholder": "ex: 6.9057"}),
+            "longitude": forms.NumberInput(attrs={"step": "any", "placeholder": "ex: 0.6287"}),
         }
 
     def clean_services(self):
@@ -377,6 +394,8 @@ class InstitutionFinanciereEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["quartier"].required = False
+        self.fields["latitude"].required = True
+        self.fields["longitude"].required = True
         if self.instance and self.instance.pk and self.instance.services:
             self.initial['services'] = self.instance.services.split(',')
 

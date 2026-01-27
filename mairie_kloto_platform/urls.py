@@ -34,6 +34,9 @@ urlpatterns = [
     path("emploi/", include("emploi.urls", namespace="emploi")),
     path("actualites/", include("actualites.urls", namespace="actualites")),
     path("comptes/", include("comptes.urls", namespace="comptes")),
+    path("diaspora/", include("diaspora.urls", namespace="diaspora")),
+    # Politique de cookies (conformité / données personnelles)
+    path("politique-cookies/", views.politique_cookies, name="politique_cookies"),
     # Tableau de bord administrateur
     path("tableau-bord/", views.tableau_bord, name="tableau_bord"),
     path("tableau-bord/acteurs-economiques/", views.liste_acteurs_economiques, name="liste_acteurs"),
@@ -44,6 +47,10 @@ urlpatterns = [
     path("tableau-bord/jeunes/<int:pk>/pdf/", views.export_pdf_jeune_detail, name="export_pdf_jeune_detail"),
     path("tableau-bord/retraites/", views.liste_retraites, name="liste_retraites"),
     path("tableau-bord/retraites/<int:pk>/pdf/", views.export_pdf_retraite_detail, name="export_pdf_retraite_detail"),
+    path("tableau-bord/diaspora/", views.liste_diaspora_tableau_bord, name="liste_diaspora_tableau_bord"),
+    path("tableau-bord/diaspora/<int:pk>/pdf/", views.export_pdf_diaspora_detail, name="export_pdf_diaspora_detail"),
+    path("tableau-bord/suggestions/", views.liste_suggestions, name="liste_suggestions"),
+    path("tableau-bord/suggestions/<int:pk>/", views.detail_suggestion, name="detail_suggestion"),
     path("tableau-bord/candidatures/", views.liste_candidatures, name="liste_candidatures"),
     path("tableau-bord/candidatures/<int:appel_offre_id>/pdf/", views.export_pdf_candidatures, name="export_pdf_candidatures"),
     path("tableau-bord/notifications-candidats/", views.notifications_candidats, name="notifications_candidats"),
@@ -54,6 +61,14 @@ urlpatterns = [
     path("tableau-bord/export/institutions/", views.export_pdf_institutions, name="export_pdf_institutions"),
     path("tableau-bord/export/jeunes/", views.export_pdf_jeunes, name="export_pdf_jeunes"),
     path("tableau-bord/export/retraites/", views.export_pdf_retraites, name="export_pdf_retraites"),
+    path("tableau-bord/export/diaspora/", views.export_pdf_diaspora, name="export_pdf_diaspora"),
+    # Exports Excel
+    path("tableau-bord/export-excel/acteurs/", views.export_excel_acteurs, name="export_excel_acteurs"),
+    path("tableau-bord/export-excel/institutions/", views.export_excel_institutions, name="export_excel_institutions"),
+    path("tableau-bord/export-excel/jeunes/", views.export_excel_jeunes, name="export_excel_jeunes"),
+    path("tableau-bord/export-excel/retraites/", views.export_excel_retraites, name="export_excel_retraites"),
+    path("tableau-bord/export-excel/diaspora/", views.export_excel_diaspora, name="export_excel_diaspora"),
+    path("tableau-bord/export-excel/candidatures/", views.export_excel_candidatures, name="export_excel_candidatures"),
     path("tableau-bord/publicites/", views.gestion_publicites, name="gestion_publicites"),
     path(
         "tableau-bord/publicites/<int:pk>/",

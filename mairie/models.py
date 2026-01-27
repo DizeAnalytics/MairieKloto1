@@ -141,6 +141,7 @@ class InformationMairie(models.Model):
         ("adresse", "Adresse"),
         ("mission", "Mission/Vision"),
         ("histoire", "Histoire"),
+        ("pdc", "PDC"),
         ("autre", "Autre"),
     ]
 
@@ -372,6 +373,34 @@ class ImageCarousel(models.Model):
         blank=True,
         help_text="Description optionnelle pour l'image"
     )
+    # Jusqu'à 3 boutons d'action affichés sur l'image du carousel
+    bouton1_texte = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Texte du premier bouton (ex: 'En savoir plus'). Laisser vide pour utiliser un texte par défaut."
+    )
+    bouton1_url = models.URLField(
+        blank=True,
+        help_text="URL du premier bouton. Si vide, le bouton n'apparaîtra pas."
+    )
+    bouton2_texte = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Texte du deuxième bouton (facultatif)."
+    )
+    bouton2_url = models.URLField(
+        blank=True,
+        help_text="URL du deuxième bouton (facultatif)."
+    )
+    bouton3_texte = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Texte du troisième bouton (facultatif)."
+    )
+    bouton3_url = models.URLField(
+        blank=True,
+        help_text="URL du troisième bouton (facultatif)."
+    )
     ordre_affichage = models.PositiveIntegerField(
         default=0,
         help_text="Ordre d'affichage (0 = premier, plus grand = plus bas)"
@@ -411,6 +440,18 @@ class ConfigurationMairie(models.Model):
         default="+228 XX XX XX XX",
         help_text="Numéro de téléphone (ex: +228 XX XX XX XX)"
     )
+    whatsapp = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Numéro WhatsApp (ex: +228 XX XX XX XX). Format: +228XXXXXXXXX (sans espaces ni tirets)"
+    )
+    pdc_pdf = models.FileField(
+        upload_to="mairie/pdc/",
+        blank=True,
+        null=True,
+        validators=[validate_file_size],
+        help_text="Plan de Développement Communal (PDF). Ce fichier sera accessible via un bouton flottant sur le site."
+    )
     email = models.EmailField(
         blank=True,
         default="contact@mairiekloto1.tg",
@@ -439,6 +480,23 @@ class ConfigurationMairie(models.Model):
     url_youtube = models.URLField(
         blank=True,
         help_text="URL de la chaîne YouTube"
+    )
+    
+    # Syntaxes / numéros pour les dons (USSD ou numéros courts, non affichés aux citoyens)
+    numero_yas_money = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Syntaxe ou code de transfert Mixx by Yas (ex: *145*1*...#). Ce code ne sera pas affiché, uniquement utilisé pour le lien."
+    )
+    numero_flooz_money = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Syntaxe ou code de transfert Flooz Money (ex: *155*1*...#). Ce code ne sera pas affiché, uniquement utilisé pour le lien."
+    )
+    numero_carte_bancaire = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Numéro de compte bancaire pour les dons (affiché publiquement sur le site)"
     )
     
     date_creation = models.DateTimeField(auto_now_add=True)
@@ -610,3 +668,234 @@ class Publicite(models.Model):
         if self.date_debut and self.date_fin:
             return self.date_debut <= maintenant <= self.date_fin
         return True
+
+
+class Projet(models.Model):
+    """Projet de la mairie (en cours ou réalisé)."""
+    
+    STATUT_CHOICES = [
+        ("en_cours", "En cours"),
+        ("realise", "Réalisé"),
+    ]
+    
+    titre = models.CharField(
+        max_length=255,
+        help_text="Titre du projet"
+    )
+    slug = models.SlugField(
+        max_length=255,
+        unique=True,
+        help_text="Identifiant technique pour l'URL (ex: rehabilitation-marche-central)"
+    )
+    description = models.TextField(
+        help_text="Description détaillée du projet"
+    )
+    resume = models.TextField(
+        blank=True,
+        help_text="Résumé court du projet (affiché dans la liste)"
+    )
+    
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default="en_cours",
+        help_text="Statut du projet"
+    )
+    
+    date_debut = models.DateField(
+        help_text="Date de début du projet"
+    )
+    date_fin = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Date de fin du projet (surtout pour les projets réalisés)"
+    )
+    
+    budget = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Budget alloué au projet (en FCFA)"
+    )
+    
+    localisation = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Localisation du projet (quartier, secteur, etc.)"
+    )
+    
+    photo_principale = models.ImageField(
+        upload_to="mairie/projets/",
+        blank=True,
+        null=True,
+        validators=[validate_file_size],
+        help_text="Photo principale du projet"
+    )
+    
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage (0 = premier, plus grand = plus bas)"
+    )
+    
+    est_visible = models.BooleanField(
+        default=True,
+        help_text="Afficher ce projet sur le site public"
+    )
+    
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Projet"
+        verbose_name_plural = "Projets"
+        ordering = ["ordre_affichage", "-date_debut", "-date_creation"]
+    
+    def __str__(self):
+        return f"{self.titre} ({self.get_statut_display()})"
+    
+    def get_resume(self):
+        """Retourne le résumé ou un extrait de la description."""
+        if self.resume:
+            return self.resume
+        return self.description[:200] + "..." if len(self.description) > 200 else self.description
+
+
+class ProjetPhoto(models.Model):
+    """Photo supplémentaire pour illustrer un projet (en plus de la photo principale)."""
+    
+    projet = models.ForeignKey(
+        Projet,
+        on_delete=models.CASCADE,
+        related_name="photos",
+        help_text="Projet concerné"
+    )
+    image = models.ImageField(
+        upload_to="mairie/projets/galerie/",
+        validators=[validate_file_size],
+        help_text="Photo descriptive du projet (max 5 Mo)"
+    )
+    legende = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Légende optionnelle pour décrire la photo"
+    )
+    ordre = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage (0 = première, 1 = deuxième, etc.)"
+    )
+    
+    class Meta:
+        verbose_name = "Photo du projet"
+        verbose_name_plural = "Photos du projet"
+        ordering = ["ordre", "pk"]
+    
+    def __str__(self):
+        return f"Photo {self.ordre + 1} - {self.projet.titre}"
+
+
+class Suggestion(models.Model):
+    """Suggestion soumise par un visiteur via le formulaire de contact."""
+    
+    nom = models.CharField(
+        max_length=255,
+        help_text="Nom du visiteur"
+    )
+    email = models.EmailField(
+        help_text="Adresse email du visiteur"
+    )
+    telephone = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Numéro de téléphone (facultatif)"
+    )
+    sujet = models.CharField(
+        max_length=255,
+        help_text="Sujet de la suggestion"
+    )
+    message = models.TextField(
+        help_text="Message détaillé de la suggestion"
+    )
+    date_soumission = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Date et heure de soumission"
+    )
+    est_lue = models.BooleanField(
+        default=False,
+        help_text="Marquer comme lue par l'administration"
+    )
+    date_lecture = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date de lecture par l'administration"
+    )
+    
+    class Meta:
+        verbose_name = "Suggestion"
+        verbose_name_plural = "Suggestions"
+        ordering = ["-date_soumission"]
+    
+    def __str__(self):
+        return f"Suggestion de {self.nom} - {self.sujet} ({self.date_soumission.strftime('%d/%m/%Y')})"
+
+
+class DonMairie(models.Model):
+    """Enregistre un don fait à la mairie."""
+    
+    TYPE_DON_CHOICES = [
+        ("yas_money", "Yas Money"),
+        ("flooz_money", "Flooz Money"),
+        ("carte_bancaire", "Carte Bancaire"),
+    ]
+    
+    nom_donateur = models.CharField(
+        max_length=255,
+        help_text="Nom complet du donateur"
+    )
+    email = models.EmailField(
+        help_text="Adresse email du donateur"
+    )
+    telephone = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Numéro de téléphone (facultatif)"
+    )
+    type_don = models.CharField(
+        max_length=20,
+        choices=TYPE_DON_CHOICES,
+        help_text="Moyen de paiement utilisé pour le don"
+    )
+    montant = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text="Montant du don en FCFA"
+    )
+    message = models.TextField(
+        blank=True,
+        help_text="Message optionnel du donateur"
+    )
+    date_don = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Date et heure du don"
+    )
+    est_confirme = models.BooleanField(
+        default=False,
+        help_text="Marquer comme confirmé après vérification du paiement"
+    )
+    date_confirmation = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date de confirmation du don"
+    )
+    notes_admin = models.TextField(
+        blank=True,
+        help_text="Notes internes de l'administration"
+    )
+    
+    class Meta:
+        verbose_name = "Don à la Mairie"
+        verbose_name_plural = "Dons à la Mairie"
+        ordering = ["-date_don"]
+    
+    def __str__(self):
+        return f"Don de {self.nom_donateur} - {self.montant} FCFA ({self.get_type_don_display()})"

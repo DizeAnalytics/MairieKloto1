@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre }} - Tableau de Bord</title>
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% endif %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+        }
+
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            opacity: 0.9;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-header h2 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .table-container {
+            background: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        thead {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--light);
+        }
+
+        tbody tr:hover {
+            background: var(--light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-lue {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-non-lue {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--dark);
+            opacity: 0.7;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-control {
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 98, 51, 0.2);
+        }
+
+        .btn-search {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            align-self: flex-end;
+            transition: background 0.2s;
+        }
+
+        .btn-search:hover {
+            background: #004d28;
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            display: inline-block;
+            align-self: flex-end;
+        }
+
+        .btn-reset:hover {
+            background: #d32f2f;
+        }
+
+        .btn-action {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--white);
+            transition: transform 0.2s;
+            margin: 0 2px;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-mark-read {
+            background-color: var(--primary);
+        }
+
+        .btn-read {
+            background-color: #007bff;
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+
+        .btn-read:hover {
+            background-color: #0056b3;
+            color: white;
+            text-decoration: none;
+        }
+
+        .message-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .message-full {
+            max-width: 500px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .close {
+            color: var(--white);
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.9;
+        }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .detail-item {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--light);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            color: var(--dark);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .detail-value.message-text {
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>{{ titre }}</h1>
+            <div>
+                <a href="{% url 'tableau_bord' %}" class="back-link">← Retour au tableau de bord</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>{{ titre }}</h2>
+            <p>Total : {{ suggestions.count }} suggestion(s)</p>
+
+            <form method="get" class="search-form">
+                <div class="form-group">
+                    <label for="search">Recherche</label>
+                    <input type="text" name="q" id="search" class="form-control" placeholder="Nom, email, sujet, message..." value="{{ current_filters.q }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="est_lue">Statut de lecture</label>
+                    <select name="est_lue" id="est_lue" class="form-control">
+                        <option value="">Toutes</option>
+                        <option value="oui" {% if current_filters.est_lue == 'oui' %}selected{% endif %}>Lues</option>
+                        <option value="non" {% if current_filters.est_lue == 'non' %}selected{% endif %}>Non lues</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-search">Filtrer</button>
+                <a href="{% url 'liste_suggestions' %}" class="btn-reset">Réinitialiser</a>
+            </form>
+        </div>
+
+        <div class="table-container">
+            {% if suggestions %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Sujet</th>
+                        <th>Message</th>
+                        <th>Date Soumission</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for suggestion in suggestions %}
+                    <tr>
+                        <td><strong>{{ suggestion.nom }}</strong></td>
+                        <td>{{ suggestion.email }}</td>
+                        <td>{{ suggestion.telephone|default:"-" }}</td>
+                        <td><strong>{{ suggestion.sujet }}</strong></td>
+                        <td>
+                            <div class="message-preview" title="{{ suggestion.message }}">
+                                {{ suggestion.message|truncatewords:15 }}
+                            </div>
+                        </td>
+                        <td>{{ suggestion.date_soumission|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if suggestion.est_lue %}
+                            <span class="badge badge-lue">Lue</span>
+                            {% if suggestion.date_lecture %}
+                            <br><small style="font-size: 0.75rem; color: #666;">{{ suggestion.date_lecture|date:"d/m/Y H:i" }}</small>
+                            {% endif %}
+                            {% else %}
+                            <span class="badge badge-non-lue">Non lue</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <a href="{% url 'detail_suggestion' suggestion.pk %}" class="btn-read" target="_blank">Lire</a>
+                                {% if not suggestion.est_lue %}
+                                <form method="post" action="{% url 'changer_statut' 'suggestion' suggestion.pk 'marquer_lue' %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="redirect_to" value="{% url 'liste_suggestions' %}">
+                                    <button type="submit" class="btn-action btn-mark-read" title="Marquer comme lue">✓</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <p>Aucune suggestion soumise pour le moment.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

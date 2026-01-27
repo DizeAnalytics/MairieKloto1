@@ -191,6 +191,68 @@
         }
         
         .container { max-width: 1400px; margin: 0 auto; padding: 3rem 2rem; }
+
+        /* Bandeau cookies */
+        .cookie-banner {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: 16px;
+            z-index: 3000;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            display: none;
+        }
+        .cookie-banner-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .cookie-banner-text {
+            flex: 1 1 520px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            opacity: 0.95;
+        }
+        .cookie-banner-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .cookie-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+        }
+        .cookie-btn:hover { transform: translateY(-1px); }
+        .cookie-btn-accept { background: var(--secondary); color: var(--dark); }
+        .cookie-btn-decline { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
+        .cookie-btn-link {
+            background: transparent;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.25);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        @media (max-width: 600px) {
+            .cookie-banner { left: 12px; right: 12px; bottom: 12px; }
+            .cookie-banner-actions { justify-content: stretch; width: 100%; }
+            .cookie-btn, .cookie-btn-link { width: 100%; justify-content: center; }
+        }
     </style>
     {% include 'includes/footer_styles.html' %}
 </head>
@@ -230,6 +292,7 @@
                 <li><a href="{% url 'mairie:etat_civil' %}" {% if request.resolver_match.url_name == 'etat_civil' %}class="active"{% endif %}>État civil</a></li>
                 <li><a href="{% url 'acteurs:sites_public' %}" {% if request.resolver_match.url_name == 'sites_public' %}class="active"{% endif %}>Sites touristiques</a></li>
                 <li><a href="{% url 'actualites:liste' %}" {% if request.resolver_match.url_name == 'liste' %}class="active"{% endif %}>Actualités</a></li>
+                <li><a href="{% url 'mairie:projets' %}" {% if request.resolver_match.url_name == 'projets' or request.resolver_match.url_name == 'projet_detail' %}class="active"{% endif %}>Nos Projets</a></li>
                 <li><a href="{% url 'mairie:appels_offres' %}" {% if request.resolver_match.url_name == 'appels_offres' %}class="active"{% endif %}>Appels d'offres</a></li>
                 <li><a href="{% url 'mairie:contactez_nous' %}" {% if request.resolver_match.url_name == 'contactez_nous' %}class="active"{% endif %}>Contactez-nous</a></li>
                 {% if user.is_staff or user.is_superuser %}
@@ -253,6 +316,22 @@
     </header>
 
     {% block content %}{% endblock %}
+
+    <!-- Bandeau de consentement cookies (RGPD / données personnelles) -->
+    <div class="cookie-banner" id="cookieBanner" role="dialog" aria-live="polite" aria-label="Consentement cookies">
+        <div class="cookie-banner-inner">
+            <div class="cookie-banner-text">
+                Ce site utilise des cookies **nécessaires** au bon fonctionnement et pour sécuriser certaines fonctionnalités.
+                Vous pouvez accepter ou refuser les cookies non essentiels. Pour en savoir plus, consultez notre
+                <a href="{% url 'politique_cookies' %}" style="color: var(--secondary); text-decoration: underline;">politique de cookies</a>.
+            </div>
+            <div class="cookie-banner-actions">
+                <a class="cookie-btn cookie-btn-link" href="{% url 'politique_cookies' %}">📄 Politique</a>
+                <button type="button" class="cookie-btn cookie-btn-decline" id="cookieDeclineBtn">Refuser</button>
+                <button type="button" class="cookie-btn cookie-btn-accept" id="cookieAcceptBtn">Accepter</button>
+            </div>
+        </div>
+    </div>
 
     {# Modale de publicité globale - affichée sur la plupart des pages #}
     {% if publicite_aleatoire %}
@@ -559,6 +638,235 @@
             }
             window.closePubModal();
         };
+        
+        // Configuration du lien WhatsApp
+        {% if mairie_config and mairie_config.whatsapp %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const whatsappNumber = "{{ mairie_config.whatsapp }}";
+            // Nettoyer le numéro : enlever espaces et tirets, mais garder le +
+            const cleanNumber = whatsappNumber.replace(/[\s\-]/g, '');
+            const whatsappLink = document.getElementById('whatsapp-link');
+            if (whatsappLink && cleanNumber) {
+                // S'assurer que le numéro commence par +, sinon l'ajouter
+                const finalNumber = cleanNumber.startsWith('+') ? cleanNumber : '+' + cleanNumber;
+                whatsappLink.href = 'https://wa.me/' + finalNumber.replace(/^\+/, '');
+            }
+        });
+        {% endif %}
+        
+        // Configuration du lien PDC
+        {% if mairie_config and mairie_config.pdc_pdf %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const pdcLink = document.getElementById('pdc-link');
+            if (pdcLink) {
+                pdcLink.href = "{{ mairie_config.pdc_pdf.url }}";
+            }
+        });
+        {% endif %}
+
+        // Bandeau cookies
+        (function() {
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+            function setCookie(name, value, days) {
+                const d = new Date();
+                d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+                const expires = "expires=" + d.toUTCString();
+                document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Lax`;
+            }
+            function showBanner() {
+                const el = document.getElementById('cookieBanner');
+                if (el) el.style.display = 'block';
+            }
+            function hideBanner() {
+                const el = document.getElementById('cookieBanner');
+                if (el) el.style.display = 'none';
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const consent = getCookie('cookie_consent');
+                if (!consent) {
+                    showBanner();
+                }
+
+                const acceptBtn = document.getElementById('cookieAcceptBtn');
+                const declineBtn = document.getElementById('cookieDeclineBtn');
+
+                if (acceptBtn) {
+                    acceptBtn.addEventListener('click', function() {
+                        setCookie('cookie_consent', 'accepted', 180);
+                        hideBanner();
+                    });
+                }
+                if (declineBtn) {
+                    declineBtn.addEventListener('click', function() {
+                        setCookie('cookie_consent', 'declined', 180);
+                        hideBanner();
+                    });
+                }
+            });
+        })();
     </script>
+    
+    {% if mairie_config and mairie_config.whatsapp %}
+    <!-- Bouton WhatsApp Flottant -->
+    <style>
+        .whatsapp-float {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25d366;
+            color: #FFF;
+            border-radius: 50px;
+            text-align: center;
+            font-size: 30px;
+            box-shadow: 2px 2px 3px #999;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+        
+        .whatsapp-float:hover {
+            background-color: #20ba5a;
+            transform: scale(1.1);
+            box-shadow: 3px 3px 5px #666;
+        }
+        
+        .whatsapp-float svg {
+            width: 35px;
+            height: 35px;
+            fill: white;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .whatsapp-float {
+                width: 55px;
+                height: 55px;
+                bottom: 15px;
+                right: 15px;
+                font-size: 28px;
+            }
+            
+            .whatsapp-float svg {
+                width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
+    <a href="#" 
+       class="whatsapp-float" 
+       target="_blank" 
+       rel="noopener noreferrer"
+       title="Contactez-nous sur WhatsApp"
+       id="whatsapp-link">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+        </svg>
+    </a>
+    {% endif %}
+    
+    {% if mairie_config and mairie_config.pdc_pdf %}
+    <!-- Bouton PDC Flottant -->
+    <style>
+        .pdc-float {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            bottom: 20px;
+            left: 20px;
+            background-color: #dc3545;
+            color: #FFF;
+            border-radius: 50px;
+            text-align: center;
+            font-size: 30px;
+            box-shadow: 2px 2px 3px #999;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            animation: pulse-pdc 2s infinite;
+        }
+        
+        .pdc-float:hover {
+            background-color: #c82333;
+            transform: scale(1.1);
+            box-shadow: 3px 3px 5px #666;
+        }
+        
+        .pdc-float svg {
+            width: 35px;
+            height: 35px;
+            fill: white;
+        }
+        
+        @keyframes pulse-pdc {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .pdc-float {
+                width: 55px;
+                height: 55px;
+                bottom: 15px;
+                left: 15px;
+                font-size: 28px;
+            }
+            
+            .pdc-float svg {
+                width: 30px;
+                height: 30px;
+            }
+            
+            /* Sur mobile, empiler les boutons verticalement si WhatsApp est aussi présent */
+            {% if mairie_config and mairie_config.whatsapp %}
+            .pdc-float {
+                bottom: 85px;
+            }
+            {% endif %}
+        }
+    </style>
+    <a href="#" 
+       class="pdc-float" 
+       target="_blank" 
+       rel="noopener noreferrer"
+       title="Télécharger le Plan de Développement Communal"
+       id="pdc-link">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+        </svg>
+    </a>
+    {% endif %}
 </body>
 </html>

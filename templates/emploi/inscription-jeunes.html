@@ -582,7 +582,7 @@
 
                 <!-- Conditions -->
                 <div class="checkbox-group">
-                    <h4 style="margin-bottom: 1rem; color: var(--primary);">Autorisations</h4>
+                    <h4 style="margin-bottom: 1rem; color: var(--primary);">Autorisations & Engagements</h4>
                     <div class="checkbox-item">
                         {{ form.accepte_rgpd }}
                         <label>
@@ -598,6 +598,14 @@
                             <span class="required">*</span>
                         </label>
                         {{ form.accepte_contact.errors }}
+                    </div>
+                    <div class="checkbox-item">
+                        {{ form.service_citoyen_obligatoire }}
+                        <label>
+                            Je m'engage à effectuer le service citoyen obligatoire (requis pour les jeunes diplômés sans emploi)
+                            <span class="required">*</span>
+                        </label>
+                        {{ form.service_citoyen_obligatoire.errors }}
                     </div>
                 </div>
 

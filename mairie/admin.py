@@ -11,6 +11,10 @@ from .models import (
     ConfigurationMairie,
     CampagnePublicitaire,
     Publicite,
+    Projet,
+    ProjetPhoto,
+    Suggestion,
+    DonMairie,
 )
 
 
@@ -141,18 +145,26 @@ class AppelOffreAdmin(admin.ModelAdmin):
 class ConfigurationMairieAdmin(admin.ModelAdmin):
     list_display = ("nom_commune", "est_active", "date_modification")
     list_filter = ("est_active",)
-    search_fields = ("nom_commune", "email", "telephone")
+    search_fields = ("nom_commune", "email", "telephone", "whatsapp")
     fieldsets = (
         ("Identité", {
             "fields": ("nom_commune", "logo", "favicon", "est_active")
         }),
         ("Informations de contact", {
-            "fields": ("adresse", "telephone", "email", "horaires"),
-            "description": "Ces informations seront affichées dans le footer du site."
+            "fields": ("adresse", "telephone", "whatsapp", "email", "horaires"),
+            "description": "Ces informations seront affichées dans le footer du site. Le numéro WhatsApp sera utilisé pour le bouton flottant de contact."
+        }),
+        ("Documents", {
+            "fields": ("pdc_pdf",),
+            "description": "Le Plan de Développement Communal (PDC) sera accessible via un bouton flottant sur le site."
         }),
         ("Réseaux sociaux", {
             "fields": ("url_facebook", "url_twitter", "url_instagram", "url_youtube"),
             "description": "URLs des réseaux sociaux. Laissez vide si vous ne souhaitez pas afficher un réseau social."
+        }),
+        ("Numéros de compte pour les dons", {
+            "fields": ("numero_yas_money", "numero_flooz_money", "numero_carte_bancaire"),
+            "description": "Numéros de compte pour recevoir les dons. Ces numéros seront affichés sur la page de contact."
         }),
         ("Dates", {
             "fields": ("date_creation", "date_modification")
@@ -259,6 +271,9 @@ class InformationMairieAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ("date_creation", "date_modification")
+    
+    class Media:
+        js = ('mairie/js/information_mairie_icons.js',)
 
 
 @admin.register(EtatCivilPage)
@@ -310,6 +325,17 @@ class ImageCarouselAdmin(admin.ModelAdmin):
                 "titre",
                 "description",
             )
+        }),
+        ("Boutons d'action (max 3)", {
+            "fields": (
+                "bouton1_texte",
+                "bouton1_url",
+                "bouton2_texte",
+                "bouton2_url",
+                "bouton3_texte",
+                "bouton3_url",
+            ),
+            "description": "Vous pouvez définir jusqu'à 3 boutons qui s'afficheront sur cette image du carousel. Un bouton n'est visible que si son URL est renseignée."
         }),
         ("Affichage", {
             "fields": (
@@ -441,3 +467,208 @@ class PubliciteAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = ("date_creation",)
+
+
+class ProjetPhotoInline(admin.TabularInline):
+    model = ProjetPhoto
+    extra = 3
+    fields = ("image", "legende", "ordre")
+    verbose_name = "Photo supplémentaire"
+    verbose_name_plural = "Photos supplémentaires (3 pour mieux décrire le projet)"
+
+
+@admin.register(Projet)
+class ProjetAdmin(admin.ModelAdmin):
+    """Administration des projets de la mairie."""
+    
+    inlines = (ProjetPhotoInline,)
+    
+    list_display = (
+        "titre",
+        "statut",
+        "date_debut",
+        "date_fin",
+        "budget",
+        "localisation",
+        "ordre_affichage",
+        "est_visible",
+        "date_modification",
+    )
+    
+    list_filter = (
+        "statut",
+        "est_visible",
+        "date_debut",
+        "date_fin",
+    )
+    
+    search_fields = (
+        "titre",
+        "description",
+        "resume",
+        "localisation",
+    )
+    
+    prepopulated_fields = {"slug": ("titre",)}
+    
+    fieldsets = (
+        ("Informations générales", {
+            "fields": (
+                "titre",
+                "slug",
+                "statut",
+                "description",
+                "resume",
+            )
+        }),
+        ("Calendrier", {
+            "fields": (
+                "date_debut",
+                "date_fin",
+            )
+        }),
+        ("Informations complémentaires", {
+            "fields": (
+                "budget",
+                "localisation",
+                "photo_principale",
+            )
+        }),
+        ("Affichage", {
+            "fields": (
+                "ordre_affichage",
+                "est_visible",
+            )
+        }),
+        ("Dates", {
+            "fields": (
+                "date_creation",
+                "date_modification",
+            )
+        }),
+    )
+    
+    readonly_fields = ("date_creation", "date_modification")
+
+
+@admin.register(Suggestion)
+class SuggestionAdmin(admin.ModelAdmin):
+    """Administration des suggestions soumises par les visiteurs."""
+    
+    list_display = (
+        "nom",
+        "email",
+        "sujet",
+        "date_soumission",
+        "est_lue",
+        "date_lecture",
+    )
+    
+    list_filter = (
+        "est_lue",
+        "date_soumission",
+        "date_lecture",
+    )
+    
+    search_fields = (
+        "nom",
+        "email",
+        "telephone",
+        "sujet",
+        "message",
+    )
+    
+    readonly_fields = ("date_soumission",)
+    
+    fieldsets = (
+        ("Informations du visiteur", {
+            "fields": (
+                "nom",
+                "email",
+                "telephone",
+            )
+        }),
+        ("Contenu de la suggestion", {
+            "fields": (
+                "sujet",
+                "message",
+            )
+        }),
+        ("Suivi", {
+            "fields": (
+                "est_lue",
+                "date_lecture",
+                "date_soumission",
+            )
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Marquer automatiquement comme lue si l'admin modifie."""
+        if change and obj.est_lue and not obj.date_lecture:
+            from django.utils import timezone
+            obj.date_lecture = timezone.now()
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(DonMairie)
+class DonMairieAdmin(admin.ModelAdmin):
+    """Administration des dons à la mairie."""
+    
+    list_display = (
+        "nom_donateur",
+        "email",
+        "type_don",
+        "montant",
+        "date_don",
+        "est_confirme",
+        "date_confirmation",
+    )
+    
+    list_filter = (
+        "type_don",
+        "est_confirme",
+        "date_don",
+        "date_confirmation",
+    )
+    
+    search_fields = (
+        "nom_donateur",
+        "email",
+        "telephone",
+        "message",
+    )
+    
+    readonly_fields = ("date_don",)
+    
+    fieldsets = (
+        ("Informations du donateur", {
+            "fields": (
+                "nom_donateur",
+                "email",
+                "telephone",
+            )
+        }),
+        ("Détails du don", {
+            "fields": (
+                "type_don",
+                "montant",
+                "message",
+            )
+        }),
+        ("Suivi", {
+            "fields": (
+                "est_confirme",
+                "date_confirmation",
+                "notes_admin",
+                "date_don",
+            )
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Marquer automatiquement la date de confirmation si confirmé."""
+        if change and obj.est_confirme and not obj.date_confirmation:
+            from django.utils import timezone
+            obj.date_confirmation = timezone.now()
+        super().save_model(request, obj, form, change)

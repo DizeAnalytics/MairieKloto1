@@ -12,5 +12,7 @@ urlpatterns = [
     path('appels-offres/<int:pk>/', views.detail_appel_offre, name='appel_offre_detail'),
     path('appels-offres/<int:pk>/pdf/', views.generer_pdf_appel_offre, name='appel_offre_pdf'),
     path('appels-offres/<int:pk>/candidater/', views.soumettre_candidature, name='soumettre_candidature'),
+    path('nos-projets/', views.liste_projets, name='projets'),
+    path('nos-projets/<slug:slug>/', views.detail_projet, name='projet_detail'),
 ]
 

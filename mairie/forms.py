@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Candidature, CampagnePublicitaire, Publicite
+from .models import Candidature, CampagnePublicitaire, Publicite, Suggestion, DonMairie
 
 
 class CandidatureForm(forms.ModelForm):
@@ -103,3 +103,121 @@ class PubliciteForm(forms.ModelForm):
                 }
             ),
         }
+
+
+class SuggestionForm(forms.ModelForm):
+    """Formulaire de suggestion pour les visiteurs."""
+    
+    class Meta:
+        model = Suggestion
+        fields = ["nom", "email", "telephone", "sujet", "message"]
+        widgets = {
+            "nom": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Votre nom complet",
+                    "required": True,
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "votre.email@exemple.com",
+                    "required": True,
+                }
+            ),
+            "telephone": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "+228 XX XX XX XX (facultatif)",
+                }
+            ),
+            "sujet": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Sujet de votre suggestion",
+                    "required": True,
+                }
+            ),
+            "message": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 6,
+                    "placeholder": "Décrivez votre suggestion en détail...",
+                    "required": True,
+                }
+            ),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["nom"].required = True
+        self.fields["email"].required = True
+        self.fields["sujet"].required = True
+        self.fields["message"].required = True
+
+
+class DonForm(forms.ModelForm):
+    """Formulaire pour faire un don à la mairie."""
+    
+    class Meta:
+        model = DonMairie
+        fields = ["nom_donateur", "email", "telephone", "type_don", "montant", "message"]
+        widgets = {
+            "nom_donateur": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Votre nom complet",
+                    "required": True,
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "votre.email@exemple.com",
+                    "required": True,
+                }
+            ),
+            "telephone": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "+228 XX XX XX XX (facultatif)",
+                }
+            ),
+            "type_don": forms.Select(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "montant": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Montant en FCFA",
+                    "min": 1,
+                    "step": 0.01,
+                    "required": True,
+                }
+            ),
+            "message": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Message optionnel (ex: pour quel projet, dédicace, etc.)",
+                }
+            ),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["nom_donateur"].required = True
+        self.fields["email"].required = True
+        self.fields["type_don"].required = True
+        self.fields["montant"].required = True
+        self.fields["type_don"].label = "Moyen de paiement"
+    
+    def clean_montant(self):
+        montant = self.cleaned_data.get("montant")
+        if montant and montant <= 0:
+            raise forms.ValidationError("Le montant doit être supérieur à zéro.")
+        return montant

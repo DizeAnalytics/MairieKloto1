@@ -19,8 +19,12 @@ from .models import (
     Candidature,
     ImageCarousel,
     Publicite,
+    Projet,
+    Suggestion,
+    DonMairie,
+    ConfigurationMairie,
 )
-from .forms import CandidatureForm
+from .forms import CandidatureForm, SuggestionForm
 from acteurs.models import ActeurEconomique, InstitutionFinanciere
 from emploi.models import ProfilEmploi
 
@@ -59,7 +63,7 @@ def etat_civil(request):
 
 
 def contactez_nous(request):
-    """Page de contact simple (coordonnées de la mairie)."""
+    """Page de contact avec formulaire de suggestion et section pour faire un don."""
 
     # Les informations principales (adresse, téléphone, email, horaires)
     # viennent de ConfigurationMairie via le context processor `mairie_config`.
@@ -67,9 +71,33 @@ def contactez_nous(request):
     informations_contact = InformationMairie.objects.filter(
         type_info__in=["contact", "adresse", "horaire"]
     ).order_by("ordre_affichage", "type_info")
+    
+    # Récupérer la configuration de la mairie pour les numéros de compte
+    mairie_config = ConfigurationMairie.objects.filter(est_active=True).first()
+
+    # Gestion du formulaire de suggestion
+    if request.method == 'POST':
+        form = SuggestionForm(request.POST)
+        if form.is_valid():
+            suggestion = form.save()
+            messages.success(
+                request,
+                "Votre suggestion a été envoyée avec succès ! Nous vous remercions pour votre contribution."
+            )
+            # Rediriger pour éviter la double soumission
+            return redirect('mairie:contactez_nous')
+        else:
+            messages.error(
+                request,
+                "Une erreur s'est produite lors de l'envoi de votre suggestion. Veuillez vérifier les informations saisies."
+            )
+    else:
+        form = SuggestionForm()
 
     context = {
         "informations_contact": informations_contact,
+        "form_suggestion": form,
+        "mairie_config": mairie_config,
     }
     return render(request, "mairie/contactez_nous.html", context)
 
@@ -351,4 +379,43 @@ def soumettre_candidature(request, pk: int):
         'form': form,
     }
     return render(request, 'mairie/candidature_form.html', context)
+
+
+def liste_projets(request):
+    """Page listant tous les projets publiés de la mairie."""
+    
+    projets = Projet.objects.filter(est_visible=True).order_by('ordre_affichage', '-date_debut', '-date_creation')
+    
+    # Séparer les projets en cours et réalisés
+    projets_en_cours = projets.filter(statut='en_cours')
+    projets_realises = projets.filter(statut='realise')
+    
+    context = {
+        'projets_en_cours': projets_en_cours,
+        'projets_realises': projets_realises,
+    }
+    
+    return render(request, 'mairie/projets.html', context)
+
+
+def detail_projet(request, slug):
+    """Page de détail d'un projet."""
+    
+    projet = get_object_or_404(
+        Projet.objects.prefetch_related("photos"),
+        slug=slug,
+        est_visible=True
+    )
+    
+    # Récupérer d'autres projets pour la section "À découvrir aussi"
+    autres_projets = Projet.objects.filter(
+        est_visible=True
+    ).exclude(pk=projet.pk).order_by('ordre_affichage', '-date_debut')[:6]
+    
+    context = {
+        'projet': projet,
+        'autres_projets': autres_projets,
+    }
+    
+    return render(request, 'mairie/projet_detail.html', context)
 

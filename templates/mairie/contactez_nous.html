@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load mairie_filters %}
 
 {% block extra_css %}
 <style>
@@ -22,6 +23,70 @@
         grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr);
         gap: 2rem;
         margin-top: 2rem;
+    }
+    .suggestion-don-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    .form-group {
+        margin-bottom: 1.2rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--dark);
+        font-size: 0.95rem;
+    }
+    .form-group label .required {
+        color: #dc3545;
+        margin-left: 0.2rem;
+    }
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: border-color 0.3s ease;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+    }
+    .form-group .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.3rem;
+    }
+    .form-group .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.3rem 0 0 0;
+        color: #dc3545;
+        font-size: 0.85rem;
+    }
+    .btn-submit {
+        background-color: var(--primary);
+        color: white;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .btn-submit:hover {
+        background-color: #004d2a;
+    }
+    .btn-submit:active {
+        transform: translateY(1px);
     }
     .contact-card {
         background: var(--white);
@@ -49,9 +114,30 @@
     .contact-extra li {
         margin-bottom: 0.4rem;
     }
+    .don-account-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    .don-account-link:active {
+        transform: translateY(0);
+    }
     @media (max-width: 900px) {
         .contact-grid {
             grid-template-columns: 1fr;
+        }
+        .suggestion-don-grid {
+            grid-template-columns: 1fr;
+        }
+        .don-account-link {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+        .don-account-link > div:first-child {
+            width: 100%;
+        }
+        .don-account-link > div:last-child {
+            display: none;
         }
     }
 </style>
@@ -110,8 +196,168 @@
             <p style="margin-top: 0.75rem;">
                 Pour les demandes nécessitant un traitement officiel (ex&nbsp;: dépôt de dossier
                 d’état civil, réclamations, demandes particulières), merci de vous adresser
-                directement aux services de la mairie aux horaires d’ouverture indiqués.
+                directement aux services de la mairie aux horaires d'ouverture indiqués.
             </p>
+        </section>
+    </div>
+
+    <div class="suggestion-don-grid">
+        <section class="contact-card">
+            <h2>💡 Faites-nous une suggestion</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--dark); opacity: 0.9;">
+                Vos idées comptent ! Partagez vos suggestions pour améliorer nos services et la plateforme.
+            </p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" role="alert" style="padding: 0.75rem 1rem; margin-bottom: 1rem; border-radius: 6px; {% if message.tags == 'success' %}background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% elif message.tags == 'error' %}background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" action="{% url 'mairie:contactez_nous' %}">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form_suggestion.nom.id_for_label }}">
+                        Nom complet <span class="required">*</span>
+                    </label>
+                    {{ form_suggestion.nom }}
+                    {% if form_suggestion.nom.errors %}
+                        <ul class="errorlist">
+                            {% for error in form_suggestion.nom.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form_suggestion.email.id_for_label }}">
+                        Email <span class="required">*</span>
+                    </label>
+                    {{ form_suggestion.email }}
+                    {% if form_suggestion.email.errors %}
+                        <ul class="errorlist">
+                            {% for error in form_suggestion.email.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form_suggestion.telephone.id_for_label }}">
+                        Téléphone
+                    </label>
+                    {{ form_suggestion.telephone }}
+                    {% if form_suggestion.telephone.errors %}
+                        <ul class="errorlist">
+                            {% for error in form_suggestion.telephone.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if form_suggestion.telephone.help_text %}
+                        <p class="help-text">{{ form_suggestion.telephone.help_text }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form_suggestion.sujet.id_for_label }}">
+                        Sujet <span class="required">*</span>
+                    </label>
+                    {{ form_suggestion.sujet }}
+                    {% if form_suggestion.sujet.errors %}
+                        <ul class="errorlist">
+                            {% for error in form_suggestion.sujet.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form_suggestion.message.id_for_label }}">
+                        Message <span class="required">*</span>
+                    </label>
+                    {{ form_suggestion.message }}
+                    {% if form_suggestion.message.errors %}
+                        <ul class="errorlist">
+                            {% for error in form_suggestion.message.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    Envoyer ma suggestion
+                </button>
+            </form>
+        </section>
+
+        <section class="contact-card">
+            <h2>💝 Faire un don à la Mairie</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--dark); opacity: 0.9;">
+                Votre générosité contribue au développement de notre commune. Sélectionnez un moyen de paiement pour effectuer votre don directement depuis votre téléphone :
+            </p>
+
+            {% if mairie_config %}
+            <div style="display: grid; gap: 1rem;">
+                {% if mairie_config.numero_yas_money %}
+                <button type="button"
+                        onclick="if (confirm('Cher(e) citoyen(ne), vous allez faire un don volontaire à la mairie de la Commune de Kloto 1. Votre don compte, la Mairie vous remercie pour votre générosité. Voulez-vous continuer ?')) { window.location.href='tel:{{ mairie_config.numero_yas_money|ussd_link }}'; }"
+                        class="don-account-link" 
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 1.2rem; background: linear-gradient(135deg, #28a745, #20c997); color: white; border-radius: 10px; text-decoration: none; border: none; width: 100%; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div>
+                        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem;">📱 Mixx by Yas</div>
+                        <div style="font-size: 0.95rem; opacity: 0.9;">Cliquer pour lancer le don depuis votre téléphone</div>
+                    </div>
+                    <div style="font-size: 1.5rem;">→</div>
+                </button>
+                {% endif %}
+                
+                {% if mairie_config.numero_flooz_money %}
+                <button type="button"
+                        onclick="if (confirm('Cher(e) citoyen(ne), vous allez faire un don volontaire à la mairie de la Commune de Kloto 1. Votre don compte, la Mairie vous remercie pour votre générosité. Voulez-vous continuer ?')) { window.location.href='tel:{{ mairie_config.numero_flooz_money|ussd_link }}'; }"
+                        class="don-account-link" 
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 1.2rem; background: linear-gradient(135deg, #007bff, #0056b3); color: white; border-radius: 10px; text-decoration: none; border: none; width: 100%; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div>
+                        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem;">📱 Flooz Money</div>
+                        <div style="font-size: 0.95rem; opacity: 0.9;">Cliquer pour lancer le don depuis votre téléphone</div>
+                    </div>
+                    <div style="font-size: 1.5rem;">→</div>
+                </button>
+                {% endif %}
+                
+                {% if mairie_config.numero_carte_bancaire %}
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.2rem; background: linear-gradient(135deg, #6c757d, #495057); color: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div>
+                        <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem;">💳 Carte Bancaire</div>
+                        <div style="font-size: 1.3rem; font-weight: bold;">{{ mairie_config.numero_carte_bancaire }}</div>
+                    </div>
+                    <div style="font-size: 1.5rem;">💳</div>
+                </div>
+                {% endif %}
+                
+                {% if not mairie_config.numero_yas_money and not mairie_config.numero_flooz_money and not mairie_config.numero_carte_bancaire %}
+                <div style="padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <p style="color: #856404; margin: 0; font-style: italic;">
+                        Les numéros de compte seront bientôt disponibles.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <p style="margin-top: 1.5rem; font-size: 0.9rem; color: #666; text-align: center; padding: 0.75rem; background: #e7f3ff; border-radius: 6px;">
+                💡 <strong>Comment faire un don ?</strong><br>
+                Cliquez sur un bouton ci-dessus pour ouvrir directement l'application de paiement mobile (Mixx by Yas ou Flooz Money) sur votre téléphone. 
+                Vous pourrez ensuite effectuer le transfert directement depuis l'application.<br>
+                Pour les dons par carte bancaire, utilisez le numéro de compte affiché ci-dessus.
+            </p>
+            {% endif %}
         </section>
     </div>
 </div>

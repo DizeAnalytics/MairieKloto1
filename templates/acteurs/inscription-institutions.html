@@ -167,6 +167,19 @@
             margin-top: 0.3rem;
         }
 
+        .btn-geo {
+            padding: 0.6rem 1.2rem;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        .btn-geo:hover { opacity: 0.9; }
+        .btn-geo:disabled { opacity: 0.7; cursor: wait; }
+
         .info-box {
             background: linear-gradient(135deg, #e3f2fd, #bbdefb);
             border-left: 4px solid #2196F3;
@@ -618,6 +631,20 @@
                     </div>
 
                     <div class="form-group">
+                        <label>Latitude (GPS) <span class="required">*</span></label>
+                        {{ form.latitude }}
+                        <span class="helper-text">Ex: 6.9057 (Kpalimé)</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude (GPS) <span class="required">*</span></label>
+                        {{ form.longitude }}
+                        <span class="helper-text">Ex: 0.6287 (Kpalimé)</span>
+                    </div>
+                    <div class="form-group full-width">
+                        <button type="button" class="btn-geo" id="btnGeo">Obtenir ma position automatiquement</button>
+                    </div>
+
+                    <div class="form-group">
                         <label>Nombre d'agences dans Kloto 1</label>
                         {{ form.nombre_agences }}
                     </div>
@@ -707,5 +734,25 @@
     </div>
 
     <!-- La validation et le traitement sont gérés côté serveur par Django -->
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  var btn = document.getElementById('btnGeo');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    if (!navigator.geolocation) { alert('La géolocalisation n\'est pas supportée par votre navigateur.'); return; }
+    btn.disabled = true; btn.textContent = 'Recherche en cours...';
+    navigator.geolocation.getCurrentPosition(
+      function(p) {
+        var lat = document.getElementById('id_latitude'); var lng = document.getElementById('id_longitude');
+        if (lat) lat.value = p.coords.latitude.toFixed(6); if (lng) lng.value = p.coords.longitude.toFixed(6);
+        btn.disabled = false; btn.textContent = 'Obtenir ma position automatiquement';
+      },
+      function(err) { alert('Impossible d\'obtenir la position : ' + (err.message || 'accès refusé')); btn.disabled = false; btn.textContent = 'Obtenir ma position automatiquement'; }
+    );
+  });
+})();
+</script>
 {% endblock %}
 

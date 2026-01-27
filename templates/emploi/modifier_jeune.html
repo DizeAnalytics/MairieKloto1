@@ -1,15 +1,12 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modification Profil Jeune - Mairie de Kloto 1</title>
-    {% if mairie_config and mairie_config.favicon %}
-    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
-    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
-    {% endif %}
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
             --primary: #006233;
             --secondary: #FFCD00;
@@ -18,153 +15,439 @@
             --light: #f5f5f5;
             --white: #ffffff;
         }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             padding: 2rem 1rem;
         }
-        .container { max-width: 1000px; margin: 0 auto; }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
         .back-link {
-            display: inline-block; margin-bottom: 1rem; color: var(--primary);
-            text-decoration: none; font-weight: 600; padding: 0.5rem 1rem;
-            background: var(--white); border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            background: var(--white);
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: all 0.3s;
         }
-        .back-link:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); color: var(--primary); }
-        header {
-            background: linear-gradient(135deg, var(--primary), #004d28); color: var(--white);
-            padding: 2rem; border-radius: 15px 15px 0 0; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Header local - ne doit pas masquer le header principal */
+        .container header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
             text-align: center;
+            position: relative;
+            z-index: 1;
         }
+
         .logo {
-            width: 80px; height: 80px; background: var(--white); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-weight: bold;
-            color: var(--primary); font-size: 2rem; margin: 0 auto 1rem;
+            width: 80px;
+            height: 80px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 2rem;
+            margin: 0 auto 1rem;
         }
-        header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-        header p { opacity: 0.95; font-size: 1.1rem; }
+        .logo-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--white);
+            display: block;
+            margin: 0 auto 1rem;
+            background: var(--white);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.95;
+            font-size: 1.05rem;
+        }
+
         .form-container {
-            background: var(--white); padding: 3rem; border-radius: 0 0 15px 15px;
+            background: var(--white);
+            padding: 3rem 2rem;
+            border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
+
         .section-title {
-            color: var(--primary); font-size: 1.5rem; margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem; border-bottom: 3px solid var(--secondary);
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--secondary);
         }
+
         .form-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem; margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group.full-width { grid-column: 1 / -1; }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
         .form-group label {
-            display: block; margin-bottom: 0.5rem; color: var(--dark);
-            font-weight: 600; font-size: 0.95rem;
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 0.95rem;
         }
-        .required { color: var(--accent); margin-left: 0.2rem; }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%; padding: 0.9rem; border: 2px solid #ddd; border-radius: 8px;
-            font-size: 1rem; transition: all 0.3s; font-family: inherit;
+
+        .required {
+            color: var(--accent);
+            margin-left: 0.2rem;
         }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: inherit;
         }
-        .form-group textarea { resize: vertical; min-height: 100px; }
-        .form-group input[type="file"] { padding: 0.6rem; border-style: dashed; }
-        .helper-text { font-size: 0.85rem; color: #666; margin-top: 0.3rem; }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .helper-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+
+        .checkbox-group {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: var(--light);
+            border-radius: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 0.8rem;
+            margin-top: 0.2rem;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            font-weight: normal;
+            line-height: 1.5;
+        }
+
         .btn {
-            display: block; width: 100%; padding: 1rem; border: none; border-radius: 8px;
-            background: var(--primary); color: var(--white); font-size: 1.1rem;
-            font-weight: bold; cursor: pointer; transition: all 0.3s; margin-top: 2rem;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: inline-block;
         }
-        .btn:hover { background: #004d28; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,98,51,0.3); }
-        .alert { padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; font-weight: 500; }
-        .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
-    </style>
-</head>
-<body>
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 98, 51, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            margin-left: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            padding: 1.2rem 1.4rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 2px solid #28a745;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1.5rem 1.2rem;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn-secondary {
+                margin-left: 0;
+            }
+        }
+</style>
+{% endblock %}
+{% block content %}
     <div class="container">
         <a href="{% url 'comptes:profil' %}" class="back-link">← Retour au profil</a>
-        
         <header>
-            <div class="logo">MK1</div>
-            <h1>Modification Profil Jeune</h1>
-            <p>Mettez à jour vos informations personnelles et professionnelles</p>
+            {% if mairie_config and mairie_config.logo %}
+            <img src="{{ mairie_config.logo.url }}" alt="Logo Mairie de Kloto 1" class="logo-image">
+            {% else %}
+            <div class="logo">K1</div>
+            {% endif %}
+            <h1>Modification du Profil Jeune</h1>
+            <p>Mairie de Kloto 1 - Plateforme Emploi & Compétences</p>
         </header>
 
         <div class="form-container">
             {% if form.errors %}
-            <div class="alert alert-error">
-                Veuillez corriger les erreurs ci-dessous.
+            <div class="success-message" style="background: #f8d7da; color: #721c24; border-color: #dc3545;">
+                <strong>⚠️ Erreurs dans le formulaire</strong>
+                <p>Veuillez corriger les erreurs ci-dessous avant de continuer.</p>
             </div>
             {% endif %}
 
-            <form method="post" enctype="multipart/form-data">
+            <form method="post">
                 {% csrf_token %}
 
-                <div class="section-title">1. Informations Personnelles</div>
+                <!-- Informations personnelles -->
+                <div class="section-title">1. Informations personnelles</div>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Nom <span class="required">*</span></label>
                         {{ form.nom }}
+                        {{ form.nom.errors }}
                     </div>
                     <div class="form-group">
-                        <label>Prénom(s) <span class="required">*</span></label>
+                        <label>Prénoms <span class="required">*</span></label>
                         {{ form.prenoms }}
+                        {{ form.prenoms.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Sexe <span class="required">*</span></label>
+                        {{ form.sexe }}
+                        {{ form.sexe.errors }}
                     </div>
                     <div class="form-group">
                         <label>Date de naissance <span class="required">*</span></label>
                         {{ form.date_naissance }}
+                        {{ form.date_naissance.errors }}
                     </div>
                     <div class="form-group">
-                        <label>Genre <span class="required">*</span></label>
-                        {{ form.genre }}
-                    </div>
-                    <div class="form-group full-width">
-                        <label>Adresse de résidence <span class="required">*</span></label>
-                        {{ form.adresse }}
-                    </div>
-                    <div class="form-group">
-                        <label>Téléphone <span class="required">*</span></label>
-                        {{ form.telephone }}
+                        <label>Nationalité</label>
+                        {{ form.nationalite }}
+                        {{ form.nationalite.errors }}
                     </div>
                 </div>
 
-                <div class="section-title">2. Profil Professionnel</div>
+                <!-- Coordonnées -->
+                <div class="section-title">2. Coordonnées</div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Niveau d'étude <span class="required">*</span></label>
+                        <label>Téléphone principal <span class="required">*</span></label>
+                        {{ form.telephone1 }}
+                        {{ form.telephone1.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone secondaire</label>
+                        {{ form.telephone2 }}
+                        {{ form.telephone2.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Email <span class="required">*</span></label>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Quartier <span class="required">*</span></label>
+                        {{ form.quartier }}
+                        {{ form.quartier.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Canton</label>
+                        {{ form.canton }}
+                        {{ form.canton.errors }}
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Adresse complète <span class="required">*</span></label>
+                        {{ form.adresse_complete }}
+                        {{ form.adresse_complete.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Résident de Kloto 1 ?</label>
+                        {{ form.est_resident_kloto }}
+                        <span class="helper-text">Cochez si vous vivez dans la commune de Kloto 1.</span>
+                        {{ form.est_resident_kloto.errors }}
+                    </div>
+                </div>
+
+                <!-- Profil professionnel -->
+                <div class="section-title">3. Profil professionnel</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Niveau d'études</label>
                         {{ form.niveau_etude }}
+                        {{ form.niveau_etude.errors }}
                     </div>
                     <div class="form-group">
-                        <label>Domaine de compétence <span class="required">*</span></label>
+                        <label>Diplôme principal</label>
+                        {{ form.diplome_principal }}
+                        {{ form.diplome_principal.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Situation actuelle <span class="required">*</span></label>
+                        {{ form.situation_actuelle }}
+                        {{ form.situation_actuelle.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Employeur actuel (si applicable)</label>
+                        {{ form.employeur_actuel }}
+                        {{ form.employeur_actuel.errors }}
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Domaines de compétences <span class="required">*</span></label>
                         {{ form.domaine_competence }}
+                        <span class="helper-text">Exemples : comptabilité, plomberie, informatique, enseignement…</span>
+                        {{ form.domaine_competence.errors }}
                     </div>
                     <div class="form-group full-width">
-                        <label>Expérience professionnelle</label>
-                        {{ form.experience_professionnelle }}
-                        <p class="helper-text">Décrivez brièvement vos expériences passées.</p>
+                        <label>Expériences professionnelles</label>
+                        {{ form.experiences }}
+                        {{ form.experiences.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Disponibilité <span class="required">*</span></label>
+                        {{ form.disponibilite }}
+                        {{ form.disponibilite.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Type de contrat souhaité</label>
+                        {{ form.type_contrat_souhaite }}
+                        {{ form.type_contrat_souhaite.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>Salaire souhaité (facultatif)</label>
+                        {{ form.salaire_souhaite }}
+                        {{ form.salaire_souhaite.errors }}
                     </div>
                 </div>
 
-                <div class="section-title">3. Documents</div>
-                <div class="form-grid">
-                    <div class="form-group full-width">
-                        <label>Curriculum Vitae (PDF)</label>
-                        {{ form.cv }}
-                        <p class="helper-text">Laissez vide si vous ne souhaitez pas modifier le document existant.</p>
+                <!-- Conditions -->
+                <div class="checkbox-group">
+                    <h4 style="margin-bottom: 1rem; color: var(--primary);">Autorisations & Engagements</h4>
+                    <div class="checkbox-item">
+                        {{ form.accepte_rgpd }}
+                        <label>
+                            J'accepte que mes données soient traitées par la Mairie de Kloto 1
+                            <span class="required">*</span>
+                        </label>
+                        {{ form.accepte_rgpd.errors }}
                     </div>
-                    <div class="form-group full-width">
-                        <label>Lettre de motivation (PDF)</label>
-                        {{ form.lettre_motivation }}
-                        <p class="helper-text">Laissez vide si vous ne souhaitez pas modifier le document existant.</p>
+                    <div class="checkbox-item">
+                        {{ form.accepte_contact }}
+                        <label>
+                            J'accepte d'être contacté par des employeurs via la plateforme
+                            <span class="required">*</span>
+                        </label>
+                        {{ form.accepte_contact.errors }}
+                    </div>
+                    <div class="checkbox-item">
+                        {{ form.service_citoyen_obligatoire }}
+                        <label>
+                            Je m'engage à effectuer le service citoyen obligatoire (requis pour les jeunes diplômés sans emploi)
+                            <span class="required">*</span>
+                        </label>
+                        {{ form.service_citoyen_obligatoire.errors }}
                     </div>
                 </div>
 
-                <button type="submit" class="btn">Enregistrer les modifications</button>
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">💾 Enregistrer les modifications</button>
+                    <a href="{% url 'comptes:profil' %}" class="btn btn-secondary" style="text-decoration: none; color: inherit;">❌ Annuler</a>
+                </div>
             </form>
+
         </div>
+
     </div>
-</body>
-</html>
+{% endblock %}
