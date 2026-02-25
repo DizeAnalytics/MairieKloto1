@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Actualite(models.Model):
@@ -60,5 +61,46 @@ class Actualite(models.Model):
 
     def __str__(self) -> str:
         return self.titre
+
+
+class CommentaireActualite(models.Model):
+    """Commentaire laissé par un citoyen sur une actualité donnée."""
+
+    actualite = models.ForeignKey(
+        Actualite,
+        related_name="commentaires",
+        on_delete=models.CASCADE,
+    )
+    utilisateur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="commentaires_actualites",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    nom = models.CharField(
+        max_length=150,
+        help_text="Nom ou prénom du citoyen.",
+    )
+    email = models.EmailField(
+        blank=True,
+        help_text="Adresse e-mail (facultative).",
+    )
+    texte = models.TextField(
+        help_text="Contenu du commentaire.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    est_valide = models.BooleanField(
+        default=True,
+        help_text="Si décoché, le commentaire n'est pas affiché publiquement.",
+    )
+
+    class Meta:
+        ordering = ["-date_creation"]
+        verbose_name = "Commentaire d'actualité"
+        verbose_name_plural = "Commentaires d'actualités"
+
+    def __str__(self) -> str:
+        return f"Commentaire de {self.nom} sur « {self.actualite} »"
 
 

@@ -9,7 +9,13 @@ from decimal import Decimal
 def validate_file_size(value):
     limit = 5 * 1024 * 1024  # 5 Mo
     if value.size > limit:
-        raise ValidationError('Le fichier est trop volumineux (max 5 Mo).')
+        raise ValidationError("Le fichier est trop volumineux (max 5 Mo).")
+
+
+def validate_video_size(value):
+    limit = 25 * 1024 * 1024  # 25 Mo
+    if value.size > limit:
+        raise ValidationError("La vidéo est trop volumineuse (max 25 Mo).")
 
 
 class MotMaire(models.Model):
@@ -174,6 +180,54 @@ class DirectionMairie(models.Model):
         return self.nom
 
 
+class DivisionDirection(models.Model):
+    """
+    Division rattachée à une direction (niveau intermédiaire entre la direction et les sections).
+    Exemple : Division des affaires administratives, Division des services techniques, etc.
+    """
+
+    direction = models.ForeignKey(
+        DirectionMairie,
+        on_delete=models.CASCADE,
+        related_name="divisions",
+        help_text="Direction à laquelle cette division est rattachée.",
+    )
+    nom = models.CharField(
+        max_length=255,
+        help_text="Nom complet de la division.",
+    )
+    sigle = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Sigle de la division (facultatif).",
+    )
+    chef_division = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Nom du Chef de division (facultatif).",
+    )
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage de la division à l'intérieur de la direction.",
+    )
+    est_active = models.BooleanField(
+        default=True,
+        help_text="Afficher cette division dans l'organigramme public.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Division de direction"
+        verbose_name_plural = "Divisions de direction"
+        ordering = ["direction", "ordre_affichage", "nom"]
+
+    def __str__(self) -> str:
+        if self.sigle:
+            return f"{self.nom} ({self.sigle})"
+        return self.nom
+
+
 class SectionDirection(models.Model):
     """
     Section rattachée à une direction (ex: Section état civil, Section ressources humaines).
@@ -183,7 +237,15 @@ class SectionDirection(models.Model):
         DirectionMairie,
         on_delete=models.CASCADE,
         related_name="sections",
-        help_text="Direction à laquelle cette section est rattachée.",
+        help_text="Direction à laquelle cette section est rattachée (pour compatibilité).",
+    )
+    division = models.ForeignKey(
+        "DivisionDirection",
+        on_delete=models.CASCADE,
+        related_name="sections",
+        null=True,
+        blank=True,
+        help_text="Division à laquelle cette section est rattachée (niveau intermédiaire).",
     )
     nom = models.CharField(
         max_length=255,
@@ -983,6 +1045,75 @@ class Publicite(models.Model):
         maintenant = timezone.now()
         if self.date_debut and self.date_fin:
             return self.date_debut <= maintenant <= self.date_fin
+        return True
+
+
+class VideoSpot(models.Model):
+    """Courte vidéo ou spot publicitaire mis en avant par la mairie."""
+
+    titre = models.CharField(max_length=255)
+    description = models.TextField(
+        blank=True,
+        help_text="Texte descriptif court de la vidéo ou du spot.",
+    )
+    fichier_video = models.FileField(
+        upload_to="mairie/videos_spots/",
+        blank=True,
+        null=True,
+        validators=[validate_video_size],
+        help_text="Fichier vidéo court (ex: spot de 5 minutes, max 25 Mo).",
+    )
+    vignette = models.ImageField(
+        upload_to="mairie/videos_spots/vignettes/",
+        blank=True,
+        null=True,
+        validators=[validate_file_size],
+        help_text="Vignette optionnelle pour illustrer la vidéo.",
+    )
+    url_externe = models.URLField(
+        blank=True,
+        help_text="Lien pour voir la suite (YouTube, Facebook, etc.).",
+    )
+    est_active = models.BooleanField(
+        default=True,
+        help_text="Afficher ce spot vidéo sur les pages d'accueil et d'actualités.",
+    )
+    date_debut = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date de début de diffusion de ce spot (facultatif).",
+    )
+    date_fin = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Date de fin de diffusion de ce spot (facultatif).",
+    )
+    ordre_priorite = models.PositiveIntegerField(
+        default=0,
+        help_text="Permet de donner la priorité à certains spots (0 = priorité normale).",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Spot vidéo"
+        verbose_name_plural = "Spots vidéos"
+        ordering = ["ordre_priorite", "-date_creation"]
+
+    def __str__(self) -> str:
+        return self.titre
+
+    @property
+    def est_diffusable(self) -> bool:
+        """Retourne True si le spot est actif et dans sa période de diffusion."""
+        if not self.est_active:
+            return False
+        maintenant = timezone.now()
+        if self.date_debut and self.date_fin:
+            return self.date_debut <= maintenant <= self.date_fin
+        if self.date_debut and not self.date_fin:
+            return self.date_debut <= maintenant
+        if not self.date_debut and self.date_fin:
+            return maintenant <= self.date_fin
         return True
 
 

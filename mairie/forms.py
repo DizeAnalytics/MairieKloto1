@@ -10,6 +10,7 @@ from .models import (
     NewsletterSubscription,
     Contribuable,
     DirectionMairie,
+    DivisionDirection,
     SectionDirection,
     PersonnelSection,
     ServiceSection,
@@ -365,14 +366,63 @@ class DirectionMairieForm(forms.ModelForm):
         }
 
 
+class DivisionDirectionForm(forms.ModelForm):
+    """Formulaire pour créer ou modifier une Division rattachée à une Direction."""
+
+    class Meta:
+        model = DivisionDirection
+        fields = ["direction", "nom", "sigle", "chef_division", "ordre_affichage", "est_active"]
+        widgets = {
+            "direction": forms.Select(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "nom": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Nom complet de la division",
+                    "required": True,
+                }
+            ),
+            "sigle": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Sigle (facultatif)",
+                }
+            ),
+            "chef_division": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Nom du chef de division (facultatif)",
+                }
+            ),
+            "ordre_affichage": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                }
+            ),
+            "est_active": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input",
+                }
+            ),
+        }
+
+
 class SectionDirectionForm(forms.ModelForm):
-    """Formulaire pour créer une Section rattachée à une Direction."""
+    """
+    Formulaire pour créer une Section rattachée à une Division.
+    La direction est déduite automatiquement à partir de la division choisie.
+    """
 
     class Meta:
         model = SectionDirection
-        fields = ["direction", "nom", "sigle", "chef_section", "ordre_affichage", "est_active"]
+        fields = ["division", "nom", "sigle", "chef_section", "ordre_affichage", "est_active"]
         widgets = {
-            "direction": forms.Select(
+            "division": forms.Select(
                 attrs={
                     "class": "form-control",
                     "required": True,
@@ -409,6 +459,24 @@ class SectionDirectionForm(forms.ModelForm):
                 }
             ),
         }
+
+    def clean_division(self):
+        division = self.cleaned_data.get("division")
+        if not division:
+            raise forms.ValidationError("Veuillez sélectionner une division.")
+        return division
+
+    def save(self, commit=True):
+        """
+        Fixe automatiquement la direction à partir de la division choisie.
+        """
+        instance = super().save(commit=False)
+        if instance.division and instance.division.direction:
+            instance.direction = instance.division.direction
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 class PersonnelSectionForm(forms.ModelForm):

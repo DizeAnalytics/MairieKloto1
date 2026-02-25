@@ -363,8 +363,47 @@
             </div>
 
             <div class="card">
+                <h2>{% if editing_division %}Modifier une division{% else %}Ajouter une division{% endif %}</h2>
+                <p>{% if editing_division %}Mettez à jour les informations de la division sélectionnée.{% else %}Créez une division rattachée à une direction existante (niveau intermédiaire).{% endif %}</p>
+                <span class="badge-total">Divisions actuelles : {{ divisions|length }}</span>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="{% if editing_division %}update_division{% else %}create_division{% endif %}">
+                    {% if editing_division %}
+                    <input type="hidden" name="division_id" value="{{ editing_division.id }}">
+                    {% endif %}
+                    <div class="form-group">
+                        <label>Direction *</label>
+                        {{ division_form.direction }}
+                    </div>
+                    <div class="form-group">
+                        <label>Nom de la division *</label>
+                        {{ division_form.nom }}
+                    </div>
+                    <div class="form-group">
+                        <label>Sigle</label>
+                        {{ division_form.sigle }}
+                    </div>
+                    <div class="form-group">
+                        <label>Chef de division</label>
+                        {{ division_form.chef_division }}
+                    </div>
+                    <div class="form-group">
+                        <label>Ordre d'affichage</label>
+                        {{ division_form.ordre_affichage }}
+                        <small>Plus petit = affiché en premier dans la direction.</small>
+                    </div>
+                    <div class="form-group form-check">
+                        {{ division_form.est_active }}
+                        <label for="{{ division_form.est_active.id_for_label }}">Division active</label>
+                    </div>
+                    <button type="submit" class="btn-primary">✅ Enregistrer la division</button>
+                </form>
+            </div>
+
+            <div class="card">
                 <h2>{% if editing_section %}Modifier une section{% else %}Ajouter une section{% endif %}</h2>
-                <p>{% if editing_section %}Mettez à jour les informations de la section sélectionnée.{% else %}Créez une section rattachée à une direction existante.{% endif %}</p>
+                <p>{% if editing_section %}Mettez à jour les informations de la section sélectionnée.{% else %}Créez une section rattachée à une division de direction.{% endif %}</p>
                 <span class="badge-total">Sections actuelles : {{ sections|length }}</span>
                 <form method="post">
                     {% csrf_token %}
@@ -373,8 +412,8 @@
                     <input type="hidden" name="section_id" value="{{ editing_section.id }}">
                     {% endif %}
                     <div class="form-group">
-                        <label>Direction *</label>
-                        {{ section_form.direction }}
+                        <label>Division *</label>
+                        {{ section_form.division }}
                     </div>
                     <div class="form-group">
                         <label>Nom de la section *</label>
@@ -484,14 +523,14 @@
         <div class="grid-lists">
             <div class="card">
                 <div class="section-title">Vue d'ensemble par direction</div>
-                <p class="muted">Aperçu hiérarchique : directions, sections et effectifs.</p>
+                <p class="muted">Aperçu hiérarchique : directions, divisions, sections et effectifs.</p>
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
                                 <th>Direction</th>
                                 <th>Chef de direction</th>
-                                <th>Sections</th>
+                                <th>Divisions</th>
                                 <th>Personnel</th>
                                 <th>Actions</th>
                             </tr>
@@ -505,8 +544,8 @@
                                 </td>
                                 <td>{{ d.chef_direction }}</td>
                                 <td>
-                                    {% with d.sections.all as d_sections %}
-                                        {{ d_sections|length }} section(s)
+                                    {% with d.divisions.all as d_divisions %}
+                                        {{ d_divisions|length }} division(s)
                                     {% endwith %}
                                 </td>
                                 <td>
@@ -530,7 +569,7 @@
 
             <div class="card">
                 <div class="section-title">Liste détaillée des sections</div>
-                <p class="muted">Sections et responsables, triées par direction.</p>
+                <p class="muted">Sections et responsables, triées par direction et division.</p>
                 <div class="filters-bar">
                     <form method="get" action="{% url 'tableau_bord_organigramme' %}">
                         <div class="form-group">
@@ -563,6 +602,7 @@
                             <tr>
                                 <th>Section</th>
                                 <th>Direction</th>
+                                <th>Division</th>
                                 <th>Chef de section</th>
                                 <th>Personnel</th>
                                 <th>Services</th>
@@ -577,6 +617,13 @@
                                     {% if s.sigle %}<span class="muted">{{ s.sigle }}</span>{% endif %}
                                 </td>
                                 <td>{{ s.direction.sigle|default:s.direction.nom }}</td>
+                                <td>
+                                    {% if s.division %}
+                                        {{ s.division.sigle|default:s.division.nom }}
+                                    {% else %}
+                                        <span class="muted">—</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ s.chef_section|default:"—" }}</td>
                                 <td>{{ s.personnels.all|length }} agent(s)</td>
                                 <td>
@@ -602,6 +649,113 @@
                             <tr>
                                 <td colspan="4" style="text-align:center;padding:1rem;color:#777;">
                                     Aucune section enregistrée pour le moment.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Liste des divisions</div>
+                <p class="muted">Divisions rattachées aux directions, avec leurs sections.</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Division</th>
+                                <th>Direction</th>
+                                <th>Chef de division</th>
+                                <th>Sections</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for div in divisions %}
+                            <tr>
+                                <td>
+                                    <strong>{{ div.nom }}</strong><br>
+                                    {% if div.sigle %}<span class="muted">{{ div.sigle }}</span>{% endif %}
+                                </td>
+                                <td>
+                                    {{ div.direction.sigle|default:div.direction.nom }}
+                                </td>
+                                <td>
+                                    {{ div.chef_division|default:"—" }}
+                                </td>
+                                <td>
+                                    {% with div.sections.all as div_sections %}
+                                        {{ div_sections|length }} section(s)
+                                    {% endwith %}
+                                </td>
+                                <td class="actions-cell">
+                                    <a href="?edit_division={{ div.id }}" class="btn-table btn-edit">✏️ Modifier</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align:center;padding:1rem;color:#777;">
+                                    Aucune division enregistrée pour le moment.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Liste du personnel des sections</div>
+                <p class="muted">Tous les agents rattachés aux sections, avec leur hiérarchie.</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Fonction</th>
+                                <th>Section</th>
+                                <th>Division</th>
+                                <th>Direction</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in personnels %}
+                            <tr>
+                                <td>
+                                    <strong>{{ p.nom_prenoms }}</strong>
+                                </td>
+                                <td>{{ p.fonction }}</td>
+                                <td>
+                                    {% if p.section %}
+                                        {{ p.section.nom }}
+                                    {% else %}
+                                        <span class="muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if p.section and p.section.division %}
+                                        {{ p.section.division.sigle|default:p.section.division.nom }}
+                                    {% else %}
+                                        <span class="muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if p.section and p.section.direction %}
+                                        {{ p.section.direction.sigle|default:p.section.direction.nom }}
+                                    {% else %}
+                                        <span class="muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="actions-cell">
+                                    <a href="?edit_personnel={{ p.id }}" class="btn-table btn-edit">✏️ Modifier</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" style="text-align:center;padding:1rem;color:#777;">
+                                    Aucun membre du personnel n'est encore enregistré pour les sections.
                                 </td>
                             </tr>
                             {% endfor %}

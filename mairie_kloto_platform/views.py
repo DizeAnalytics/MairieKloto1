@@ -36,6 +36,7 @@ from mairie.models import (
     PaiementCotisationActeur,
     PaiementCotisationInstitution,
     DirectionMairie,
+    DivisionDirection,
     SectionDirection,
     PersonnelSection,
     ServiceSection,
@@ -48,6 +49,7 @@ from emploi.models import ProfilEmploi
 from mairie.models import Candidature, AppelOffre
 from mairie.forms import (
     DirectionMairieForm,
+    DivisionDirectionForm,
     SectionDirectionForm,
     PersonnelSectionForm,
     ServiceSectionForm,
@@ -543,6 +545,7 @@ def tableau_bord_organigramme(request):
     # Identifiants/objets éventuels à éditer (mode édition sur la même page)
     editing_direction = None
     editing_section = None
+    editing_division = None
     editing_personnel = None
     editing_service = None
 
@@ -574,6 +577,34 @@ def tableau_bord_organigramme(request):
                 return redirect("tableau_bord_organigramme")
             else:
                 message_error = "Erreur lors de la mise à jour de la direction. Veuillez vérifier les informations."
+
+        elif action == "create_division":
+            division_form = DivisionDirectionForm(request.POST)
+            direction_form = DirectionMairieForm()
+            section_form = SectionDirectionForm()
+            personnel_form = PersonnelSectionForm()
+            service_form = ServiceSectionForm()
+            if division_form.is_valid():
+                division_form.save()
+                message_success = "La division a été créée avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la création de la division. Veuillez vérifier les informations."
+
+        elif action == "update_division":
+            division_id = request.POST.get("division_id")
+            editing_division = get_object_or_404(DivisionDirection, pk=division_id)
+            division_form = DivisionDirectionForm(request.POST, instance=editing_division)
+            direction_form = DirectionMairieForm()
+            section_form = SectionDirectionForm()
+            personnel_form = PersonnelSectionForm()
+            service_form = ServiceSectionForm()
+            if division_form.is_valid():
+                division_form.save()
+                message_success = "La division a été mise à jour avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la mise à jour de la division. Veuillez vérifier les informations."
 
         elif action == "create_section":
             section_form = SectionDirectionForm(request.POST)
@@ -656,6 +687,7 @@ def tableau_bord_organigramme(request):
         else:
             # Action inconnue
             direction_form = DirectionMairieForm()
+            division_form = DivisionDirectionForm()
             section_form = SectionDirectionForm()
             personnel_form = PersonnelSectionForm()
             service_form = ServiceSectionForm()
@@ -663,6 +695,7 @@ def tableau_bord_organigramme(request):
     else:
         # Mode édition depuis les paramètres GET (ex: ?edit_direction=1)
         edit_direction_id = request.GET.get("edit_direction")
+        edit_division_id = request.GET.get("edit_division")
         edit_section_id = request.GET.get("edit_section")
         edit_personnel_id = request.GET.get("edit_personnel")
         edit_service_id = request.GET.get("edit_service")
@@ -672,6 +705,12 @@ def tableau_bord_organigramme(request):
             direction_form = DirectionMairieForm(instance=editing_direction)
         else:
             direction_form = DirectionMairieForm()
+
+        if edit_division_id:
+            editing_division = get_object_or_404(DivisionDirection, pk=edit_division_id)
+            division_form = DivisionDirectionForm(instance=editing_division)
+        else:
+            division_form = DivisionDirectionForm()
 
         if edit_section_id:
             editing_section = get_object_or_404(SectionDirection, pk=edit_section_id)
@@ -694,19 +733,39 @@ def tableau_bord_organigramme(request):
     directions_qs = (
         DirectionMairie.objects.all()
         .annotate(total_personnels=Count("sections__personnels", distinct=True))
-        .prefetch_related("sections__personnels")
+        .prefetch_related("divisions__sections__personnels")
         .order_by("ordre_affichage", "nom")
     )
 
-    sections_qs = (
-        SectionDirection.objects.select_related("direction")
-        .prefetch_related("personnels", "services")
+    divisions_qs = (
+        DivisionDirection.objects.select_related("direction")
+        .prefetch_related("sections")
         .order_by("direction__ordre_affichage", "ordre_affichage", "nom")
     )
 
+    sections_qs = (
+        SectionDirection.objects.select_related("direction", "division")
+        .prefetch_related("personnels", "services")
+        .order_by(
+            "direction__ordre_affichage",
+            "division__ordre_affichage",
+            "ordre_affichage",
+            "nom",
+        )
+    )
+
     personnels_qs = (
-        PersonnelSection.objects.select_related("section", "section__direction")
-        .order_by("section__direction__ordre_affichage", "section__ordre_affichage", "ordre_affichage", "nom_prenoms")
+        PersonnelSection.objects.select_related(
+            "section",
+            "section__direction",
+            "section__division",
+        ).order_by(
+            "section__direction__ordre_affichage",
+            "section__division__ordre_affichage",
+            "section__ordre_affichage",
+            "ordre_affichage",
+            "nom_prenoms",
+        )
     )
 
     if q:
@@ -715,11 +774,23 @@ def tableau_bord_organigramme(request):
             Q(nom__icontains=q)
             | Q(sigle__icontains=q)
             | Q(chef_direction__icontains=q)
+            | Q(divisions__nom__icontains=q)
+            | Q(divisions__sigle__icontains=q)
+            | Q(divisions__chef_division__icontains=q)
             | Q(sections__nom__icontains=q)
             | Q(sections__sigle__icontains=q)
             | Q(sections__chef_section__icontains=q)
             | Q(sections__personnels__nom_prenoms__icontains=q)
             | Q(sections__personnels__fonction__icontains=q)
+        ).distinct()
+
+        # Filtrer les divisions (nom, sigle, chef, direction)
+        divisions_qs = divisions_qs.filter(
+            Q(nom__icontains=q)
+            | Q(sigle__icontains=q)
+            | Q(chef_division__icontains=q)
+            | Q(direction__nom__icontains=q)
+            | Q(direction__sigle__icontains=q)
         ).distinct()
 
         # Filtrer les sections (nom, sigle, chef, direction, personnel, services)
@@ -729,6 +800,9 @@ def tableau_bord_organigramme(request):
             | Q(chef_section__icontains=q)
             | Q(direction__nom__icontains=q)
             | Q(direction__sigle__icontains=q)
+            | Q(division__nom__icontains=q)
+            | Q(division__sigle__icontains=q)
+            | Q(division__chef_division__icontains=q)
             | Q(personnels__nom_prenoms__icontains=q)
             | Q(personnels__fonction__icontains=q)
             | Q(services__titre__icontains=q)
@@ -739,25 +813,31 @@ def tableau_bord_organigramme(request):
             Q(nom_prenoms__icontains=q)
             | Q(fonction__icontains=q)
             | Q(section__nom__icontains=q)
+            | Q(section__division__nom__icontains=q)
+            | Q(section__division__sigle__icontains=q)
             | Q(section__direction__nom__icontains=q)
             | Q(section__direction__sigle__icontains=q)
         ).distinct()
 
     directions = directions_qs
+    divisions = divisions_qs
     sections = sections_qs
     personnels = personnels_qs
 
     context = {
         "titre": "Organigramme de la Mairie",
         "direction_form": direction_form,
+        "division_form": division_form,
         "section_form": section_form,
         "personnel_form": personnel_form,
         "directions": directions,
+        "divisions": divisions,
         "sections": sections,
         "personnels": personnels,
         "message_success": message_success,
         "message_error": message_error,
         "editing_direction": editing_direction,
+        "editing_division": editing_division,
         "editing_section": editing_section,
         "editing_personnel": editing_personnel,
         "editing_service": editing_service,
@@ -779,9 +859,14 @@ def export_pdf_organigramme(request):
     q = request.GET.get("q", "").strip()
 
     sections = (
-        SectionDirection.objects.select_related("direction")
+        SectionDirection.objects.select_related("direction", "division")
         .prefetch_related("personnels")
-        .order_by("direction__ordre_affichage", "ordre_affichage", "nom")
+        .order_by(
+            "direction__ordre_affichage",
+            "division__ordre_affichage",
+            "ordre_affichage",
+            "nom",
+        )
     )
 
     if q:
@@ -791,6 +876,9 @@ def export_pdf_organigramme(request):
             | Q(chef_section__icontains=q)
             | Q(direction__nom__icontains=q)
             | Q(direction__sigle__icontains=q)
+            | Q(division__nom__icontains=q)
+            | Q(division__sigle__icontains=q)
+            | Q(division__chef_division__icontains=q)
             | Q(personnels__nom_prenoms__icontains=q)
             | Q(personnels__fonction__icontains=q)
         ).distinct()
@@ -843,12 +931,12 @@ def export_pdf_organigramme(request):
     data = [
         [
             "Direction",
+            "Division",
             "Chef de direction",
             "Section",
             "Chef de section",
             "Personnel",
             "Fonction",
-            "Contact",
         ]
     ]
 
@@ -860,6 +948,10 @@ def export_pdf_organigramme(request):
     for s in sections:
         direction_label = s.direction.sigle or s.direction.nom
         chef_direction = getattr(s.direction, "chef_direction", "") or ""
+
+        division_label = ""
+        if getattr(s, "division", None):
+            division_label = s.division.sigle or s.division.nom
 
         section_label = s.nom
         if s.sigle:
@@ -875,12 +967,12 @@ def export_pdf_organigramme(request):
                 data.append(
                     [
                         p(direction_label),
+                        p(division_label),
                         p(chef_direction),
                         p(section_label),
                         p(chef_section),
                         p(pers.nom_prenoms),
                         p(pers.fonction),
-                        p(pers.contact),
                     ]
                 )
                 rows_added += 1
@@ -890,10 +982,10 @@ def export_pdf_organigramme(request):
             data.append(
                 [
                     p(direction_label),
+                    p(division_label),
                     p(chef_direction),
                     p(section_label),
                     p(chef_section),
-                    p(""),
                     p(""),
                     p(""),
                 ]
@@ -906,19 +998,19 @@ def export_pdf_organigramme(request):
     if len(data) == 1:
         story.append(
             Paragraph(
-                "Aucune direction / section ne correspond aux critères sélectionnés.",
+                "Aucune direction / division / section ne correspond aux critères sélectionnés.",
                 styles["Normal"],
             )
         )
     else:
         col_widths = [
-            4.0 * cm,  # direction
+            3.5 * cm,  # direction
+            3.5 * cm,  # division
             4.0 * cm,  # chef direction
-            4.5 * cm,  # section
-            3.5 * cm,  # chef section
-            4.5 * cm,  # personnel
+            4.3 * cm,  # section
+            3.3 * cm,  # chef section
+            4.3 * cm,  # personnel
             3.8 * cm,  # fonction
-            3.4 * cm,  # contact
         ]
 
         table = Table(data, colWidths=col_widths, repeatRows=1)
@@ -972,9 +1064,14 @@ def export_excel_organigramme(request):
     q = request.GET.get("q", "").strip()
 
     sections = (
-        SectionDirection.objects.select_related("direction")
+        SectionDirection.objects.select_related("direction", "division")
         .prefetch_related("personnels", "services")
-        .order_by("direction__ordre_affichage", "ordre_affichage", "nom")
+        .order_by(
+            "direction__ordre_affichage",
+            "division__ordre_affichage",
+            "ordre_affichage",
+            "nom",
+        )
     )
 
     if q:
@@ -984,6 +1081,9 @@ def export_excel_organigramme(request):
             | Q(chef_section__icontains=q)
             | Q(direction__nom__icontains=q)
             | Q(direction__sigle__icontains=q)
+            | Q(division__nom__icontains=q)
+            | Q(division__sigle__icontains=q)
+            | Q(division__chef_division__icontains=q)
             | Q(personnels__nom_prenoms__icontains=q)
             | Q(personnels__fonction__icontains=q)
             | Q(services__titre__icontains=q)
@@ -999,7 +1099,9 @@ def export_excel_organigramme(request):
         "ID Section",
         "Direction",
         "Sigle direction",
-        "Chef de direction",
+        "Division",
+        "Sigle division",
+        "Chef de division",
         "Section",
         "Sigle section",
         "Chef de section",
@@ -1032,7 +1134,9 @@ def export_excel_organigramme(request):
                 s.id,
                 s.direction.nom,
                 s.direction.sigle or "",
-                getattr(s.direction, "chef_direction", "") or "",
+                (s.division.nom if s.division else ""),
+                (s.division.sigle if s.division and s.division.sigle else ""),
+                (getattr(s.division, "chef_division", "") if s.division else ""),
                 s.nom,
                 s.sigle or "",
                 s.chef_section or "",
@@ -1092,6 +1196,7 @@ def export_excel_organigramme(request):
         "Nom et prénoms",
         "Fonction",
         "Section",
+        "Division",
         "Direction",
         "Chef de direction",
         "Contact",
@@ -1103,20 +1208,27 @@ def export_excel_organigramme(request):
     from mairie.models import PersonnelSection  # import local pour éviter les cycles
 
     personnels = (
-        PersonnelSection.objects.select_related("section", "section__direction")
+        PersonnelSection.objects.select_related("section", "section__direction", "section__division")
         .filter(section__in=sections)
-        .order_by("section__direction__ordre_affichage", "section__ordre_affichage", "nom_prenoms")
+        .order_by(
+            "section__direction__ordre_affichage",
+            "section__division__ordre_affichage",
+            "section__ordre_affichage",
+            "nom_prenoms",
+        )
     )
 
     for p in personnels:
         section = p.section
         direction = section.direction
+        division = getattr(section, "division", None)
         ws_personnel.append(
             [
                 p.id,
                 p.nom_prenoms,
                 p.fonction,
                 section.nom,
+                (division.nom if division else ""),
                 direction.nom,
                 getattr(direction, "chef_direction", "") or "",
                 p.contact,

@@ -248,12 +248,15 @@ def cartographie_commune(request):
 def organigramme_mairie(request):
     """
     Page affichant l'organigramme de la mairie :
-    Conseil communal → Maire de la commune → Secrétaire Général → Directions → Sections → Personnel.
+    Conseil communal → Maire de la commune → Secrétaire Général → Directions → Divisions → Sections → Services → Personnel.
     """
 
     directions = (
         DirectionMairie.objects.filter(est_active=True)
-        .prefetch_related("sections__personnels", "sections__services")
+        .prefetch_related(
+            "divisions__sections__personnels",
+            "divisions__sections__services",
+        )
         .order_by("ordre_affichage", "nom")
     )
 

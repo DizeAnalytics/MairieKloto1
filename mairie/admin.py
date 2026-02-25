@@ -15,6 +15,7 @@ from .models import (
     InfrastructureCommune,
     CampagnePublicitaire,
     Publicite,
+    VideoSpot,
     Projet,
     ProjetPhoto,
     Suggestion,
@@ -561,6 +562,56 @@ class PubliciteAdmin(admin.ModelAdmin):
         ),
     )
 
+    readonly_fields = ("date_creation",)
+
+
+@admin.register(VideoSpot)
+class VideoSpotAdmin(admin.ModelAdmin):
+    """Administration des spots vidéo / courtes vidéos de la mairie."""
+
+    list_display = (
+        "titre",
+        "est_active",
+        "date_debut",
+        "date_fin",
+        "ordre_priorite",
+        "date_creation",
+    )
+    list_filter = ("est_active", "date_debut", "date_fin")
+    search_fields = ("titre", "description")
+    fieldsets = (
+        (
+            "Contenu",
+            {
+                "fields": (
+                    "titre",
+                    "description",
+                    "fichier_video",
+                    "vignette",
+                    "url_externe",
+                )
+            },
+        ),
+        (
+            "Diffusion",
+            {
+                "fields": (
+                    "est_active",
+                    "ordre_priorite",
+                    "date_debut",
+                    "date_fin",
+                )
+            },
+        ),
+        (
+            "Suivi",
+            {
+                "fields": (
+                    "date_creation",
+                )
+            },
+        ),
+    )
     readonly_fields = ("date_creation",)
 
 

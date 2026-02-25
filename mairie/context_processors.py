@@ -6,6 +6,7 @@ from .models import (
     Publicite,
     Partenaire,
     NewsletterSubscription,
+    VideoSpot,
 )
 
 
@@ -48,11 +49,45 @@ def publicite_globale(request):
     Retourne aussi afficher_popup_newsletter pour afficher le popup d'inscription newsletter
     même en l'absence de publicité (entrée sur le site ou toutes les 10 min).
     """
-    # Exclure certaines routes (mon compte, auth, tableau de bord admin)
     resolver = getattr(request, "resolver_match", None)
     if not resolver:
         return {}
 
+    namespace = getattr(resolver, "namespace", "") or ""
+    url_name = getattr(resolver, "url_name", "") or ""
+
+    # Pages spéciales : accueil et liste des actualités
+    # Sur ces pages, on affiche un spot vidéo dédié à la place des publicités classiques.
+    is_home = namespace == "mairie" and url_name == "accueil"
+    is_actualites_list = namespace == "actualites" and url_name == "liste"
+
+    if is_home or is_actualites_list:
+        maintenant = timezone.now()
+        video_qs = VideoSpot.objects.filter(
+            est_active=True,
+        ).filter(
+            models.Q(date_debut__isnull=True) | models.Q(date_debut__lte=maintenant),
+            models.Q(date_fin__isnull=True) | models.Q(date_fin__gte=maintenant),
+        ).order_by("ordre_priorite", "?")
+
+        spot = video_qs.first()
+        if not spot:
+            # Aucun spot vidéo disponible : ne rien afficher (ni publicité ni newsletter)
+            return {
+                "afficher_popup_newsletter": False,
+                "publicite_aleatoire": None,
+                "publicite_entreprise": None,
+                "video_spot": None,
+            }
+
+        return {
+            "afficher_popup_newsletter": True,
+            "publicite_aleatoire": None,
+            "publicite_entreprise": None,
+            "video_spot": spot,
+        }
+
+    # Exclure certaines routes (mon compte, auth, tableau de bord admin)
     excluded_names = {
         "connexion",
         "inscription",
@@ -62,14 +97,15 @@ def publicite_globale(request):
     }
     excluded_namespaces = {"admin"}
 
-    if resolver.url_name in excluded_names or resolver.namespace in excluded_namespaces:
+    if url_name in excluded_names or namespace in excluded_namespaces:
         return {}
 
-    # Toujours afficher le popup newsletter sur les pages non exclues
+    # Toujours afficher le popup newsletter/publicité sur les pages non exclues
     result = {
         "afficher_popup_newsletter": True,
         "publicite_aleatoire": None,
         "publicite_entreprise": None,
+        "video_spot": None,
     }
 
     maintenant = timezone.now()

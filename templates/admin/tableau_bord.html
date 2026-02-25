@@ -23,6 +23,7 @@
             --dark: #1a1a1a;
             --light: #f5f5f5;
             --white: #ffffff;
+            --site-header-height: 0px;
         }
 
         body {
@@ -30,6 +31,7 @@
             line-height: 1.6;
             color: var(--dark);
             background: var(--light);
+            padding-top: var(--site-header-height);
         }
 
         .header {
@@ -37,7 +39,11 @@
             color: var(--white);
             padding: 1.5rem 2rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 4000;
         }
 
         .header-content {
@@ -177,6 +183,31 @@
             font-size: 2rem;
             font-weight: bold;
             color: var(--accent);
+        }
+
+        .menu-card-footer {
+            margin-top: 0.5rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .menu-card-open {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.7rem;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 98, 51, 0.4);
+            font-size: 0.8rem;
+            color: var(--primary);
+            background: #ffffff;
+            font-weight: 600;
+        }
+
+        .menu-card:hover .menu-card-open {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
         }
 
         .stats-section {
@@ -417,6 +448,29 @@
             cursor: wait;
         }
 
+        /* Mise en page de la section Infrastructures (carte + formulaire) */
+        .infra-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr);
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .infra-map {
+            height: 380px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--light);
+            width: 100%;
+        }
+
+        .infra-form-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        }
+
         @media (max-width: 768px) {
             .pdf-export-grid {
                 grid-template-columns: 1fr;
@@ -568,6 +622,30 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Responsive spécifique Infrastructures sur mobile / tablette */
+        @media (max-width: 900px) {
+            .infra-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .infra-map {
+                height: 300px;
+                margin-bottom: 1rem;
+            }
+
+            .infra-form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .infra-form-actions .btn-infra-primary,
+            .infra-form-actions .btn-infra-secondary,
+            .infra-form-actions .btn-geo {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -615,7 +693,20 @@
             <a href="{% url 'comptes:deconnexion' %}">Déconnexion</a>
         </div>
     </div>
-
+    
+    <script>
+        (function() {
+            function updateHeaderHeight() {
+                const header = document.querySelector('.header');
+                if (!header) return;
+                document.documentElement.style.setProperty('--site-header-height', header.offsetHeight + 'px');
+            }
+            window.addEventListener('load', updateHeaderHeight);
+            window.addEventListener('resize', updateHeaderHeight);
+            document.addEventListener('DOMContentLoaded', updateHeaderHeight);
+        })();
+    </script>
+    
     <script>
         const hamburgerBtn = document.getElementById('hamburgerBtn');
         const mobileMenu = document.getElementById('mobileMenu');
@@ -701,12 +792,18 @@
                 <h2>Candidatures</h2>
                 <p>Gérer les candidatures aux appels d'offres</p>
                 <div class="menu-card-count">{{ stats.candidatures }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'notifications_candidats' %}" class="menu-card">
                 <div class="menu-card-icon">📧</div>
                 <h2>Notifications Candidats</h2>
                 <p>Envoyer des notifications aux candidats acceptés</p>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_acteurs' %}" class="menu-card">
@@ -714,6 +811,9 @@
                 <h2>Acteurs Économiques</h2>
                 <p>Consulter la liste des entreprises et acteurs économiques enregistrés</p>
                 <div class="menu-card-count">{{ stats.acteurs_economiques }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_institutions' %}" class="menu-card">
@@ -721,6 +821,9 @@
                 <h2>Institutions Financières</h2>
                 <p>Consulter la liste des institutions financières inscrites</p>
                 <div class="menu-card-count">{{ stats.institutions_financieres }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_jeunes' %}" class="menu-card">
@@ -728,6 +831,9 @@
                 <h2>Jeunes Demandeurs d'Emploi</h2>
                 <p>Consulter la liste des jeunes en quête d'emploi</p>
                 <div class="menu-card-count">{{ stats.jeunes }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_retraites' %}" class="menu-card">
@@ -735,6 +841,9 @@
                 <h2>Retraités Actifs</h2>
                 <p>Consulter la liste des retraités actifs</p>
                 <div class="menu-card-count">{{ stats.retraites }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_diaspora_tableau_bord' %}" class="menu-card">
@@ -742,6 +851,9 @@
                 <h2>Diaspora</h2>
                 <p>Consulter la liste des membres de la diaspora</p>
                 <div class="menu-card-count">{{ stats.diaspora }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_osc_tableau_bord' %}" class="menu-card">
@@ -749,6 +861,9 @@
                 <h2>Organisations de la Société Civile</h2>
                 <p>Consulter la liste des OSC enregistrées</p>
                 <div class="menu-card-count">{{ stats.osc }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_suggestions' %}" class="menu-card">
@@ -756,18 +871,27 @@
                 <h2>Suggestions</h2>
                 <p>Consulter les suggestions des visiteurs</p>
                 <div class="menu-card-count">{{ stats.suggestions }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'gestion_publicites' %}" class="menu-card">
                 <div class="menu-card-icon">📢</div>
                 <h2>Publicités</h2>
                 <p>Valider, activer et suivre les campagnes publicitaires</p>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'newsletters_admin' %}" class="menu-card">
                 <div class="menu-card-icon">📨</div>
                 <h2>Newsletters</h2>
                 <p>Consulter les abonnés et préparer l'envoi des actualités par email</p>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_agents_collecteurs' %}" class="menu-card">
@@ -775,6 +899,9 @@
                 <h2>Agents Collecteurs</h2>
                 <p>Gérer les agents chargés de collecter les recettes auprès des contribuables</p>
                 <div class="menu-card-count">{{ stats.agents_collecteurs }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_contribuables' %}" class="menu-card">
@@ -782,6 +909,9 @@
                 <h2>Contribuables</h2>
                 <p>Consulter la liste des contribuables (marchés et places publiques)</p>
                 <div class="menu-card-count">{{ stats.contribuables }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_boutiques' %}" class="menu-card">
@@ -789,6 +919,9 @@
                 <h2>Boutiques / Magasins</h2>
                 <p>Créer et gérer les boutiques / magasins de marché (locations aux contribuables)</p>
                 <div class="menu-card-count">{{ stats.boutiques_magasins }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'liste_contributions' %}" class="menu-card">
@@ -796,11 +929,17 @@
                 <h2>Contributions / Taxes</h2>
                 <p>Consulter les cotisations annuelles, paiements mensuels et tickets marché</p>
                 <div class="menu-card-count">{{ stats.cotisations_annuelles }} cotisations</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
             <a href="{% url 'liste_cotisations_acteurs_institutions' %}" class="menu-card">
                 <div class="menu-card-icon">🏢</div>
                 <h2>Cotisations Acteurs & Institutions</h2>
                 <p>Cotisations annuelles (acteurs économiques et institutions financières)</p>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="{% url 'tableau_bord_organigramme' %}" class="menu-card">
@@ -810,6 +949,9 @@
                 <div class="menu-card-count">
                     {{ stats.directions_mairie }} dir. • {{ stats.sections_mairie }} sec. • {{ stats.personnels_sections }} pers.
                 </div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="#infrastructures-commune" class="menu-card">
@@ -817,25 +959,31 @@
                 <h2>Infrastructures de la Commune</h2>
                 <p>Créer et modifier les infrastructures (santé, éducation, voirie, administrations) sur la carte.</p>
                 <div class="menu-card-count">{{ stats.infrastructures_commune }}</div>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
 
             <a href="/Securelogin/" class="menu-card" target="_blank">
                 <div class="menu-card-icon">⚙️</div>
                 <h2>Admin Django</h2>
                 <p>Accéder à l'interface d'administration Django complète</p>
+                <div class="menu-card-footer">
+                    <span class="menu-card-open">Ouvrir →</span>
+                </div>
             </a>
         </div>
 
         <div class="stats-section" id="infrastructures-commune" style="margin-top: 2rem; scroll-margin-top: 120px;">
             <h2>🏛️ Infrastructures de la Commune (santé, éducation, voirie, administrations)</h2>
             <p style="margin-bottom: 1rem; color: var(--dark); opacity: 0.8;">Cliquez sur la carte pour créer (ou replacer) une infrastructure, puis enregistrez-la via le formulaire.</p>
-            <div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr); gap: 1.5rem; align-items: flex-start;">
+            <div class="infra-layout">
                 <div>
-                    <div id="carte-infrastructures" style="height: 380px; border-radius: 10px; overflow: hidden; background: var(--light);"></div>
+                    <div id="carte-infrastructures" class="infra-map"></div>
                     <small style="display:block; margin-top:0.5rem; color:#777;">Astuce : cliquez sur un point existant pour le modifier ; cliquez sur la carte pour préparer un nouveau point.</small>
                 </div>
                 <div>
-                    <form id="form-infrastructure" method="post" action="{% url 'sauvegarder_infrastructure_ajax' %}" class="card" style="padding:1.5rem; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.06);">
+                    <form id="form-infrastructure" method="post" action="{% url 'sauvegarder_infrastructure_ajax' %}" class="infra-form-card">
                         {% csrf_token %}
                         <input type="hidden" name="infra_id" id="infra_id">
                         <div class="form-group">

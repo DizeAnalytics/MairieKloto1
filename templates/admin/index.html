@@ -1,0 +1,523 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    :root {
+        --admin-primary: #006233;
+        --admin-secondary: #FFCD00;
+        --admin-accent: #D21034;
+        --admin-bg: #f5f5f5;
+        --admin-card-bg: #ffffff;
+    }
+
+    body {
+        background: var(--admin-bg);
+    }
+
+    .mairie-dashboard-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+    }
+
+    .mairie-dashboard-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        gap: 24px;
+        margin-bottom: 24px;
+        align-items: stretch;
+    }
+
+    .mairie-hero-main,
+    .mairie-hero-side,
+    .mairie-dashboard-card {
+        background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.15), transparent),
+                    var(--admin-card-bg);
+        border-radius: 18px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .mairie-hero-main {
+        padding: 22px 22px 20px;
+        background: linear-gradient(135deg, var(--admin-primary), #004d28);
+        color: #ffffff;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mairie-hero-main::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
+            radial-gradient(circle at 100% 100%, rgba(255, 255, 255, 0.08), transparent 55%);
+        opacity: 0.9;
+        pointer-events: none;
+    }
+
+    .mairie-hero-main-inner {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 16px;
+        align-items: center;
+    }
+
+    .mairie-hero-logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--admin-primary);
+        font-weight: 800;
+        font-size: 1.6rem;
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25);
+    }
+
+    .mairie-hero-title {
+        font-size: 1.8rem;
+        margin: 0 0 4px;
+    }
+
+    .mairie-hero-subtitle {
+        margin: 0;
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    .mairie-hero-actions {
+        margin-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .mairie-hero-btn {
+        border-radius: 999px;
+        padding: 7px 15px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, color 0.12s ease;
+    }
+
+    .mairie-hero-btn-primary {
+        background: var(--admin-secondary);
+        color: #1a1a1a;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .mairie-hero-btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.26);
+        background: #f5c000;
+    }
+
+    .mairie-hero-btn-secondary {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        color: #ffffff;
+    }
+
+    .mairie-hero-btn-secondary:hover {
+        background: rgba(0, 0, 0, 0.12);
+        transform: translateY(-1px);
+    }
+
+    .mairie-hero-side {
+        padding: 18px 18px 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .mairie-kpi-label {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #555;
+        margin-bottom: 8px;
+    }
+
+    .mairie-kpi-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--admin-primary);
+        margin-bottom: 4px;
+    }
+
+    .mairie-kpi-helper {
+        font-size: 0.85rem;
+        color: #777;
+    }
+
+    .mairie-dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 18px;
+        margin-bottom: 28px;
+    }
+
+    .mairie-dashboard-card {
+        padding: 16px 16px 14px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mairie-dashboard-card:hover {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .mairie-dashboard-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(0, 98, 51, 0.03), transparent);
+        pointer-events: none;
+    }
+
+    .mairie-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .mairie-card-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #222;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .mairie-card-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(0, 98, 51, 0.08);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .mairie-card-badge {
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(0, 98, 51, 0.07);
+        color: #155724;
+        font-weight: 500;
+    }
+
+    .mairie-card-body {
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .mairie-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #888;
+        position: relative;
+        z-index: 1;
+    }
+
+    .mairie-card-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--admin-primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .mairie-card-link span:last-child {
+        font-size: 1rem;
+    }
+
+    .mairie-admin-apps {
+        margin-top: 8px;
+    }
+
+    .mairie-admin-apps h2 {
+        font-size: 1.1rem;
+        margin: 0 0 10px;
+        color: #444;
+    }
+
+    .mairie-admin-apps-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+    }
+
+    .mairie-admin-app {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .mairie-admin-app-title {
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .mairie-admin-models {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 0.86rem;
+    }
+
+    .mairie-admin-models li + li {
+        margin-top: 2px;
+    }
+
+    .mairie-admin-models a {
+        color: #006233;
+        text-decoration: none;
+    }
+
+    .mairie-admin-models a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 900px) {
+        .mairie-dashboard-hero {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mairie-dashboard-wrapper">
+    <section class="mairie-dashboard-hero">
+        <div class="mairie-hero-main">
+            <div class="mairie-hero-main-inner">
+                <div class="mairie-hero-logo">
+                    K1
+                </div>
+                <div>
+                    <h1 class="mairie-hero-title">Tableau de bord administratif</h1>
+                    <p class="mairie-hero-subtitle">
+                        Gérer les contenus de la plateforme de la <strong>Mairie de Kloto 1</strong> :
+                        actualités, spots vidéo, publicités, projets, partenaires…
+                    </p>
+                </div>
+            </div>
+            <div class="mairie-hero-actions">
+                <a href="{% url 'tableau_bord' %}" class="mairie-hero-btn mairie-hero-btn-primary">
+                    <span>📊 Tableau de bord métier</span>
+                </a>
+                <a href="{% url 'gestion_publicites' %}" class="mairie-hero-btn mairie-hero-btn-secondary">
+                    <span>📢 Gérer les campagnes publicitaires</span>
+                </a>
+            </div>
+        </div>
+        <div class="mairie-hero-side">
+            <div>
+                <div class="mairie-kpi-label">Administration</div>
+                <div class="mairie-kpi-value">Mairie Kloto 1</div>
+                <div class="mairie-kpi-helper">
+                    Portail officiel de gestion des données (contenus, acteurs, finances, statistiques).
+                </div>
+            </div>
+            <div style="margin-top: 14px; font-size: 0.85rem; color:#666;">
+                Vous accédez ici à l’administration technique (Django). Pour les opérations métier
+                quotidiennes (suivi des inscriptions, cartes, cotisations…), utilisez en priorité
+                le bouton « Tableau de bord métier » ci-dessus.
+            </div>
+        </div>
+    </section>
+
+    <section class="mairie-dashboard-grid">
+        <div class="mairie-dashboard-card"
+             onclick="window.location.href='{% url 'admin:actualites_actualite_changelist' %}'">
+            <div class="mairie-card-header">
+                <div class="mairie-card-title">
+                    <span class="mairie-card-icon">📰</span>
+                    <span>Actualités</span>
+                </div>
+                <span class="mairie-card-badge">Contenus</span>
+            </div>
+            <div class="mairie-card-body">
+                Publier et mettre à jour les actualités visibles sur le site public, avec photos et blocs de texte.
+            </div>
+            <div class="mairie-card-footer">
+                <span>Gestion des actualités de la commune</span>
+                <span class="mairie-card-link">
+                    <span>Ouvrir</span><span>→</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="mairie-dashboard-card"
+             onclick="window.location.href='{% url 'admin:mairie_videospot_changelist' %}'">
+            <div class="mairie-card-header">
+                <div class="mairie-card-title">
+                    <span class="mairie-card-icon">🎥</span>
+                    <span>Spots vidéo</span>
+                </div>
+                <span class="mairie-card-badge">Accueil &amp; Actualités</span>
+            </div>
+            <div class="mairie-card-body">
+                Gérer les courtes vidéos et spots publicitaires affichés sur la page d’accueil et la page des actualités,
+                avec lien vers YouTube, Facebook, etc.
+            </div>
+            <div class="mairie-card-footer">
+                <span>Durée de diffusion configurable</span>
+                <span class="mairie-card-link">
+                    <span>Ouvrir</span><span>→</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="mairie-dashboard-card"
+             onclick="window.location.href='{% url 'admin:mairie_publicite_changelist' %}'">
+            <div class="mairie-card-header">
+                <div class="mairie-card-title">
+                    <span class="mairie-card-icon">📢</span>
+                    <span>Publicités</span>
+                </div>
+                <span class="mairie-card-badge">Campagnes</span>
+            </div>
+            <div class="mairie-card-body">
+                Activer ou désactiver les publicités modales liées aux campagnes des acteurs économiques
+                et institutions financières.
+            </div>
+            <div class="mairie-card-footer">
+                <span>Fenêtres modales sur le portail</span>
+                <span class="mairie-card-link">
+                    <span>Ouvrir</span><span>→</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="mairie-dashboard-card"
+             onclick="window.location.href='{% url 'admin:mairie_projet_changelist' %}'">
+            <div class="mairie-card-header">
+                <div class="mairie-card-title">
+                    <span class="mairie-card-icon">🏗️</span>
+                    <span>Projets municipaux</span>
+                </div>
+                <span class="mairie-card-badge">Développement</span>
+            </div>
+            <div class="mairie-card-body">
+                Créer et suivre les projets de la mairie (en cours et réalisés), avec photos, budget,
+                localisation et statut.
+            </div>
+            <div class="mairie-card-footer">
+                <span>Section « Nos projets » du site</span>
+                <span class="mairie-card-link">
+                    <span>Ouvrir</span><span>→</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="mairie-dashboard-card"
+             onclick="window.location.href='{% url 'admin:mairie_configurationmairie_changelist' %}'">
+            <div class="mairie-card-header">
+                <div class="mairie-card-title">
+                    <span class="mairie-card-icon">⚙️</span>
+                    <span>Configuration du site</span>
+                </div>
+                <span class="mairie-card-badge">Identité</span>
+            </div>
+            <div class="mairie-card-body">
+                Mettre à jour le logo, les coordonnées, les liens de réseaux sociaux
+                et les paramètres généraux de la commune.
+            </div>
+            <div class="mairie-card-footer">
+                <span>Identité visuelle &amp; contacts</span>
+                <span class="mairie-card-link">
+                    <span>Ouvrir</span><span>→</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="mairie-dashboard-card"
+             onclick="window.location.href='{% url 'admin:mairie_newslettersubscription_changelist' %}'">
+            <div class="mairie-card-header">
+                <div class="mairie-card-title">
+                    <span class="mairie-card-icon">📨</span>
+                    <span>Newsletter &amp; partenaires</span>
+                </div>
+                <span class="mairie-card-badge">Communication</span>
+            </div>
+            <div class="mairie-card-body">
+                Gérer les abonnés à la newsletter et les partenaires affichés dans le footer
+                de la plateforme.
+            </div>
+            <div class="mairie-card-footer">
+                <span>Visibilité &amp; communication</span>
+                <span class="mairie-card-link">
+                    <span>Ouvrir</span><span>→</span>
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <section class="mairie-admin-apps">
+        <h2>{% trans "Applications de l’administration" %}</h2>
+        <div class="mairie-admin-apps-list">
+            {% for app in app_list %}
+                <div class="mairie-admin-app">
+                    <div class="mairie-admin-app-title">
+                        <span>{{ app.name }}</span>
+                        <span style="font-size:0.75rem; color:#888;">
+                            {{ app.models|length }} modèles
+                        </span>
+                    </div>
+                    <ul class="mairie-admin-models">
+                        {% for model in app.models %}
+                            <li>
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+

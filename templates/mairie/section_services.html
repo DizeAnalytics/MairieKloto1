@@ -20,6 +20,33 @@
         font-size: 0.95rem;
         color: #4b5563;
     }
+    .section-info-card {
+        margin: 1.2rem auto 0;
+        max-width: 520px;
+        background: var(--secondary);
+        color: #111827;
+        border-radius: 12px;
+        padding: 0.9rem 1.1rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.16);
+        text-align: left;
+    }
+    .section-info-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.1rem;
+    }
+    .section-info-sigle {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #374151;
+    }
+    .section-info-chief,
+    .section-info-division {
+        font-size: 0.9rem;
+        color: #111827;
+        margin-top: 0.3rem;
+    }
     .services-list {
         display: flex;
         flex-direction: column;
@@ -102,6 +129,41 @@
             <strong>{{ direction.nom }}</strong>
             {% if direction.sigle %} ({{ direction.sigle }}){% endif %}
         </p>
+
+        <div class="section-info-card">
+            {% if section.division %}
+                <div class="section-info-title">Division {{ section.division.nom }}</div>
+                {% if section.division.sigle %}
+                    <div class="section-info-sigle">{{ section.division.sigle }}</div>
+                {% endif %}
+                {% if section.division.chef_division %}
+                    <div class="section-info-division">
+                        Chef de division&nbsp;: <strong>{{ section.division.chef_division }}</strong>
+                    </div>
+                {% endif %}
+                <div class="section-info-chief" style="margin-top: 0.6rem;">
+                    Section fille&nbsp;: <strong>{{ section.nom }}</strong>
+                    {% if section.sigle %}
+                        <span class="section-info-sigle">({{ section.sigle }})</span>
+                    {% endif %}
+                </div>
+                {% if section.chef_section %}
+                    <div class="section-info-chief">
+                        Chef de section&nbsp;: <strong>{{ section.chef_section }}</strong>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="section-info-title">Section {{ section.nom }}</div>
+                {% if section.sigle %}
+                    <div class="section-info-sigle">{{ section.sigle }}</div>
+                {% endif %}
+                {% if section.chef_section %}
+                    <div class="section-info-chief">
+                        Chef de section&nbsp;: <strong>{{ section.chef_section }}</strong>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
     </div>
 
     {% if services %}

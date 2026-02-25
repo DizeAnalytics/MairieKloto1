@@ -142,6 +142,20 @@
         padding: 0.3rem 0.6rem 0.6rem;
         border: 1px solid rgba(0,0,0,0.03);
     }
+    .org-section--section {
+        border-color: #e0b800;
+    }
+    .org-section--section .org-section-header {
+        background: var(--secondary);
+        border-radius: 6px;
+        padding: 0.35rem 0.55rem;
+        margin: -0.1rem -0.4rem 0.35rem;
+    }
+    .org-section--section .org-section-name,
+    .org-section--section .org-section-chief,
+    .org-section--section .org-section-sigle {
+        color: #111827;
+    }
     .org-section-toggle {
         width: 100%;
         border: none;
@@ -277,8 +291,8 @@
         <h1>Organigramme de la Mairie</h1>
         <p>
             Cet organigramme présente la structure de gouvernance de la commune&nbsp;:
-            du <strong>Conseil communal</strong> jusqu’aux <strong>directions</strong>, <strong>sections</strong>
-            et au <strong>personnel</strong> de chaque unité.
+            du <strong>Conseil communal</strong> jusqu’aux <strong>directions</strong>, <strong>divisions</strong>,
+            <strong>sections</strong>, <strong>services</strong> et au <strong>personnel</strong> de chaque unité.
         </p>
     </div>
 
@@ -315,26 +329,113 @@
                             </div>
                         </header>
 
-                        {% with sections=direction.sections.all %}
-                            {% if sections %}
+                        {% with divisions=direction.divisions.all %}
+                            {% if divisions %}
                                 <div class="org-sections-list">
-                                    {% for section in sections %}
-                                        {% if section.est_active %}
-                                        <article class="org-section" data-section>
+                                    {% for division in divisions %}
+                                        {% if division.est_active %}
+                                        <article class="org-section org-section--division" data-section>
                                             <button type="button" class="org-section-toggle" data-section-toggle>
                                                 <div class="org-section-header">
-                                                    <div class="org-section-name">{{ section.nom }}</div>
-                                                    {% if section.sigle %}
-                                                        <div class="org-section-sigle">{{ section.sigle }}</div>
+                                                    <div class="org-section-name">{{ division.nom }}</div>
+                                                    {% if division.sigle %}
+                                                        <div class="org-section-sigle">{{ division.sigle }}</div>
                                                     {% endif %}
-                                                    {% if section.chef_section %}
+                                                    {% if division.chef_division %}
                                                         <div class="org-section-chief">
-                                                            Chef de section&nbsp;: <strong>{{ section.chef_section }}</strong>
+                                                            Chef de division&nbsp;: <strong>{{ division.chef_division }}</strong>
                                                         </div>
                                                     {% endif %}
                                                 </div>
                                                 <span class="org-section-toggle-icon" aria-hidden="true">▾</span>
                                             </button>
+
+                                            <div class="org-section-body">
+                                                {% with sections=division.sections.all %}
+                                                    {% if sections %}
+                                                        <div class="org-sections-list">
+                                                            {% for section in sections %}
+                                                                {% if section.est_active %}
+                                                                <article class="org-section org-section--section" data-section>
+                                                                    <header class="org-section-header">
+                                                                        <div class="org-section-name">{{ section.nom }}</div>
+                                                                        {% if section.sigle %}
+                                                                            <div class="org-section-sigle">{{ section.sigle }}</div>
+                                                                        {% endif %}
+                                                                        {% if section.chef_section %}
+                                                                            <div class="org-section-chief">
+                                                                                Chef de section&nbsp;: <strong>{{ section.chef_section }}</strong>
+                                                                            </div>
+                                                                        {% endif %}
+                                                                    </header>
+
+                                                                    <div class="org-section-body">
+                                                                        {% with personnes=section.personnels.all %}
+                                                                            {% if personnes %}
+                                                                                <ul class="org-personnel-list">
+                                                                                    {% for personne in personnes %}
+                                                                                        {% if personne.est_actif %}
+                                                                                            <li class="org-person">
+                                                                                                <strong>{{ personne.nom_prenoms }}</strong>
+                                                                                                <span>— {{ personne.fonction }}</span>
+                                                                                                {% if personne.contact or personne.adresse %}
+                                                                                                <div class="org-person-contact">
+                                                                                                    {% if personne.contact %}📞 {{ personne.contact }}{% endif %}
+                                                                                                    {% if personne.adresse %}
+                                                                                                        {% if personne.contact %} • {% endif %}
+                                                                                                        {{ personne.adresse }}
+                                                                                                    {% endif %}
+                                                                                                </div>
+                                                                                                {% endif %}
+                                                                                            </li>
+                                                                                        {% endif %}
+                                                                                    {% endfor %}
+                                                                                </ul>
+                                                                            {% endif %}
+                                                                        {% endwith %}
+                                                                    </div>
+
+                                                                    <div class="org-section-footer">
+                                                                        <a href="{% url 'mairie:section_services' section.pk %}" class="org-section-services-btn">
+                                                                            Voir les services
+                                                                        </a>
+                                                                    </div>
+                                                                </article>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% else %}
+                                                        <p class="org-empty" style="margin-top: 0.5rem;">
+                                                            Aucune section enregistrée pour cette division pour le moment.
+                                                        </p>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        </article>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+
+                        {# Afficher aussi les sections qui n'ont pas encore de division (données anciennes) #}
+                        {% with all_sections=direction.sections.all %}
+                            {% if all_sections %}
+                                {% for section in all_sections %}
+                                    {% if not section.division and section.est_active %}
+                                    <div class="org-sections-list">
+                                        <article class="org-section org-section--section" data-section>
+                                            <header class="org-section-header">
+                                                <div class="org-section-name">{{ section.nom }}</div>
+                                                {% if section.sigle %}
+                                                    <div class="org-section-sigle">{{ section.sigle }}</div>
+                                                {% endif %}
+                                                {% if section.chef_section %}
+                                                    <div class="org-section-chief">
+                                                        Chef de section&nbsp;: <strong>{{ section.chef_section }}</strong>
+                                                    </div>
+                                                {% endif %}
+                                            </header>
 
                                             <div class="org-section-body">
                                                 {% with personnes=section.personnels.all %}
@@ -346,13 +447,13 @@
                                                                         <strong>{{ personne.nom_prenoms }}</strong>
                                                                         <span>— {{ personne.fonction }}</span>
                                                                         {% if personne.contact or personne.adresse %}
-                                                                            <div class="org-person-contact">
-                                                                                {% if personne.contact %}📞 {{ personne.contact }}{% endif %}
-                                                                                {% if personne.adresse %}
-                                                                                    {% if personne.contact %} • {% endif %}
-                                                                                    {{ personne.adresse }}
-                                                                                {% endif %}
-                                                                            </div>
+                                                                        <div class="org-person-contact">
+                                                                            {% if personne.contact %}📞 {{ personne.contact }}{% endif %}
+                                                                            {% if personne.adresse %}
+                                                                                {% if personne.contact %} • {% endif %}
+                                                                                {{ personne.adresse }}
+                                                                            {% endif %}
+                                                                        </div>
                                                                         {% endif %}
                                                                     </li>
                                                                 {% endif %}
@@ -368,13 +469,9 @@
                                                 </a>
                                             </div>
                                         </article>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <p class="org-empty" style="margin-top: 0.5rem;">
-                                    Aucune section enregistrée pour cette direction pour le moment.
-                                </p>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
                         {% endwith %}
                     </section>
