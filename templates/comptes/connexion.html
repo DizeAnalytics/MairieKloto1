@@ -36,9 +36,33 @@
             overflow: hidden;
         }
 
-        .flag-bg {
+        .flag-layer {
             position: fixed;
-            inset: 0;
+            inset: -40px;
+            pointer-events: none;
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .flag {
+            position: absolute;
+            width: 130px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            opacity: 0.9;
+            animation: float-flag 26s linear infinite;
+        }
+
+        .flag-body {
+            width: 100%;
+            height: 56px;
+            border-radius: 6px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+            overflow: hidden;
+            position: relative;
             background:
                 linear-gradient(to bottom,
                     #006233 0%,
@@ -51,28 +75,25 @@
                     #FFCD00 80%,
                     #006233 80%,
                     #006233 100%);
-            transform-origin: left center;
-            animation: flag-wave 10s ease-in-out infinite;
-            z-index: -2;
         }
 
-        .flag-bg::before {
+        .flag-body::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 40%;
+            width: 42%;
             height: 60%;
             background: #D21034;
         }
 
-        .flag-bg::after {
+        .flag-body::after {
             content: '';
             position: absolute;
             top: 18%;
             left: 16%;
-            width: 80px;
-            height: 80px;
+            width: 34px;
+            height: 34px;
             background: #ffffff;
             clip-path: polygon(
                 50% 0%,
@@ -88,15 +109,39 @@
             );
         }
 
-        @keyframes flag-wave {
-            0% { transform: translateX(0) skewX(0deg); }
-            50% { transform: translateX(-12px) skewX(-2.5deg); }
-            100% { transform: translateX(0) skewX(0deg); }
+        .flag-word {
+            font-size: 0.75rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #fdfdfd;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            white-space: nowrap;
+        }
+
+        .flag--1 { top: 8%; animation-duration: 28s; animation-delay: -6s; }
+        .flag--2 { top: 26%; animation-duration: 32s; animation-delay: -14s; }
+        .flag--3 { top: 44%; animation-duration: 30s; animation-delay: -10s; }
+        .flag--4 { top: 62%; animation-duration: 34s; animation-delay: -18s; }
+        .flag--5 { top: 78%; animation-duration: 29s; animation-delay: -8s; }
+        .flag--6 { top: 15%; animation-duration: 36s; animation-delay: -20s; opacity: 0.8; }
+
+        @keyframes float-flag {
+            0% {
+                transform: translate3d(-25vw, 4vh, 0) rotate(-4deg);
+            }
+            50% {
+                transform: translate3d(25vw, -6vh, 0) rotate(2deg);
+            }
+            100% {
+                transform: translate3d(120vw, 3vh, 0) rotate(-2deg);
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .flag-bg {
+            .flag {
                 animation: none;
+                opacity: 0.45;
             }
         }
 
@@ -270,7 +315,32 @@
     </script>
 </head>
 <body>
-    <div class="flag-bg"></div>
+    <div class="flag-layer" aria-hidden="true">
+        <div class="flag flag--1">
+            <div class="flag-body"></div>
+            <div class="flag-word">PAIX</div>
+        </div>
+        <div class="flag flag--2">
+            <div class="flag-body"></div>
+            <div class="flag-word">UNITÉ</div>
+        </div>
+        <div class="flag flag--3">
+            <div class="flag-body"></div>
+            <div class="flag-word">DÉVELOPPEMENT</div>
+        </div>
+        <div class="flag flag--4">
+            <div class="flag-body"></div>
+            <div class="flag-word">PATRIE</div>
+        </div>
+        <div class="flag flag--5">
+            <div class="flag-body"></div>
+            <div class="flag-word">LIBERTÉ</div>
+        </div>
+        <div class="flag flag--6">
+            <div class="flag-body"></div>
+            <div class="flag-word">TRAVAIL</div>
+        </div>
+    </div>
     <div class="auth-container">
         <div class="auth-header">
             <h1>Connexion</h1>
