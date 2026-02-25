@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views import View
 from django.views.decorators.http import require_http_methods
@@ -22,6 +22,13 @@ from mairie.forms import CampagnePublicitaireForm, PubliciteForm
 from django.db.models import Q, Sum
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from reportlab.lib.units import cm
+from mairie_kloto_platform.views import _draw_pdf_header, NumberedCanvas, PDF_HEADER_HEIGHT_CM
 
 User = get_user_model()
 
@@ -376,6 +383,215 @@ def profil(request):
     context['campagne_peut_renouveler'] = campagne_peut_renouveler
 
     return render(request, 'comptes/profil.html', context)
+
+
+@login_required
+def telecharger_fiche_paiements(request, profil_type: str):
+    """
+    Permet au profil connecté (contribuable, acteur économique, institution financière)
+    de télécharger une fiche de paiements (Excel) entre deux dates.
+    """
+    user = request.user
+
+    # Récupération et parsing des dates (au format HTML input[type=date] => YYYY-MM-DD)
+    date_du_raw = request.GET.get("date_du") or ""
+    date_au_raw = request.GET.get("date_au") or ""
+
+    def _parse_date(value):
+        if not value:
+            return None
+        try:
+            return datetime.strptime(value, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+
+    date_du = _parse_date(date_du_raw)
+    date_au = _parse_date(date_au_raw)
+
+    # Sélection du queryset selon le type de profil
+    qs = None
+    title = ""
+    filename = ""
+    subtitle = ""
+
+    if profil_type == "contribuable":
+        contribuable = getattr(user, "contribuable", None)
+        if not contribuable:
+            messages.error(request, "Aucun profil contribuable associé à votre compte.")
+            return redirect("comptes:profil")
+
+        qs = (
+            PaiementCotisation.objects.filter(
+                cotisation_annuelle__boutique__contribuable=contribuable
+            )
+            .select_related(
+                "cotisation_annuelle",
+                "cotisation_annuelle__boutique",
+                "cotisation_annuelle__boutique__emplacement",
+                "encaisse_par_agent",
+            )
+            .order_by("date_paiement")
+        )
+        title = "Votre relevé de paiements"
+        filename = "fiche_paiements_contribuable.pdf"
+        subtitle = f"Titulaire : {contribuable.nom_complet}"
+
+    elif profil_type == "acteur":
+        acteur = getattr(user, "acteur_economique", None)
+        if not acteur:
+            messages.error(request, "Aucun profil acteur économique associé à votre compte.")
+            return redirect("comptes:profil")
+
+        qs = (
+            PaiementCotisationActeur.objects.filter(
+                cotisation_annuelle__acteur=acteur
+            )
+            .select_related("cotisation_annuelle", "encaisse_par_agent")
+            .order_by("date_paiement")
+        )
+        title = "Fiche de paiements – Acteur économique"
+        filename = "fiche_paiements_acteur.pdf"
+        subtitle = f"Acteur économique : {acteur.raison_sociale}"
+
+    elif profil_type == "institution":
+        institution = getattr(user, "institution_financiere", None)
+        if not institution:
+            messages.error(request, "Aucun profil institution financière associé à votre compte.")
+            return redirect("comptes:profil")
+
+        qs = (
+            PaiementCotisationInstitution.objects.filter(
+                cotisation_annuelle__institution=institution
+            )
+            .select_related("cotisation_annuelle", "encaisse_par_agent")
+            .order_by("date_paiement")
+        )
+        title = "Fiche de paiements – Institution financière"
+        filename = "fiche_paiements_institution.pdf"
+        subtitle = f"Institution financière : {institution.nom_institution}"
+
+    else:
+        messages.error(request, "Type de profil inconnu pour la fiche de paiements.")
+        return redirect("comptes:profil")
+
+    # Filtre par dates si fourni
+    if date_du:
+        qs = qs.filter(date_paiement__date__gte=date_du)
+    if date_au:
+        qs = qs.filter(date_paiement__date__lte=date_au)
+
+    # Préparation des données pour le tableau PDF
+    headers = [
+        "Date paiement",
+        "Année",
+        "Mois",
+        "Référence / Boutique",
+        "Lieu / Emplacement",
+        "Montant payé (FCFA)",
+        "Agent encaisseur",
+    ]
+    rows = []
+
+    for paiement in qs:
+        date_p = getattr(paiement, "date_paiement", None)
+        date_str = date_p.strftime("%d/%m/%Y %H:%M") if date_p else ""
+
+        if isinstance(paiement, PaiementCotisation):
+            cotisation = paiement.cotisation_annuelle
+            boutique = getattr(cotisation, "boutique", None)
+            emplacement = getattr(boutique, "emplacement", None) if boutique else None
+            ref = f"{boutique.matricule}" if boutique and getattr(boutique, "matricule", None) else ""
+            lieu = getattr(emplacement, "nom_lieu", "") if emplacement else ""
+            annee = cotisation.annee if cotisation else ""
+            mois = paiement.mois
+        else:
+            cotisation = getattr(paiement, "cotisation_annuelle", None)
+            ref = str(cotisation.annee) if cotisation else ""
+            lieu = ""
+            annee = cotisation.annee if cotisation else ""
+            mois = ""
+
+        agent = getattr(paiement, "encaisse_par_agent", None)
+        if agent:
+            nom_agent = getattr(agent, "nom", "") or ""
+            prenom_agent = getattr(agent, "prenom", "") or ""
+            agent_str = f"{nom_agent} {prenom_agent}".strip()
+        else:
+            agent_str = ""
+
+        rows.append(
+            [
+                date_str,
+                annee,
+                mois,
+                ref,
+                lieu,
+                f"{paiement.montant_paye or 0:.0f}",
+                agent_str,
+            ]
+        )
+
+    data = [headers] + rows
+
+    # Génération du PDF
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        spaceAfter=12,
+    )
+
+    story = [Paragraph(title, title_style)]
+
+    if subtitle:
+        story.append(Paragraph(subtitle, styles["Normal"]))
+        story.append(Spacer(1, 6))
+
+    # Ligne rappelant la période sélectionnée
+    period_parts = []
+    if date_du:
+        period_parts.append(f"Du {date_du.strftime('%d/%m/%Y')}")
+    if date_au:
+        period_parts.append(f"Au {date_au.strftime('%d/%m/%Y')}")
+    if period_parts:
+        story.append(Paragraph("Période : " + " ".join(period_parts), styles["Normal"]))
+        story.append(Spacer(1, 8))
+
+    table = Table(data, repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E0E0E0")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]
+        )
+    )
+
+    story.append(table)
+    doc.build(
+        story,
+        onFirstPage=lambda c, d: _draw_pdf_header(c, d),
+        onLaterPages=lambda c, d: _draw_pdf_header(c, d),
+        canvasmaker=NumberedCanvas,
+    )
+
+    return response
 
 
 @login_required

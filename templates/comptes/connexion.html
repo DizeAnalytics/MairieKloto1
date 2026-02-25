@@ -63,46 +63,50 @@
             box-shadow: 0 8px 18px rgba(0,0,0,0.28);
             overflow: hidden;
             position: relative;
+            /* 5 bandes horizontales vert/jaune en proportions égales */
             background:
                 linear-gradient(to bottom,
                     #006233 0%,
                     #006233 20%,
                     #FFCD00 20%,
-                    #FFCD00 35%,
-                    #006233 35%,
-                    #006233 65%,
-                    #FFCD00 65%,
+                    #FFCD00 40%,
+                    #006233 40%,
+                    #006233 60%,
+                    #FFCD00 60%,
                     #FFCD00 80%,
                     #006233 80%,
                     #006233 100%);
         }
 
         .flag-body::before {
+            /* canton rouge : 3 bandes de haut (3/5) et ~40% de large */
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 42%;
+            width: 40%;
             height: 60%;
             background: #D21034;
         }
 
         .flag-body::after {
+            /* étoile blanche centrée au milieu du carré rouge */
             content: '';
             position: absolute;
-            top: 18%;
-            left: 16%;
-            width: 34px;
-            height: 34px;
+            top: 30%;
+            left: 20%;
+            width: 30px;
+            height: 30px;
+            transform: translate(-50%, -50%);
             background: #ffffff;
             clip-path: polygon(
                 50% 0%,
                 61% 35%,
                 98% 35%,
                 68% 57%,
-                79% 91%,
-                50% 70%,
-                21% 91%,
+                79% 100%,
+                50% 75%,
+                21% 100%,
                 32% 57%,
                 2% 35%,
                 39% 35%

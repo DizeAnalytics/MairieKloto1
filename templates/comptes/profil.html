@@ -37,7 +37,7 @@
                 <strong>Montant Total des Arriérés :</strong>
                 {{ total_arrieres|default:0|floatformat:0 }} FCFA
             </p>
-            <p style="margin-bottom: 0;">
+            <p style="margin-bottom: 0.75rem;">
                 <strong>Reste à payer :</strong>
                 {% if total_reste_a_payer_contribuable and total_reste_a_payer_contribuable > 0 %}
                     <span style="color: #c62828; font-weight: 600;">
@@ -48,6 +48,25 @@
                         0 FCFA (à jour)
                     </span>
                 {% endif %}
+            </p>
+
+            <form method="get" action="{% url 'comptes:telecharger_fiche_paiements' 'contribuable' %}" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; margin-top: 0.5rem;">
+                <div>
+                    <label for="date_du_contribuable" style="font-size: 0.85rem; color: #555;">Du</label><br>
+                    <input type="date" id="date_du_contribuable" name="date_du" style="padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label for="date_au_contribuable" style="font-size: 0.85rem; color: #555;">Au</label><br>
+                    <input type="date" id="date_au_contribuable" name="date_au" style="padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; margin-top: 0.1rem;">
+                        ⬇️ Télécharger ma fiche de paiements
+                    </button>
+                </div>
+            </form>
+            <p style="margin-top: 0.35rem; font-size: 0.8rem; color: #777;">
+                Le fichier contiendra la liste de vos paiements entre les dates choisies (ou tout l'historique si aucune date n'est saisie).
             </p>
         </div>
         {% else %}
@@ -91,6 +110,25 @@
                     </p>
                 </div>
             </div>
+
+            <form method="get" action="{% url 'comptes:telecharger_fiche_paiements' 'acteur' %}" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; margin-top: 0.5rem;">
+                <div>
+                    <label for="date_du_acteur" style="font-size: 0.85rem; color: #555;">Du</label><br>
+                    <input type="date" id="date_du_acteur" name="date_du" style="padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label for="date_au_acteur" style="font-size: 0.85rem; color: #555;">Au</label><br>
+                    <input type="date" id="date_au_acteur" name="date_au" style="padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; margin-top: 0.1rem;">
+                        ⬇️ Télécharger ma fiche de paiements
+                    </button>
+                </div>
+            </form>
+            <p style="margin-top: 0.35rem; font-size: 0.8rem; color: #777;">
+                Le fichier contiendra vos paiements de cotisation entre les dates choisies (ou tout l'historique si aucune date n'est saisie).
+            </p>
         </div>
 
         {% if paiements_acteur %}
@@ -178,6 +216,25 @@
                     </p>
                 </div>
             </div>
+
+            <form method="get" action="{% url 'comptes:telecharger_fiche_paiements' 'institution' %}" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; margin-top: 0.5rem;">
+                <div>
+                    <label for="date_du_institution" style="font-size: 0.85rem; color: #555;">Du</label><br>
+                    <input type="date" id="date_du_institution" name="date_du" style="padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label for="date_au_institution" style="font-size: 0.85rem; color: #555;">Au</label><br>
+                    <input type="date" id="date_au_institution" name="date_au" style="padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem;">
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem; margin-top: 0.1rem;">
+                        ⬇️ Télécharger ma fiche de paiements
+                    </button>
+                </div>
+            </form>
+            <p style="margin-top: 0.35rem; font-size: 0.8rem; color: #777;">
+                Le fichier contiendra vos paiements de cotisation entre les dates choisies (ou tout l'historique si aucune date n'est saisie).
+            </p>
         </div>
 
         {% if paiements_institution %}

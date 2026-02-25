@@ -18,4 +18,5 @@ urlpatterns = [
     path('payer-contribuable/<int:contribuable_id>/', views.payer_contribuable, name='payer_contribuable'),
     path('payer-acteur/<int:acteur_id>/', views.payer_acteur, name='payer_acteur'),
     path('payer-institution/<int:institution_id>/', views.payer_institution, name='payer_institution'),
+    path('profil/fiche-paiements/<str:profil_type>/', views.telecharger_fiche_paiements, name='telecharger_fiche_paiements'),
 ]
