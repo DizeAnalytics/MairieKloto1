@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .section-services-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding-top: 3rem;
+    }
+    .section-services-header {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .section-services-title {
+        font-size: 1.8rem;
+        color: var(--primary);
+        margin-bottom: 0.25rem;
+    }
+    .section-services-subtitle {
+        font-size: 0.95rem;
+        color: #4b5563;
+    }
+    .services-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        align-items: center;
+    }
+    .service-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+        padding: 1.25rem 1.5rem;
+        max-width: 700px;
+        width: 100%;
+    }
+    .service-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.25rem;
+    }
+    .service-meta {
+        font-size: 0.85rem;
+        color: #4b5563;
+        margin-bottom: 0.6rem;
+    }
+    .service-description {
+        font-size: 0.9rem;
+        color: #374151;
+        white-space: pre-line;
+    }
+    .no-services {
+        margin-top: 1.5rem;
+        font-size: 0.95rem;
+        color: #6b7280;
+    }
+    .back-link-wrapper {
+        margin-top: 2.5rem;
+        text-align: center;
+    }
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1.2rem;
+        font-size: 0.9rem;
+        color: var(--primary);
+        text-decoration: none;
+        border-radius: 999px;
+        border: 1px solid var(--primary);
+        background: #ffffff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    .back-link:hover {
+        background: var(--primary);
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+        text-decoration: none;
+    }
+    @media (max-width: 768px) {
+        .section-services-container {
+            padding-top: 2.5rem;
+        }
+        .service-card {
+            padding: 1rem 1.1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container section-services-container">
+    <div class="section-services-header">
+        <h1 class="section-services-title">Services de la {{ section.nom }}</h1>
+        <p class="section-services-subtitle">
+            Section rattachée à la direction :
+            <strong>{{ direction.nom }}</strong>
+            {% if direction.sigle %} ({{ direction.sigle }}){% endif %}
+        </p>
+    </div>
+
+    {% if services %}
+        <div class="services-list">
+            {% for service in services %}
+                <article class="service-card">
+                    <h2 class="service-title">{{ service.titre }}</h2>
+                    {% if service.responsable %}
+                    <div class="service-meta">
+                        Responsable : <strong>{{ service.responsable }}</strong>
+                    </div>
+                    {% endif %}
+                    {% if service.description %}
+                        <div class="service-description">
+                            {{ service.description }}
+                        </div>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-services">
+            Aucun service actif n'est actuellement renseigné pour cette section.
+        </p>
+    {% endif %}
+
+    <div class="back-link-wrapper">
+        <a href="{% url 'mairie:organigramme' %}" class="back-link">
+            ← Retour à l'organigramme
+        </a>
+    </div>
+</div>
+{% endblock %}
+

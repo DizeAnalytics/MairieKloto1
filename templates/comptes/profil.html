@@ -11,11 +11,228 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
         <div>
             <h1 style="color: var(--primary); margin-bottom: 0.5rem;">Mon Espace Personnel</h1>
-            <p style="color: #666;">Bienvenue, {{ user.email }}</p>
+            <p style="color: #666;">{{ user_display_name }}</p>
         </div>
+        {% if user.is_authenticated and user.agent_collecteur and user.agent_collecteur.statut == 'actif' %}
+        <div>
+            <a href="{% url 'comptes:espace_agent' %}"
+               class="btn btn-primary"
+               style="font-size: 0.9rem;">
+                👮 Accéder à mon espace agent collecteur
+            </a>
+        </div>
+        {% endif %}
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+    <!-- Carte Synthèse de mes paiements (pour les contribuables) -->
+    {% if contribuable_profile %}
+    <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            <span style="margin-right: 10px;">💰</span> Synthèse de mes paiements - Contribuable (Marché)
+        </h2>
+        
+        {% if cotisations_contribuable %}
+        <div style="padding: 1.25rem; border-radius: 8px; background: #f5f5f5; border: 1px solid #e0e0e0;">
+            <p style="margin-bottom: 0.5rem;">
+                <strong>Montant Total des Arriérés :</strong>
+                {{ total_arrieres|default:0|floatformat:0 }} FCFA
+            </p>
+            <p style="margin-bottom: 0;">
+                <strong>Reste à payer :</strong>
+                {% if total_reste_a_payer_contribuable and total_reste_a_payer_contribuable > 0 %}
+                    <span style="color: #c62828; font-weight: 600;">
+                        {{ total_reste_a_payer_contribuable|floatformat:0 }} FCFA
+                    </span>
+                {% else %}
+                    <span style="color: #2e7d32; font-weight: 600;">
+                        0 FCFA (à jour)
+                    </span>
+                {% endif %}
+            </p>
+        </div>
+        {% else %}
+        <div style="padding: 1.25rem; border-radius: 8px; background: #f5f5f5; border: 1px solid #e0e0e0;">
+            <p style="color: #666; text-align: center;">Aucune cotisation enregistrée pour le moment.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Carte Synthèse de mes paiements (pour les acteurs économiques) -->
+    {% if acteur_profile %}
+    <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            <span style="margin-right: 10px;">💰</span> Synthèse de mes paiements - Acteur Économique
+        </h2>
+        
+        {% if cotisations_acteur %}
+        <div style="padding: 1.25rem; border-radius: 8px; background: #f5f5f5; border: 1px solid #e0e0e0; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <p style="margin-bottom: 0.25rem; color: #666; font-size: 0.9rem;"><strong>Montant annuel dû :</strong></p>
+                    <p style="font-size: 1.1rem; font-weight: 600; color: var(--primary);">
+                        {{ total_montant_annuel_du_acteur|default:0|floatformat:0 }} FCFA
+                    </p>
+                </div>
+                <div>
+                    <p style="margin-bottom: 0.25rem; color: #666; font-size: 0.9rem;"><strong>Montant payé :</strong></p>
+                    <p style="font-size: 1.1rem; font-weight: 600; color: #2e7d32;">
+                        {{ total_montant_paye_acteur|default:0|floatformat:0 }} FCFA
+                    </p>
+                </div>
+                <div>
+                    <p style="margin-bottom: 0.25rem; color: #666; font-size: 0.9rem;"><strong>Reste à payer :</strong></p>
+                    <p style="font-size: 1.1rem; font-weight: 600; {% if total_reste_a_payer_acteur and total_reste_a_payer_acteur > 0 %}color: #c62828;{% else %}color: #2e7d32;{% endif %}">
+                        {% if total_reste_a_payer_acteur and total_reste_a_payer_acteur > 0 %}
+                            {{ total_reste_a_payer_acteur|floatformat:0 }} FCFA
+                        {% else %}
+                            0 FCFA (à jour)
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% if paiements_acteur %}
+        <div style="margin-top: 1.5rem;">
+            <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.75rem;">📋 Historique des paiements</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--light);">
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd; font-size: 0.9rem;">Date</th>
+                            <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #ddd; font-size: 0.9rem;">Montant</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd; font-size: 0.9rem;">Agent</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd; font-size: 0.9rem;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paiement in paiements_acteur|slice:":10" %}
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 0.75rem; font-size: 0.9rem;">{{ paiement.date_paiement|date:"d/m/Y H:i" }}</td>
+                            <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: var(--primary); font-size: 0.9rem;">
+                                {{ paiement.montant_paye|floatformat:0 }} FCFA
+                            </td>
+                            <td style="padding: 0.75rem; font-size: 0.9rem;">
+                                {% if paiement.encaisse_par_agent %}
+                                    {{ paiement.encaisse_par_agent.nom }} {{ paiement.encaisse_par_agent.prenoms }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td style="padding: 0.75rem; font-size: 0.9rem; color: #666;">
+                                {{ paiement.notes|default:"—"|truncatewords:10 }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if paiements_acteur|length > 10 %}
+                <p style="margin-top: 0.75rem; color: #666; font-size: 0.85rem; text-align: center;">
+                    Affichage des 10 derniers paiements sur {{ paiements_acteur|length }} au total
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <p style="color: #666; text-align: center; padding: 1rem;">Aucun paiement enregistré pour le moment.</p>
+        {% endif %}
+        {% else %}
+        <div style="padding: 1.25rem; border-radius: 8px; background: #f5f5f5; border: 1px solid #e0e0e0;">
+            <p style="color: #666; text-align: center;">Aucune cotisation définie pour le moment. La mairie définira votre taxe annuelle prochainement.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Carte Synthèse de mes paiements (pour les institutions financières) -->
+    {% if institution_profile %}
+    <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+            <span style="margin-right: 10px;">💰</span> Synthèse de mes paiements - Institution Financière
+        </h2>
+        
+        {% if cotisations_institution %}
+        <div style="padding: 1.25rem; border-radius: 8px; background: #f5f5f5; border: 1px solid #e0e0e0; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <p style="margin-bottom: 0.25rem; color: #666; font-size: 0.9rem;"><strong>Montant annuel dû :</strong></p>
+                    <p style="font-size: 1.1rem; font-weight: 600; color: var(--primary);">
+                        {{ total_montant_annuel_du_institution|default:0|floatformat:0 }} FCFA
+                    </p>
+                </div>
+                <div>
+                    <p style="margin-bottom: 0.25rem; color: #666; font-size: 0.9rem;"><strong>Montant payé :</strong></p>
+                    <p style="font-size: 1.1rem; font-weight: 600; color: #2e7d32;">
+                        {{ total_montant_paye_institution|default:0|floatformat:0 }} FCFA
+                    </p>
+                </div>
+                <div>
+                    <p style="margin-bottom: 0.25rem; color: #666; font-size: 0.9rem;"><strong>Reste à payer :</strong></p>
+                    <p style="font-size: 1.1rem; font-weight: 600; {% if total_reste_a_payer_institution and total_reste_a_payer_institution > 0 %}color: #c62828;{% else %}color: #2e7d32;{% endif %}">
+                        {% if total_reste_a_payer_institution and total_reste_a_payer_institution > 0 %}
+                            {{ total_reste_a_payer_institution|floatformat:0 }} FCFA
+                        {% else %}
+                            0 FCFA (à jour)
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% if paiements_institution %}
+        <div style="margin-top: 1.5rem;">
+            <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.75rem;">📋 Historique des paiements</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--light);">
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd; font-size: 0.9rem;">Date</th>
+                            <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #ddd; font-size: 0.9rem;">Montant</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd; font-size: 0.9rem;">Agent</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd; font-size: 0.9rem;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paiement in paiements_institution|slice:":10" %}
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 0.75rem; font-size: 0.9rem;">{{ paiement.date_paiement|date:"d/m/Y H:i" }}</td>
+                            <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: var(--primary); font-size: 0.9rem;">
+                                {{ paiement.montant_paye|floatformat:0 }} FCFA
+                            </td>
+                            <td style="padding: 0.75rem; font-size: 0.9rem;">
+                                {% if paiement.encaisse_par_agent %}
+                                    {{ paiement.encaisse_par_agent.nom }} {{ paiement.encaisse_par_agent.prenoms }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td style="padding: 0.75rem; font-size: 0.9rem; color: #666;">
+                                {{ paiement.notes|default:"—"|truncatewords:10 }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if paiements_institution|length > 10 %}
+                <p style="margin-top: 0.75rem; color: #666; font-size: 0.85rem; text-align: center;">
+                    Affichage des 10 derniers paiements sur {{ paiements_institution|length }} au total
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <p style="color: #666; text-align: center; padding: 1rem;">Aucun paiement enregistré pour le moment.</p>
+        {% endif %}
+        {% else %}
+        <div style="padding: 1.25rem; border-radius: 8px; background: #f5f5f5; border: 1px solid #e0e0e0;">
+            <p style="color: #666; text-align: center;">Aucune cotisation définie pour le moment. La mairie définira votre taxe annuelle prochainement.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
         
         <!-- Carte Informations Profil -->
         <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -25,49 +242,118 @@
             
             <div style="margin-bottom: 1.5rem;">
                 <p style="font-weight: bold; color: #555;">Type de compte</p>
-                <p style="font-size: 1.1rem;">{{ profile_type }}</p>
+                {% if profile_types_list %}
+                    <p style="font-size: 1.1rem;">{{ profile_types_list|join:", " }}</p>
+                {% else %}
+                    <p style="font-size: 1.1rem;">{{ profile_type }}</p>
+                {% endif %}
             </div>
 
-            {% if profile %}
-                <div style="margin-bottom: 1.5rem;">
-                    <p style="font-weight: bold; color: #555;">Statut de validation</p>
-                    {% if status == True or status == 'acceptee' %}
-                        <span style="background: #e8f5e9; color: #2e7d32; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
-                            ✅ Validé
-                        </span>
-                    {% elif status == False or status == 'refusee' %}
-                        <span style="background: #ffebee; color: #c62828; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
-                            ❌ Refusé / En attente
-                        </span>
-                    {% else %}
-                        <span style="background: #fff3e0; color: #ef6c00; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
-                            ⏳ En attente de validation
-                        </span>
-                    {% endif %}
-                </div>
-
-                <!-- Détails spécifiques selon le type -->
-                {% if profile_type == 'Acteur Économique' %}
-                    <p><strong>Entreprise :</strong> {{ profile.raison_sociale }}</p>
-                    <p><strong>Secteur :</strong> {{ profile.get_secteur_activite_display }}</p>
-                    <div style="margin-top: 1.5rem;">
-                        <a href="{% url 'acteurs:modifier_acteur' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mes informations</a>
-                    </div>
-                {% elif profile_type == 'Institution Financière' %}
-                    <p><strong>Institution :</strong> {{ profile.nom_institution }}</p>
-                    <p><strong>Type :</strong> {{ profile.get_type_institution_display }}</p>
-                    <div style="margin-top: 1.5rem;">
-                        <a href="{% url 'acteurs:modifier_institution' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mes informations</a>
-                    </div>
-                {% else %}
-                    <p><strong>Nom complet :</strong> {{ profile.nom }} {{ profile.prenoms }}</p>
-                    <p><strong>Qualification :</strong> {{ profile.niveau_etude }} - {{ profile.domaine_competence }}</p>
-                    <div style="margin-top: 1.5rem;">
-                        {% if profile.type_profil == 'jeune' %}
-                            <a href="{% url 'emploi:modifier_jeune' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mes informations</a>
-                        {% elif profile.type_profil == 'retraite' %}
-                            <a href="{% url 'emploi:modifier_retraite' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mes informations</a>
+            {% if has_any_profile %}
+                {% if profile %}
+                    <div style="margin-bottom: 1.5rem;">
+                        <p style="font-weight: bold; color: #555;">Statut de validation</p>
+                        {% if status == True or status == 'acceptee' %}
+                            <span style="background: #e8f5e9; color: #2e7d32; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
+                                ✅ Validé
+                            </span>
+                        {% elif status == False or status == 'refusee' %}
+                            <span style="background: #ffebee; color: #c62828; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
+                                ❌ Refusé / En attente
+                            </span>
+                        {% else %}
+                            <span style="background: #fff3e0; color: #ef6c00; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; display: inline-block;">
+                                ⏳ En attente de validation
+                            </span>
                         {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Détails pour chaque type de profil associé -->
+                {% if acteur_profile %}
+                    <div style="margin-top: 1rem;">
+                        <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.5rem;">🏢 Acteur Économique</h3>
+                        <p><strong>Entreprise :</strong> {{ acteur_profile.raison_sociale }}</p>
+                        <p><strong>Secteur :</strong> {{ acteur_profile.get_secteur_activite_display }}</p>
+                        <div style="margin-top: 0.75rem;">
+                            <a href="{% url 'acteurs:modifier_acteur' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier les infos entreprise</a>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if institution_profile %}
+                    <div style="margin-top: 1.5rem;">
+                        <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.5rem;">🏦 Institution Financière</h3>
+                        <p><strong>Institution :</strong> {{ institution_profile.nom_institution }}</p>
+                        <p><strong>Type :</strong> {{ institution_profile.get_type_institution_display }}</p>
+                        <div style="margin-top: 0.75rem;">
+                            <a href="{% url 'acteurs:modifier_institution' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier les infos institution</a>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if emploi_profile %}
+                    <div style="margin-top: 1.5rem;">
+                        <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.5rem;">👨‍💼 Profil Emploi</h3>
+                        <p><strong>Nom complet :</strong> {{ emploi_profile.nom }} {{ emploi_profile.prenoms }}</p>
+                        <p><strong>Qualification :</strong> {{ emploi_profile.niveau_etude }} - {{ emploi_profile.domaine_competence }}</p>
+                        <div style="margin-top: 0.75rem;">
+                            {% if emploi_profile.type_profil == 'jeune' %}
+                                <a href="{% url 'emploi:modifier_jeune' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier le profil emploi (jeune)</a>
+                            {% elif emploi_profile.type_profil == 'retraite' %}
+                                <a href="{% url 'emploi:modifier_retraite' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier le profil emploi (retraité)</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if contribuable_profile %}
+                    <div style="margin-top: 1.5rem;">
+                        <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.5rem;">🏪 Contribuable (Marché / Place publique)</h3>
+                        <p><strong>Nom complet :</strong> {{ contribuable_profile.nom_complet }}</p>
+                        <p><strong>Téléphone :</strong> {{ contribuable_profile.telephone }}</p>
+                        {% if contribuable_profile.nationalite %}
+                            <p><strong>Nationalité :</strong> {{ contribuable_profile.nationalite }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {% if osc_list %}
+                    <div style="margin-top: 1.5rem;">
+                        <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.5rem;">🤝 Organisations de la Société Civile (OSC)</h3>
+                        <p style="margin-bottom: 0.5rem;">Vous avez enregistré les OSC suivantes :</p>
+                        <ul style="padding-left: 1.2rem; margin: 0 0 0.75rem 0;">
+                            {% for osc in osc_list %}
+                                <li style="margin-bottom: 0.25rem;">
+                                    <strong>{{ osc.nom_osc }}</strong>
+                                    {% if osc.sigle %} ({{ osc.sigle }}){% endif %}
+                                    – {{ osc.type_osc }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <div style="margin-top: 0.75rem;">
+                            {% if osc_list|length == 1 %}
+                                {# S'il n'y a qu'une seule OSC, on va directement sur la page de modification #}
+                                {% for osc in osc_list %}
+                                    <a href="{% url 'osc:modifier' osc.id %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Gérer mon OSC</a>
+                                {% endfor %}
+                            {% else %}
+                                {# Sinon, on affiche la liste avec les boutons Modifier par OSC #}
+                                <a href="{% url 'osc:liste' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Gérer mes OSC</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if diaspora_profile %}
+                    <div style="margin-top: 1.5rem;">
+                        <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.5rem;">🌍 Profil Diaspora</h3>
+                        <p><strong>Nom complet :</strong> {{ diaspora_profile.nom }} {{ diaspora_profile.prenoms }}</p>
+                        <p><strong>Pays de résidence :</strong> {{ diaspora_profile.pays_residence_actuelle }}</p>
+                        <p><strong>Ville :</strong> {{ diaspora_profile.ville_residence_actuelle }}</p>
+                        <div style="margin-top: 0.75rem;">
+                            <a href="{% url 'diaspora:modifier' %}" class="btn btn-primary" style="font-size: 0.9rem;">✏️ Modifier mon profil diaspora</a>
+                        </div>
                     </div>
                 {% endif %}
 
@@ -158,6 +444,36 @@
                 <a href="{% url 'enregistrement' %}" class="btn btn-primary" style="margin-top: 1rem;">Compléter mon profil</a>
             {% endif %}
         </div>
+
+        <!-- Carte Cotisations Contribuable -->
+        {% if contribuable_profile and boutiques_magasins %}
+        <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+                <span style="margin-right: 10px;">💰</span> Suivi de mes taxes marché
+            </h2>
+
+            {% if boutiques_magasins %}
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="font-size: 1.05rem; color: var(--primary); margin-bottom: 0.75rem;">Mes Boutiques / Magasins</h3>
+                    {% for boutique in boutiques_magasins %}
+                        <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                            <p style="font-weight: bold; color: var(--primary); margin-bottom: 0.5rem;">
+                                🏪 {{ boutique.matricule }} - {{ boutique.emplacement.nom_lieu }}
+                            </p>
+                            <p><strong>Type :</strong> {{ boutique.get_type_local_display }}</p>
+                            <p><strong>Activité :</strong> {{ boutique.activite_vendue }}</p>
+                            <p><strong>Superficie :</strong> {{ boutique.superficie_m2 }} m²</p>
+                            <p><strong>Prix location mensuel :</strong> {{ boutique.prix_location_mensuel|floatformat:0 }} FCFA</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if not cotisations_contribuable %}
+                <p style="color: #666;">Aucune cotisation enregistrée pour le moment.</p>
+            {% endif %}
+        </div>
+        {% endif %}
 
         <!-- Carte Notifications -->
         <div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">

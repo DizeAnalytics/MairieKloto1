@@ -1,17 +1,52 @@
 from django.db import models
 from django.utils import timezone
 
-from .models import ConfigurationMairie, Publicite
+from .models import (
+    ConfigurationMairie,
+    Publicite,
+    Partenaire,
+    NewsletterSubscription,
+)
+
 
 def mairie_config(request):
-    config = ConfigurationMairie.objects.filter(est_active=True).order_by("-date_modification").first()
-    return {"mairie_config": config}
+    """
+    Contexte global de configuration de la mairie.
+    Ajoute aussi un indicateur pour savoir si l'utilisateur est déjà inscrit à la newsletter.
+    """
+    config = ConfigurationMairie.objects.filter(est_active=True).order_by(
+        "-date_modification"
+    ).first()
+
+    newsletter_deja_inscrit = False
+
+    # 1) Si un cookie dédié est présent, on considère l'utilisateur comme inscrit
+    if request.COOKIES.get("newsletter_subscribed") == "1":
+        newsletter_deja_inscrit = True
+    else:
+        # 2) Sinon, si l'utilisateur est connecté et possède un email,
+        #    on vérifie dans la base s'il est abonné actif.
+        user = getattr(request, "user", None)
+        if getattr(user, "is_authenticated", False) and getattr(user, "email", ""):
+            email = user.email.strip()
+            if email:
+                newsletter_deja_inscrit = NewsletterSubscription.objects.filter(
+                    email__iexact=email,
+                    est_actif=True,
+                ).exists()
+
+    return {
+        "mairie_config": config,
+        "newsletter_deja_inscrit": newsletter_deja_inscrit,
+    }
 
 
 def publicite_globale(request):
     """
     Fournit une publicité aléatoire et les informations de l'entreprise à toutes les pages,
     sauf sur certaines vues sensibles (connexion, inscription, profil, tableau de bord, etc.).
+    Retourne aussi afficher_popup_newsletter pour afficher le popup d'inscription newsletter
+    même en l'absence de publicité (entrée sur le site ou toutes les 10 min).
     """
     # Exclure certaines routes (mon compte, auth, tableau de bord admin)
     resolver = getattr(request, "resolver_match", None)
@@ -30,6 +65,13 @@ def publicite_globale(request):
     if resolver.url_name in excluded_names or resolver.namespace in excluded_namespaces:
         return {}
 
+    # Toujours afficher le popup newsletter sur les pages non exclues
+    result = {
+        "afficher_popup_newsletter": True,
+        "publicite_aleatoire": None,
+        "publicite_entreprise": None,
+    }
+
     maintenant = timezone.now()
     publicites_qs = (
         Publicite.objects.filter(
@@ -46,7 +88,7 @@ def publicite_globale(request):
 
     publicite_aleatoire = publicites_qs.first()
     if not publicite_aleatoire:
-        return {}
+        return result
 
     # Préparer les informations entreprise/institution
     campagne = publicite_aleatoire.campagne
@@ -80,7 +122,12 @@ def publicite_globale(request):
         "logo_url": logo_url,
     }
 
-    return {
-        "publicite_aleatoire": publicite_aleatoire,
-        "publicite_entreprise": publicite_entreprise,
-    }
+    result["publicite_aleatoire"] = publicite_aleatoire
+    result["publicite_entreprise"] = publicite_entreprise
+    return result
+
+
+def partenaires_footer(request):
+    """Fournit les partenaires actifs pour l'affichage dans le footer."""
+    partenaires = Partenaire.objects.filter(est_actif=True)
+    return {"partenaires": list(partenaires)}

@@ -3,6 +3,7 @@ from django.core.validators import MinLengthValidator
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.utils import timezone
+from decimal import Decimal
 
 
 def validate_file_size(value):
@@ -132,6 +133,187 @@ class Collaborateur(models.Model):
         return self.get_fonction_display()
 
 
+class DirectionMairie(models.Model):
+    """
+    Direction de la mairie (ex: Direction des affaires administratives, Direction des services techniques).
+    Reliée à l'organigramme sous la supervision du Secrétaire Général.
+    """
+
+    nom = models.CharField(
+        max_length=255,
+        help_text="Nom complet de la direction (ex: Direction des affaires administratives, ressources humaines et état civil).",
+    )
+    sigle = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Sigle de la direction (ex: DAARHEC).",
+    )
+    chef_direction = models.CharField(
+        max_length=255,
+        help_text="Nom du Chef de direction.",
+    )
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage dans l'organigramme (de gauche à droite).",
+    )
+    est_active = models.BooleanField(
+        default=True,
+        help_text="Afficher cette direction dans l'organigramme public.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Direction de la mairie"
+        verbose_name_plural = "Directions de la mairie"
+        ordering = ["ordre_affichage", "nom"]
+
+    def __str__(self) -> str:
+        if self.sigle:
+            return f"{self.nom} ({self.sigle})"
+        return self.nom
+
+
+class SectionDirection(models.Model):
+    """
+    Section rattachée à une direction (ex: Section état civil, Section ressources humaines).
+    """
+
+    direction = models.ForeignKey(
+        DirectionMairie,
+        on_delete=models.CASCADE,
+        related_name="sections",
+        help_text="Direction à laquelle cette section est rattachée.",
+    )
+    nom = models.CharField(
+        max_length=255,
+        help_text="Nom complet de la section.",
+    )
+    sigle = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Sigle de la section (facultatif).",
+    )
+    chef_section = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Nom du Chef de section.",
+    )
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage de la section à l'intérieur de la direction.",
+    )
+    est_active = models.BooleanField(
+        default=True,
+        help_text="Afficher cette section dans l'organigramme public.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Section de direction"
+        verbose_name_plural = "Sections de direction"
+        ordering = ["direction", "ordre_affichage", "nom"]
+
+    def __str__(self) -> str:
+        if self.sigle:
+            return f"{self.nom} ({self.sigle})"
+        return self.nom
+
+
+class PersonnelSection(models.Model):
+    """
+    Personnel rattaché à une section (organigramme détaillé du personnel).
+    """
+
+    section = models.ForeignKey(
+        SectionDirection,
+        on_delete=models.CASCADE,
+        related_name="personnels",
+        help_text="Section à laquelle ce membre du personnel est rattaché.",
+    )
+    nom_prenoms = models.CharField(
+        max_length=255,
+        help_text="Nom et prénoms du membre du personnel.",
+    )
+    adresse = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Adresse (facultatif).",
+    )
+    contact = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Contact téléphonique ou email.",
+    )
+    fonction = models.CharField(
+        max_length=255,
+        help_text="Fonction occupée dans la section.",
+    )
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage dans la section.",
+    )
+    est_actif = models.BooleanField(
+        default=True,
+        help_text="Afficher ce membre du personnel dans l'organigramme public.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Personnel de section"
+        verbose_name_plural = "Personnel des sections"
+        ordering = ["section", "ordre_affichage", "nom_prenoms"]
+
+    def __str__(self) -> str:
+        return f"{self.nom_prenoms} - {self.fonction}"
+
+
+class ServiceSection(models.Model):
+    """
+    Service rattaché à une section (ex: Service état civil, Service ressources humaines).
+    """
+
+    section = models.ForeignKey(
+        SectionDirection,
+        on_delete=models.CASCADE,
+        related_name="services",
+        help_text="Section à laquelle ce service est rattaché.",
+    )
+    titre = models.CharField(
+        max_length=255,
+        help_text="Titre du service.",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Description des missions et activités du service (facultatif).",
+    )
+    responsable = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Nom du responsable du service (facultatif).",
+    )
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage du service dans la section.",
+    )
+    est_actif = models.BooleanField(
+        default=True,
+        help_text="Afficher ce service dans l'organigramme public.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Service de section"
+        verbose_name_plural = "Services de section"
+        ordering = ["section", "ordre_affichage", "titre"]
+
+    def __str__(self) -> str:
+        return self.titre
+
+
 class InformationMairie(models.Model):
     """Informations générales sur la mairie (contacts, horaires, etc.)."""
     
@@ -175,42 +357,6 @@ class InformationMairie(models.Model):
 
     def __str__(self):
         return f"{self.get_type_info_display()}: {self.titre}"
-
-
-class EtatCivilPage(models.Model):
-    """Contenus éditoriaux pour l'état civil (actes, démarches, etc.)."""
-
-    titre = models.CharField(max_length=255, help_text="Ex: Acte de naissance, Transcription, Acte de mariage…")
-    slug = models.SlugField(
-        max_length=255,
-        unique=True,
-        help_text="Identifiant technique (ex: acte-naissance). Utilisé pour l’ancrage sur la page publique.",
-    )
-    resume = models.TextField(
-        blank=True,
-        help_text="Petit résumé qui apparaîtra sous le titre (facultatif).",
-    )
-    contenu = models.TextField(
-        help_text="Description détaillée de la démarche : pièces à fournir, coût, délais, service compétent, etc.",
-    )
-    ordre_affichage = models.PositiveIntegerField(
-        default=0,
-        help_text="Ordre d'affichage sur la page (0 = en haut).",
-    )
-    est_visible = models.BooleanField(
-        default=True,
-        help_text="Cocher pour afficher cette rubrique dans l’onglet État civil.",
-    )
-    date_creation = models.DateTimeField(auto_now_add=True)
-    date_modification = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Page d'état civil"
-        verbose_name_plural = "Pages d'état civil"
-        ordering = ["ordre_affichage", "titre"]
-
-    def __str__(self) -> str:
-        return self.titre
 
 
 class AppelOffre(models.Model):
@@ -509,6 +655,176 @@ class ConfigurationMairie(models.Model):
 
     def __str__(self):
         return self.nom_commune
+
+
+class CartographieCommune(models.Model):
+    """
+    Données de cartographie et de synthèse pour une commune.
+    Relié à la configuration active afin d'avoir une seule fiche par commune.
+    """
+
+    configuration = models.OneToOneField(
+        ConfigurationMairie,
+        on_delete=models.CASCADE,
+        related_name="cartographie",
+        help_text="Configuration associée à cette commune.",
+    )
+
+    # Données générales
+    superficie_km2 = models.PositiveIntegerField(
+        help_text="Superficie totale de la commune en km² (ex: 146)."
+    )
+    population_totale = models.PositiveIntegerField(
+        help_text="Population totale estimée de la commune."
+    )
+    densite_hab_km2 = models.PositiveIntegerField(
+        help_text="Densité moyenne (habitants par km²)."
+    )
+
+    # Indicateurs démographiques
+    taux_natalite_pour_mille = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        help_text="Taux de natalité pour 1000 habitants (ex: 32.50).",
+    )
+    taux_mortalite_pour_mille = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        help_text="Taux de mortalité pour 1000 habitants (ex: 7.80).",
+    )
+    taux_croissance_pourcent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        help_text="Taux annuel moyen de croissance de la population en % (ex: 2.30).",
+    )
+
+    # Activités et infrastructures (texte libre, une entrée par ligne)
+    principales_activites = models.TextField(
+        help_text="Principales activités économiques (une activité par ligne)."
+    )
+    infrastructures_sante = models.TextField(
+        help_text="Liste des infrastructures de santé (une par ligne)."
+    )
+    infrastructures_education = models.TextField(
+        help_text="Liste des infrastructures éducatives (une par ligne)."
+    )
+    infrastructures_routes = models.TextField(
+        help_text="Axes routiers, voiries, pistes (une par ligne)."
+    )
+    infrastructures_administration = models.TextField(
+        help_text="Principales infrastructures administratives et de services publics (une par ligne)."
+    )
+
+    # Coordonnées pour la carte
+    centre_latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        help_text="Latitude du centre de la commune pour la carte (ex: 6.900000).",
+    )
+    centre_longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        help_text="Longitude du centre de la commune pour la carte (ex: 0.630000).",
+    )
+    zoom_carte = models.PositiveIntegerField(
+        default=13,
+        help_text="Niveau de zoom par défaut de la carte (ex: 13).",
+    )
+
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Cartographie de la commune"
+        verbose_name_plural = "Cartographie de la commune"
+        ordering = ["-date_modification"]
+
+    def __str__(self):
+        return f"Cartographie - {self.configuration.nom_commune}"
+
+    @property
+    def principales_activites_list(self):
+        return [ligne.strip() for ligne in self.principales_activites.splitlines() if ligne.strip()]
+
+    @property
+    def infrastructures_sante_list(self):
+        return [ligne.strip() for ligne in self.infrastructures_sante.splitlines() if ligne.strip()]
+
+    @property
+    def infrastructures_education_list(self):
+        return [ligne.strip() for ligne in self.infrastructures_education.splitlines() if ligne.strip()]
+
+    @property
+    def infrastructures_routes_list(self):
+        return [ligne.strip() for ligne in self.infrastructures_routes.splitlines() if ligne.strip()]
+
+    @property
+    def infrastructures_administration_list(self):
+        return [ligne.strip() for ligne in self.infrastructures_administration.splitlines() if ligne.strip()]
+
+
+class InfrastructureCommune(models.Model):
+    """
+    Point d'infrastructure géolocalisé sur la carte de la commune.
+    Permet d'afficher les équipements (santé, éducation, voirie, administrations, etc.).
+    """
+
+    TYPE_INFRASTRUCTURE_CHOICES = [
+        ("sante", "Infrastructure de santé"),
+        ("education", "Infrastructure éducative"),
+        ("voirie", "Réseau viaire et voirie"),
+        ("administration", "Administration / service public"),
+    ]
+
+    cartographie = models.ForeignKey(
+        CartographieCommune,
+        on_delete=models.CASCADE,
+        related_name="infrastructures",
+        help_text="Fiche de cartographie à laquelle cette infrastructure est rattachée.",
+    )
+    type_infrastructure = models.CharField(
+        max_length=20,
+        choices=TYPE_INFRASTRUCTURE_CHOICES,
+        help_text="Catégorie d'infrastructure (santé, éducation, voirie, administration).",
+    )
+    nom = models.CharField(
+        max_length=255,
+        help_text="Nom de l'infrastructure (ex: Centre de santé de Kpodzi).",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Description synthétique de l'infrastructure et de ses services (facultatif).",
+    )
+    adresse = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Adresse ou quartier (facultatif).",
+    )
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        help_text="Latitude du point (ex: 6.903421).",
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        help_text="Longitude du point (ex: 0.627845).",
+    )
+    est_active = models.BooleanField(
+        default=True,
+        help_text="Afficher cette infrastructure sur la carte publique.",
+    )
+
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Infrastructure de la commune"
+        verbose_name_plural = "Infrastructures de la commune"
+        ordering = ["cartographie", "type_infrastructure", "nom"]
+
+    def __str__(self):
+        return f"{self.nom} ({self.get_type_infrastructure_display()})"
 
 
 class VisiteSite(models.Model):
@@ -899,3 +1215,730 @@ class DonMairie(models.Model):
     
     def __str__(self):
         return f"Don de {self.nom_donateur} - {self.montant} FCFA ({self.get_type_don_display()})"
+
+
+class NewsletterSubscription(models.Model):
+    """Inscription à la newsletter de la mairie."""
+
+    email = models.EmailField(
+        unique=True,
+        help_text="Adresse email de l'abonné à la newsletter.",
+    )
+    date_inscription = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Date et heure d'inscription.",
+    )
+    est_actif = models.BooleanField(
+        default=True,
+        help_text="Permet de désactiver un contact sans le supprimer.",
+    )
+    source = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Source d'inscription (ex: popup, formulaire footer...).",
+    )
+
+    class Meta:
+        verbose_name = "Inscription à la newsletter"
+        verbose_name_plural = "Inscriptions à la newsletter"
+        ordering = ["-date_inscription"]
+
+    def __str__(self):
+        return f"{self.email} ({'actif' if self.est_actif else 'inactif'})"
+
+
+class Partenaire(models.Model):
+    """Partenaire de la mairie affiché dans le footer du site."""
+
+    nom = models.CharField(
+        max_length=200,
+        help_text="Nom du partenaire",
+    )
+    logo = models.ImageField(
+        upload_to="mairie/partenaires/",
+        blank=True,
+        null=True,
+        validators=[validate_file_size],
+        help_text="Logo du partenaire (optionnel)",
+    )
+    url_site = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text="Lien vers le site du partenaire (optionnel)",
+    )
+    ordre = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage (plus petit = plus haut)",
+    )
+    est_actif = models.BooleanField(
+        default=True,
+        help_text="Afficher ce partenaire dans le footer",
+    )
+
+    class Meta:
+        verbose_name = "Partenaire"
+        verbose_name_plural = "Partenaires"
+        ordering = ["ordre", "nom"]
+
+    def __str__(self):
+        return self.nom
+
+
+# --- Contribuables (marchés et places publiques) ---
+
+
+class AgentCollecteur(models.Model):
+    """
+    Agent de la mairie chargé de collecter les recettes (cotisations et tickets marché)
+    auprès des contribuables sur les marchés et places publiques.
+    """
+    STATUT_CHOICES = [
+        ("actif", "Actif"),
+        ("inactif", "Inactif"),
+        ("suspendu", "Suspendu"),
+    ]
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.PROTECT,
+        related_name="agent_collecteur",
+        help_text="Compte utilisateur de l'agent (pour connexion et authentification).",
+    )
+    matricule = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Matricule unique de l'agent (ex: AGT-2025-001).",
+    )
+    nom = models.CharField(max_length=100, help_text="Nom de famille.")
+    prenom = models.CharField(max_length=150, help_text="Prénom(s).")
+    telephone = models.CharField(
+        max_length=30,
+        help_text="Numéro de téléphone de l'agent.",
+    )
+    email = models.EmailField(
+        blank=True,
+        help_text="Adresse email (si différente de celle du compte utilisateur).",
+    )
+    statut = models.CharField(
+        max_length=20,
+        choices=STATUT_CHOICES,
+        default="actif",
+        help_text="Statut de l'agent.",
+    )
+    emplacements_assignes = models.ManyToManyField(
+        "EmplacementMarche",
+        related_name="agents_collecteurs",
+        blank=True,
+        help_text="Emplacements (marchés/places) assignés à cet agent pour la collecte.",
+    )
+    date_embauche = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Date d'embauche de l'agent.",
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Notes administratives sur l'agent (formations, observations, etc.).",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Agent collecteur"
+        verbose_name_plural = "Agents collecteurs"
+        ordering = ["matricule", "nom", "prenom"]
+
+    def __str__(self):
+        return f"{self.matricule} - {self.nom} {self.prenom}"
+
+    @property
+    def nom_complet(self):
+        return f"{self.nom} {self.prenom}".strip()
+
+    def montant_total_collecte(self, date_debut=None, date_fin=None):
+        """
+        Retourne le montant total collecté par cet agent (cotisations + tickets).
+        Optionnellement filtré par période.
+        """
+        from django.db.models import Sum
+        from django.utils import timezone
+
+        if date_debut is None:
+            date_debut = timezone.now().replace(day=1, month=1, hour=0, minute=0, second=0, microsecond=0)
+        if date_fin is None:
+            date_fin = timezone.now()
+
+        # Cotisations collectées (import différé pour éviter référence circulaire)
+        # Utilisation de get_model pour éviter les imports circulaires
+        from django.apps import apps
+        PaiementCotisation = apps.get_model('mairie', 'PaiementCotisation')
+        TicketMarche = apps.get_model('mairie', 'TicketMarche')
+        PaiementCotisationActeur = apps.get_model('mairie', 'PaiementCotisationActeur')
+        PaiementCotisationInstitution = apps.get_model('mairie', 'PaiementCotisationInstitution')
+
+        cotisations = PaiementCotisation.objects.filter(
+            encaisse_par_agent=self,
+            date_paiement__gte=date_debut,
+            date_paiement__lte=date_fin,
+        ).aggregate(total=Sum("montant_paye"))["total"] or 0
+
+        # Tickets marché collectés
+        tickets = TicketMarche.objects.filter(
+            encaisse_par_agent=self,
+            date__gte=date_debut.date() if hasattr(date_debut, "date") else date_debut,
+            date__lte=date_fin.date() if hasattr(date_fin, "date") else date_fin,
+        ).aggregate(total=Sum("montant"))["total"] or 0
+
+        # Cotisations acteurs économiques collectées
+        cotisations_acteurs = PaiementCotisationActeur.objects.filter(
+            encaisse_par_agent=self,
+            date_paiement__gte=date_debut,
+            date_paiement__lte=date_fin,
+        ).aggregate(total=Sum("montant_paye"))["total"] or 0
+
+        # Cotisations institutions financières collectées
+        cotisations_institutions = PaiementCotisationInstitution.objects.filter(
+            encaisse_par_agent=self,
+            date_paiement__gte=date_debut,
+            date_paiement__lte=date_fin,
+        ).aggregate(total=Sum("montant_paye"))["total"] or 0
+
+        return cotisations + tickets + cotisations_acteurs + cotisations_institutions
+
+
+class EmplacementMarche(models.Model):
+    """
+    Lieu (marché ou place publique) où se trouvent des boutiques/magasins ou étalages.
+    Canton, village, quartier + nom du lieu (ex: Marché central, Place du marché).
+    """
+    canton = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Canton où se situe le marché ou la place.",
+    )
+    village = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text="Village (si applicable).",
+    )
+    quartier = models.CharField(
+        max_length=150,
+        help_text="Quartier ou secteur (ex: Centre-ville, Marché central).",
+    )
+    nom_lieu = models.CharField(
+        max_length=255,
+        help_text="Nom du lieu (ex: Marché central de Kpalimé, Place publique X).",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Description du lieu (accès, horaires du marché, etc.).",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Emplacement (marché / place publique)"
+        verbose_name_plural = "Emplacements (marchés / places publiques)"
+        ordering = ["canton", "quartier", "nom_lieu"]
+
+    def __str__(self):
+        parts = [self.nom_lieu, self.quartier]
+        if self.village:
+            parts.append(self.village)
+        if self.canton:
+            parts.append(self.canton)
+        return " - ".join(parts)
+
+
+class Contribuable(models.Model):
+    """
+    Personne qui occupe un local (boutique/magasin) au marché ou dans une place publique,
+    ou qui vend au détail avec un ticket (étalage). Données civiles pour la mairie.
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="contribuable",
+        help_text="Compte utilisateur pour « Mon compte » (consultation des cotisations).",
+    )
+    nom = models.CharField(max_length=100, help_text="Nom de famille.")
+    prenom = models.CharField(max_length=150, help_text="Prénom(s).")
+    telephone = models.CharField(
+        max_length=30,
+        help_text="Numéro de téléphone du contribuable.",
+    )
+    date_naissance = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Date de naissance.",
+    )
+    lieu_naissance = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Lieu de naissance.",
+    )
+    nationalite = models.CharField(
+        max_length=100,
+        default="Togolaise",
+        help_text="Nationalité.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Contribuable (marché / place publique)"
+        verbose_name_plural = "Contribuables (marchés / places publiques)"
+        ordering = ["nom", "prenom"]
+
+    def __str__(self):
+        return f"{self.nom} {self.prenom}"
+
+    @property
+    def nom_complet(self):
+        return f"{self.nom} {self.prenom}".strip()
+
+
+class BoutiqueMagasin(models.Model):
+    """
+    Magasin, boutique, local, terrain, kiosque ou réserve au marché ou dans une place publique.
+    Peut être créé sans locataire (non occupé). Une fois occupé, on assigne un contribuable (locataire).
+    Le locataire est rattaché à un ou des emplacements, gérés par les agents collecteurs.
+    """
+    TYPE_LOCAL_CHOICES = [
+        ("magasin", "Magasin"),
+        ("boutique", "Boutique"),
+        ("local", "Local"),
+        ("terrain", "Terrain"),
+        ("kiosque", "Kiosque"),
+        ("reserve", "Réserve"),
+    ]
+
+    matricule = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Matricule unique du local (ex: MKT-2025-001).",
+    )
+    emplacement = models.ForeignKey(
+        EmplacementMarche,
+        on_delete=models.PROTECT,
+        related_name="boutiques_magasins",
+        help_text="Marché ou place publique où se situe le local.",
+    )
+    type_local = models.CharField(
+        max_length=20,
+        choices=TYPE_LOCAL_CHOICES,
+        default="boutique",
+        help_text="Type de local.",
+    )
+    superficie_m2 = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Superficie en m².",
+    )
+    prix_location_mensuel = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text="Prix de location mensuel (FCFA).",
+    )
+    prix_location_annuel = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Prix de location annuelle (FCFA), si différent de 12 × mensuel.",
+    )
+    contribuable = models.ForeignKey(
+        Contribuable,
+        on_delete=models.PROTECT,
+        related_name="boutiques_magasins",
+        null=True,
+        blank=True,
+        help_text="Locataire (contribuable) du local. Vide si local non encore loué.",
+    )
+    activite_vendue = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Activité exercée par le locataire (ex: légumes, vêtements). Vide si non occupé.",
+    )
+    agent_collecteur = models.ForeignKey(
+        "AgentCollecteur",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="boutiques_magasins",
+        help_text="Agent collecteur assigné à ce local pour la collecte des cotisations.",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Description complémentaire du local ou de l'activité.",
+    )
+    est_actif = models.BooleanField(
+        default=True,
+        help_text="Local actuellement occupé / actif.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Boutique / Magasin (marché)"
+        verbose_name_plural = "Boutiques / Magasins (marché)"
+        ordering = ["emplacement", "matricule"]
+
+    def __str__(self):
+        if self.contribuable_id:
+            return f"{self.matricule} - {self.contribuable.nom_complet} ({self.emplacement.nom_lieu})"
+        return f"{self.matricule} - Non occupé ({self.emplacement.nom_lieu})"
+
+    def get_prix_annuel(self):
+        """Prix annuel effectif (champ ou 12 × mensuel)."""
+        if self.prix_location_annuel is not None:
+            return self.prix_location_annuel
+        return self.prix_location_mensuel * 12
+
+
+class CotisationAnnuelle(models.Model):
+    """
+    Une ligne par boutique/magasin par année. Permet de suivre les 12 mois de cotisation
+    pour « Mon compte » et pour les agents qui encaissent.
+    """
+    boutique = models.ForeignKey(
+        BoutiqueMagasin,
+        on_delete=models.CASCADE,
+        related_name="cotisations_annuelles",
+        help_text="Boutique ou magasin concerné.",
+    )
+    annee = models.PositiveIntegerField(
+        help_text="Année de cotisation (ex: 2025).",
+    )
+    montant_annuel_du = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text="Montant total dû pour l'année (FCFA).",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Cotisation annuelle (boutique/magasin)"
+        verbose_name_plural = "Cotisations annuelles (boutiques/magasins)"
+        ordering = ["-annee", "boutique"]
+        unique_together = [["boutique", "annee"]]
+
+    def __str__(self):
+        return f"{self.boutique.matricule} - {self.annee}"
+
+    def montant_paye(self):
+        """Somme des paiements enregistrés pour cette année."""
+        from django.db.models import Sum
+        result = self.paiements.aggregate(total=Sum("montant_paye"))
+        return result["total"] or 0
+
+    def reste_a_payer(self):
+        """Montant restant à payer pour cette année."""
+        return max(0, self.montant_annuel_du - self.montant_paye())
+
+    def mois_payes(self):
+        """Liste des numéros de mois (1-12) déjà payés."""
+        return list(
+            self.paiements.values_list("mois", flat=True).order_by("mois")
+        )
+
+
+class PaiementCotisation(models.Model):
+    """
+    Paiement d'une cotisation mensuelle (ou partiel) par un contribuable.
+    Saisi par les agents de la mairie qui collectent les recettes.
+    """
+    MOIS_CHOICES = [(i, f"Mois {i}") for i in range(1, 13)]
+
+    cotisation_annuelle = models.ForeignKey(
+        CotisationAnnuelle,
+        on_delete=models.CASCADE,
+        related_name="paiements",
+        help_text="Cotisation annuelle concernée.",
+    )
+    mois = models.PositiveSmallIntegerField(
+        choices=MOIS_CHOICES,
+        help_text="Mois concerné (1-12).",
+    )
+    montant_paye = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text="Montant payé (FCFA).",
+    )
+    date_paiement = models.DateTimeField(
+        default=timezone.now,
+        help_text="Date et heure du paiement.",
+    )
+    encaisse_par_agent = models.ForeignKey(
+        "AgentCollecteur",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="paiements_cotisations_encaisses",
+        help_text="Agent collecteur ayant encaissé ce paiement.",
+    )
+    encaisse_par = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="paiements_cotisations_encaisses",
+        help_text="[Déprécié] Utiliser encaisse_par_agent. Conservé pour compatibilité.",
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Notes éventuelles (mode de paiement, reçu, etc.).",
+    )
+
+    class Meta:
+        verbose_name = "Paiement de cotisation (mois)"
+        verbose_name_plural = "Paiements de cotisation (mois)"
+        ordering = ["cotisation_annuelle", "mois"]
+        unique_together = [["cotisation_annuelle", "mois"]]
+
+    def __str__(self):
+        return f"{self.cotisation_annuelle} - Mois {self.mois} ({self.montant_paye} FCFA)"
+
+
+class TicketMarche(models.Model):
+    """
+    Ticket vendu au marché pour les petits étalages qui n'ont pas de magasin ni boutique.
+    Un ticket par jour de marché, par vendeur (ou par vente si pas de fiche contribuable).
+    """
+    date = models.DateField(
+        help_text="Date du jour de marché.",
+    )
+    emplacement = models.ForeignKey(
+        EmplacementMarche,
+        on_delete=models.PROTECT,
+        related_name="tickets_marche",
+        help_text="Marché où le ticket a été vendu.",
+    )
+    contribuable = models.ForeignKey(
+        Contribuable,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="tickets_marche",
+        help_text="Contribuable identifié (si déjà enregistré).",
+    )
+    nom_vendeur = models.CharField(
+        max_length=255,
+        help_text="Nom du vendeur (étalage) si différent du contribuable.",
+    )
+    telephone_vendeur = models.CharField(
+        max_length=30,
+        blank=True,
+        help_text="Téléphone du vendeur.",
+    )
+    montant = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Montant du ticket (FCFA).",
+    )
+    encaisse_par_agent = models.ForeignKey(
+        "AgentCollecteur",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="tickets_marche_encaisses",
+        help_text="Agent collecteur ayant vendu ce ticket.",
+    )
+    encaisse_par = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="tickets_marche_encaisses",
+        help_text="[Déprécié] Utiliser encaisse_par_agent. Conservé pour compatibilité.",
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Notes éventuelles.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Ticket marché (étalage)"
+        verbose_name_plural = "Tickets marché (étalages)"
+        ordering = ["-date", "-date_creation"]
+
+    def __str__(self):
+        return f"Ticket {self.date} - {self.nom_vendeur} ({self.montant} FCFA)"
+
+
+# ============================================================================
+# COTISATIONS ANNUELLES POUR ACTEURS ÉCONOMIQUES ET INSTITUTIONS FINANCIÈRES
+# ============================================================================
+
+class CotisationAnnuelleActeur(models.Model):
+    """
+    Cotisation annuelle (paiement par AN) pour un acteur économique.
+    Une ligne par acteur par année.
+    """
+    acteur = models.ForeignKey(
+        "acteurs.ActeurEconomique",
+        on_delete=models.CASCADE,
+        related_name="cotisations_annuelles",
+        help_text="Acteur économique concerné.",
+    )
+    annee = models.PositiveIntegerField(
+        help_text="Année de cotisation (ex: 2025).",
+    )
+    montant_annuel_du = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text="Montant total dû pour l'année (FCFA).",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Cotisation annuelle (acteur économique)"
+        verbose_name_plural = "Cotisations annuelles (acteurs économiques)"
+        ordering = ["-annee", "acteur"]
+        unique_together = [["acteur", "annee"]]
+
+    def __str__(self):
+        return f"{self.acteur.raison_sociale} - {self.annee}"
+
+    def montant_paye(self):
+        """Somme des paiements enregistrés pour cette année."""
+        from django.db.models import Sum
+        result = self.paiements.aggregate(total=Sum("montant_paye"))
+        return result["total"] or Decimal("0")
+
+    def reste_a_payer(self):
+        """Montant restant à payer pour cette année."""
+        return max(Decimal("0"), self.montant_annuel_du - self.montant_paye())
+
+
+class CotisationAnnuelleInstitution(models.Model):
+    """
+    Cotisation annuelle (paiement par AN) pour une institution financière.
+    Une ligne par institution par année.
+    """
+    institution = models.ForeignKey(
+        "acteurs.InstitutionFinanciere",
+        on_delete=models.CASCADE,
+        related_name="cotisations_annuelles",
+        help_text="Institution financière concernée.",
+    )
+    annee = models.PositiveIntegerField(
+        help_text="Année de cotisation (ex: 2025).",
+    )
+    montant_annuel_du = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text="Montant total dû pour l'année (FCFA).",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Cotisation annuelle (institution financière)"
+        verbose_name_plural = "Cotisations annuelles (institutions financières)"
+        ordering = ["-annee", "institution"]
+        unique_together = [["institution", "annee"]]
+
+    def __str__(self):
+        return f"{self.institution.nom_institution} - {self.annee}"
+
+    def montant_paye(self):
+        """Somme des paiements enregistrés pour cette année."""
+        from django.db.models import Sum
+        result = self.paiements.aggregate(total=Sum("montant_paye"))
+        return result["total"] or Decimal("0")
+
+    def reste_a_payer(self):
+        """Montant restant à payer pour cette année."""
+        return max(Decimal("0"), self.montant_annuel_du - self.montant_paye())
+
+
+class PaiementCotisationActeur(models.Model):
+    """
+    Paiement annuel (en une fois) de la cotisation par un acteur économique.
+    Saisi par les agents de la mairie qui collectent les recettes.
+    """
+    cotisation_annuelle = models.ForeignKey(
+        CotisationAnnuelleActeur,
+        on_delete=models.CASCADE,
+        related_name="paiements",
+        help_text="Cotisation annuelle concernée.",
+    )
+    montant_paye = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text="Montant payé (FCFA).",
+    )
+    date_paiement = models.DateTimeField(
+        default=timezone.now,
+        help_text="Date et heure du paiement.",
+    )
+    encaisse_par_agent = models.ForeignKey(
+        AgentCollecteur,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="paiements_cotisations_acteurs_encaisses",
+        help_text="Agent collecteur ayant encaissé ce paiement.",
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Notes éventuelles (mode de paiement, reçu, etc.).",
+    )
+
+    class Meta:
+        verbose_name = "Paiement de cotisation (acteur économique)"
+        verbose_name_plural = "Paiements de cotisation (acteurs économiques)"
+        ordering = ["-date_paiement", "cotisation_annuelle"]
+
+    def __str__(self):
+        return f"{self.cotisation_annuelle} - {self.montant_paye} FCFA ({self.date_paiement.date()})"
+
+
+class PaiementCotisationInstitution(models.Model):
+    """
+    Paiement annuel (en une fois) de la cotisation par une institution financière.
+    Saisi par les agents de la mairie qui collectent les recettes.
+    """
+    cotisation_annuelle = models.ForeignKey(
+        CotisationAnnuelleInstitution,
+        on_delete=models.CASCADE,
+        related_name="paiements",
+        help_text="Cotisation annuelle concernée.",
+    )
+    montant_paye = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text="Montant payé (FCFA).",
+    )
+    date_paiement = models.DateTimeField(
+        default=timezone.now,
+        help_text="Date et heure du paiement.",
+    )
+    encaisse_par_agent = models.ForeignKey(
+        AgentCollecteur,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="paiements_cotisations_institutions_encaisses",
+        help_text="Agent collecteur ayant encaissé ce paiement.",
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Notes éventuelles (mode de paiement, reçu, etc.).",
+    )
+
+    class Meta:
+        verbose_name = "Paiement de cotisation (institution financière)"
+        verbose_name_plural = "Paiements de cotisation (institutions financières)"
+        ordering = ["-date_paiement", "cotisation_annuelle"]
+
+    def __str__(self):
+        return f"{self.cotisation_annuelle} - {self.montant_paye} FCFA ({self.date_paiement.date()})"

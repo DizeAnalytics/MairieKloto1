@@ -1,12 +1,13 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.contrib import messages
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDay
 from django.utils import timezone
 from datetime import timedelta, datetime, date
+from decimal import Decimal, InvalidOperation
 import os
 import json
 from django.core.serializers.json import DjangoJSONEncoder
@@ -22,13 +23,38 @@ from mairie.models import (
     CampagnePublicitaire,
     Publicite,
     Suggestion,
+    NewsletterSubscription,
+    AgentCollecteur,
+    Contribuable,
+    BoutiqueMagasin,
+    CotisationAnnuelle,
+    PaiementCotisation,
+    TicketMarche,
+    EmplacementMarche,
+    CotisationAnnuelleActeur,
+    CotisationAnnuelleInstitution,
+    PaiementCotisationActeur,
+    PaiementCotisationInstitution,
+    DirectionMairie,
+    SectionDirection,
+    PersonnelSection,
+    ServiceSection,
+    CartographieCommune,
+    InfrastructureCommune,
 )
 
 from acteurs.models import ActeurEconomique, InstitutionFinanciere
 from emploi.models import ProfilEmploi
 from mairie.models import Candidature, AppelOffre
+from mairie.forms import (
+    DirectionMairieForm,
+    SectionDirectionForm,
+    PersonnelSectionForm,
+    ServiceSectionForm,
+)
 from comptes.models import Notification
 from diaspora.models import MembreDiaspora
+from osc.models import OrganisationSocieteCivile, OSC_TYPE_CHOICES, get_osc_type_display
 from django.utils.html import escape
 from django.utils.text import slugify
 from openpyxl import Workbook
@@ -60,6 +86,77 @@ class NumberedCanvas(pdfcanvas.Canvas):
         self.drawCentredString(width / 2, 30, f"Page {self._pageNumber} / {page_count}")
 
 
+# Hauteur réservée à l'en-tête PDF (logo + titres + contacts + trait jaune + marge)
+# Le contenu (ex. "Fiche Institution Financière...") commence en dessous.
+PDF_HEADER_HEIGHT_CM = 5.5
+
+
+def _draw_pdf_header(c, d, conf=None):
+    """
+    Dessine l'en-tête standard pour tous les PDF : logo centré, nom de la mairie,
+    contacts (adresse, téléphone, email) et un trait jaune horizontal séparant l'en-tête du contenu.
+    """
+    if conf is None:
+        conf = ConfigurationMairie.objects.filter(est_active=True).first()
+
+    width, height = d.pagesize
+    y = height - 35
+
+    c.saveState()
+
+    # Logo centré en haut
+    if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
+        try:
+            logo_w = 50
+            logo_h = 50
+            c.drawImage(
+                conf.logo.path,
+                (width - logo_w) / 2,
+                y - logo_h,
+                width=logo_w,
+                height=logo_h,
+                preserveAspectRatio=True,
+                mask="auto",
+            )
+            y -= logo_h + 12  # Espacement après le logo
+        except Exception:
+            pass
+
+    # Nom de la mairie / entête république
+    commune = getattr(conf, "nom_commune", None) or "Mairie de Kloto 1"
+    c.setFont("Helvetica-Bold", 12)
+    c.drawCentredString(width / 2, y, f"République Togolaise – {commune}")
+    y -= 20  # Espacement après le titre
+
+    # Ligne de contacts (adresse, téléphone, email de la mairie)
+    if conf:
+        contact_parts = []
+        if getattr(conf, "adresse", None):
+            contact_parts.append(conf.adresse)
+        if getattr(conf, "telephone", None):
+            contact_parts.append(f"Tél: {conf.telephone}")
+        if getattr(conf, "email", None):
+            contact_parts.append(f"Email: {conf.email}")
+        if contact_parts:
+            c.setFont("Helvetica", 9)
+            c.drawCentredString(width / 2, y, " | ".join(contact_parts))
+            y -= 20  # Espacement après les contacts
+
+    # Trait jaune horizontal juste après la ligne de contacts
+    line_y = y - 12  # Espace avant le trait
+    c.setStrokeColorRGB(1, 0.85, 0)  # Jaune doré
+    c.setLineWidth(2)
+    c.line(40, line_y, width - 40, line_y)
+
+    # Le contenu (titre du document, ex. "Fiche Institution Financière...") commence
+    # en dessous, grâce à topMargin = PDF_HEADER_HEIGHT_CM
+
+    # Date d'édition en bas à gauche
+    c.setFont("Helvetica", 8)
+    c.drawString(40, 20, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+
+    c.restoreState()
+
 def _format_pdf_value(value):
     if value in (None, "", [], ()):
         return "Non renseigné"
@@ -89,7 +186,8 @@ def _make_pdf_filename(prefix, label):
 def _build_detail_pdf(filename, title, sections):
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
-    doc = SimpleDocTemplate(response, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.2 * cm)
+    # Top margin augmentée pour laisser la place à l'en-tête (logo + texte)
+    doc = SimpleDocTemplate(response, pagesize=A4, topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         "DetailTitle",
@@ -153,7 +251,12 @@ def _build_detail_pdf(filename, title, sections):
     if not sections:
         story.append(Paragraph("Aucune information disponible.", styles["Normal"]))
 
-    doc.build(story, canvasmaker=NumberedCanvas)
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
 
 
@@ -177,9 +280,99 @@ def politique_cookies(request):
     return render(request, "legal/politique_cookies.html", {})
 
 
+@require_POST
+def newsletter_subscribe(request):
+    """
+    Inscription à la newsletter via le champ email du popup de publicité.
+    - Enregistre l'email s'il n'existe pas déjà.
+    - Marque l'abonné comme actif.
+    - Redirige vers la page précédente (ou l'accueil) avec un message flash.
+    """
+    email = (request.POST.get("email") or "").strip()
+    referer = request.META.get("HTTP_REFERER") or "/"
+
+    if not email:
+        messages.error(
+            request,
+            "Veuillez saisir une adresse email valide pour la newsletter.",
+        )
+        return redirect(referer)
+
+    cookie_should_be_set = False
+
+    try:
+        abonnee, created = NewsletterSubscription.objects.get_or_create(
+            email__iexact=email,
+            defaults={"email": email, "source": "popup"},
+        )
+        if not created:
+            if not abonnee.est_actif:
+                abonnee.est_actif = True
+                abonnee.source = abonnee.source or "popup"
+                abonnee.save(update_fields=["est_actif", "source"])
+            cookie_should_be_set = True
+            messages.info(
+                request,
+                "Cette adresse email est déjà inscrite à la newsletter de la mairie."
+            )
+        else:
+            cookie_should_be_set = True
+            messages.success(
+                request,
+                "Merci ! Votre adresse email a bien été enregistrée pour recevoir les actualités de la mairie."
+            )
+    except Exception:
+        messages.error(
+            request,
+            "Une erreur est survenue lors de votre inscription à la newsletter. Merci de réessayer plus tard."
+        )
+        return redirect(referer)
+
+    response = redirect(referer)
+
+    # Marquer côté navigateur que la newsletter est déjà souscrite
+    if cookie_should_be_set:
+        # 1 an
+        max_age = 365 * 24 * 60 * 60
+        response.set_cookie(
+            "newsletter_subscribed",
+            "1",
+            max_age=max_age,
+            samesite="Lax",
+        )
+
+    return response
+
+
 def is_staff_user(user):
     """Vérifie si l'utilisateur est staff ou superuser."""
     return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def newsletters_admin(request):
+    """
+    Liste des inscriptions à la newsletter pour le tableau de bord.
+    Affiche les emails dans un tableau et propose un bouton 'Envoyer une newsletter'
+    qui ouvre la boîte mail de la mairie avec tous les emails en copie cachée.
+    """
+    abonnements = NewsletterSubscription.objects.order_by("-date_inscription")
+    emails_actifs = [a.email for a in abonnements if a.est_actif]
+
+    mairie_config = ConfigurationMairie.objects.filter(est_active=True).first()
+    mairie_email = getattr(mairie_config, "email", "") or "contact@mairiekloto1.tg"
+
+    # Chaîne d'emails séparés par des virgules pour le BCC du mailto
+    bcc_emails = ",".join(emails_actifs)
+
+    context = {
+        "abonnements": abonnements,
+        "emails_actifs": emails_actifs,
+        "bcc_emails": bcc_emails,
+        "mairie_email": mairie_email,
+    }
+    return render(request, "admin/newsletters.html", context)
 
 
 @login_required
@@ -194,13 +387,25 @@ def tableau_bord(request):
         'jeunes': ProfilEmploi.objects.filter(type_profil='jeune').count(),
         'retraites': ProfilEmploi.objects.filter(type_profil='retraite').count(),
         'diaspora': MembreDiaspora.objects.count(),
+        'osc': OrganisationSocieteCivile.objects.count(),
         'candidatures': Candidature.objects.count(),
         'suggestions': Suggestion.objects.count(),
+        'agents_collecteurs': AgentCollecteur.objects.count(),
+        'contribuables': Contribuable.objects.count(),
+        'boutiques_magasins': BoutiqueMagasin.objects.count(),
+        'cotisations_annuelles': CotisationAnnuelle.objects.count(),
+        'paiements_cotisations': PaiementCotisation.objects.count(),
+        'tickets_marche': TicketMarche.objects.count(),
+        'directions_mairie': DirectionMairie.objects.count(),
+        'sections_mairie': SectionDirection.objects.count(),
+        'personnels_sections': PersonnelSection.objects.count(),
+        'infrastructures_commune': 0,
         'total_inscriptions': (
             ActeurEconomique.objects.count() +
             InstitutionFinanciere.objects.count() +
             ProfilEmploi.objects.count() +
-            MembreDiaspora.objects.count()
+            MembreDiaspora.objects.count() +
+            OrganisationSocieteCivile.objects.count()
         ),
     }
 
@@ -236,6 +441,7 @@ def tableau_bord(request):
         'jeunes': get_counts(ProfilEmploi.objects.filter(type_profil='jeune'), 'date_inscription'),
         'retraites': get_counts(ProfilEmploi.objects.filter(type_profil='retraite'), 'date_inscription'),
         'diaspora': get_counts(MembreDiaspora.objects.all(), 'date_inscription'),
+        'osc': get_counts(OrganisationSocieteCivile.objects.all(), 'date_enregistrement'),
         'visites': get_counts(VisiteSite.objects.all(), 'date'),
     }
     
@@ -265,14 +471,683 @@ def tableau_bord(request):
         except (TypeError, ValueError):
             pass
 
+    # Données pour la carte des infrastructures de la commune
+    infrastructures_data = []
+    infra_center = {"lat": 6.9057, "lng": 0.6287, "zoom": 12}
+
+    config_active = ConfigurationMairie.objects.filter(est_active=True).first()
+    cartographie = None
+    if config_active:
+        try:
+            cartographie = CartographieCommune.objects.get(configuration=config_active)
+        except CartographieCommune.DoesNotExist:
+            cartographie = None
+
+    if cartographie:
+        try:
+            infra_center["lat"] = float(cartographie.centre_latitude)
+            infra_center["lng"] = float(cartographie.centre_longitude)
+            infra_center["zoom"] = int(cartographie.zoom_carte or 13)
+        except (TypeError, ValueError):
+            infra_center["lat"] = 6.9057
+            infra_center["lng"] = 0.6287
+            infra_center["zoom"] = 13
+
+        infrastructures_qs = InfrastructureCommune.objects.filter(
+            cartographie=cartographie
+        ).order_by("type_infrastructure", "nom")
+        stats["infrastructures_commune"] = infrastructures_qs.count()
+        for infra in infrastructures_qs:
+            try:
+                infrastructures_data.append(
+                    {
+                        "id": infra.id,
+                        "nom": infra.nom,
+                        "type": infra.type_infrastructure,
+                        "description": infra.description,
+                        "adresse": infra.adresse,
+                        "lat": float(infra.latitude),
+                        "lng": float(infra.longitude),
+                        "est_active": infra.est_active,
+                    }
+                )
+            except (TypeError, ValueError):
+                continue
+
     context = {
         'stats': stats,
         'chart_data_json': json.dumps(chart_data, cls=DjangoJSONEncoder),
         'total_visites_30j': total_visites_30j,
         'map_markers_json': json.dumps(map_markers, ensure_ascii=False),
+        'infrastructures_json': json.dumps(infrastructures_data, ensure_ascii=False),
+        'infrastructures_center_json': json.dumps(infra_center, ensure_ascii=False),
     }
     
     return render(request, "admin/tableau_bord.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def tableau_bord_organigramme(request):
+    """
+    Page de gestion de l'organigramme (Directions, Sections, Personnel)
+    depuis le tableau de bord, avec un design proche de la page Boutiques.
+    """
+
+    message_success = None
+    message_error = None
+
+    # Champ de recherche simple (sections / directions / personnel / services)
+    q = request.GET.get("q", "").strip()
+
+    # Identifiants/objets éventuels à éditer (mode édition sur la même page)
+    editing_direction = None
+    editing_section = None
+    editing_personnel = None
+    editing_service = None
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "create_direction":
+            direction_form = DirectionMairieForm(request.POST)
+            section_form = SectionDirectionForm()
+            personnel_form = PersonnelSectionForm()
+            service_form = ServiceSectionForm()
+            if direction_form.is_valid():
+                direction_form.save()
+                message_success = "La direction a été créée avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la création de la direction. Veuillez vérifier les informations."
+
+        elif action == "update_direction":
+            direction_id = request.POST.get("direction_id")
+            editing_direction = get_object_or_404(DirectionMairie, pk=direction_id)
+            direction_form = DirectionMairieForm(request.POST, instance=editing_direction)
+            section_form = SectionDirectionForm()
+            personnel_form = PersonnelSectionForm()
+            service_form = ServiceSectionForm()
+            if direction_form.is_valid():
+                direction_form.save()
+                message_success = "La direction a été mise à jour avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la mise à jour de la direction. Veuillez vérifier les informations."
+
+        elif action == "create_section":
+            section_form = SectionDirectionForm(request.POST)
+            direction_form = DirectionMairieForm()
+            personnel_form = PersonnelSectionForm()
+            service_form = ServiceSectionForm()
+            if section_form.is_valid():
+                section_form.save()
+                message_success = "La section a été créée avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la création de la section. Veuillez vérifier les informations."
+
+        elif action == "update_section":
+            section_id = request.POST.get("section_id")
+            editing_section = get_object_or_404(SectionDirection, pk=section_id)
+            section_form = SectionDirectionForm(request.POST, instance=editing_section)
+            direction_form = DirectionMairieForm()
+            personnel_form = PersonnelSectionForm()
+            service_form = ServiceSectionForm()
+            if section_form.is_valid():
+                section_form.save()
+                message_success = "La section a été mise à jour avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la mise à jour de la section. Veuillez vérifier les informations."
+
+        elif action == "create_personnel":
+            personnel_form = PersonnelSectionForm(request.POST)
+            direction_form = DirectionMairieForm()
+            section_form = SectionDirectionForm()
+            service_form = ServiceSectionForm()
+            if personnel_form.is_valid():
+                personnel_form.save()
+                message_success = "Le membre du personnel a été créé avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la création du membre du personnel. Veuillez vérifier les informations."
+
+        elif action == "update_personnel":
+            personnel_id = request.POST.get("personnel_id")
+            editing_personnel = get_object_or_404(PersonnelSection, pk=personnel_id)
+            personnel_form = PersonnelSectionForm(request.POST, instance=editing_personnel)
+            direction_form = DirectionMairieForm()
+            section_form = SectionDirectionForm()
+            service_form = ServiceSectionForm()
+            if personnel_form.is_valid():
+                personnel_form.save()
+                message_success = "Le membre du personnel a été mis à jour avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la mise à jour du membre du personnel. Veuillez vérifier les informations."
+
+        elif action == "create_service":
+            service_form = ServiceSectionForm(request.POST)
+            direction_form = DirectionMairieForm()
+            section_form = SectionDirectionForm()
+            personnel_form = PersonnelSectionForm()
+            if service_form.is_valid():
+                service_form.save()
+                message_success = "Le service a été créé avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la création du service. Veuillez vérifier les informations."
+
+        elif action == "update_service":
+            service_id = request.POST.get("service_id")
+            editing_service = get_object_or_404(ServiceSection, pk=service_id)
+            service_form = ServiceSectionForm(request.POST, instance=editing_service)
+            direction_form = DirectionMairieForm()
+            section_form = SectionDirectionForm()
+            personnel_form = PersonnelSectionForm()
+            if service_form.is_valid():
+                service_form.save()
+                message_success = "Le service a été mis à jour avec succès."
+                return redirect("tableau_bord_organigramme")
+            else:
+                message_error = "Erreur lors de la mise à jour du service. Veuillez vérifier les informations."
+
+        else:
+            # Action inconnue
+            direction_form = DirectionMairieForm()
+            section_form = SectionDirectionForm()
+            personnel_form = PersonnelSectionForm()
+            service_form = ServiceSectionForm()
+            message_error = "Action non reconnue."
+    else:
+        # Mode édition depuis les paramètres GET (ex: ?edit_direction=1)
+        edit_direction_id = request.GET.get("edit_direction")
+        edit_section_id = request.GET.get("edit_section")
+        edit_personnel_id = request.GET.get("edit_personnel")
+        edit_service_id = request.GET.get("edit_service")
+
+        if edit_direction_id:
+            editing_direction = get_object_or_404(DirectionMairie, pk=edit_direction_id)
+            direction_form = DirectionMairieForm(instance=editing_direction)
+        else:
+            direction_form = DirectionMairieForm()
+
+        if edit_section_id:
+            editing_section = get_object_or_404(SectionDirection, pk=edit_section_id)
+            section_form = SectionDirectionForm(instance=editing_section)
+        else:
+            section_form = SectionDirectionForm()
+
+        if edit_personnel_id:
+            editing_personnel = get_object_or_404(PersonnelSection, pk=edit_personnel_id)
+            personnel_form = PersonnelSectionForm(instance=editing_personnel)
+        else:
+            personnel_form = PersonnelSectionForm()
+
+        if edit_service_id:
+            editing_service = get_object_or_404(ServiceSection, pk=edit_service_id)
+            service_form = ServiceSectionForm(instance=editing_service)
+        else:
+            service_form = ServiceSectionForm()
+
+    directions_qs = (
+        DirectionMairie.objects.all()
+        .annotate(total_personnels=Count("sections__personnels", distinct=True))
+        .prefetch_related("sections__personnels")
+        .order_by("ordre_affichage", "nom")
+    )
+
+    sections_qs = (
+        SectionDirection.objects.select_related("direction")
+        .prefetch_related("personnels", "services")
+        .order_by("direction__ordre_affichage", "ordre_affichage", "nom")
+    )
+
+    personnels_qs = (
+        PersonnelSection.objects.select_related("section", "section__direction")
+        .order_by("section__direction__ordre_affichage", "section__ordre_affichage", "ordre_affichage", "nom_prenoms")
+    )
+
+    if q:
+        # Filtrer les directions liées à la recherche (nom, sigle, chef, sections, personnel)
+        directions_qs = directions_qs.filter(
+            Q(nom__icontains=q)
+            | Q(sigle__icontains=q)
+            | Q(chef_direction__icontains=q)
+            | Q(sections__nom__icontains=q)
+            | Q(sections__sigle__icontains=q)
+            | Q(sections__chef_section__icontains=q)
+            | Q(sections__personnels__nom_prenoms__icontains=q)
+            | Q(sections__personnels__fonction__icontains=q)
+        ).distinct()
+
+        # Filtrer les sections (nom, sigle, chef, direction, personnel, services)
+        sections_qs = sections_qs.filter(
+            Q(nom__icontains=q)
+            | Q(sigle__icontains=q)
+            | Q(chef_section__icontains=q)
+            | Q(direction__nom__icontains=q)
+            | Q(direction__sigle__icontains=q)
+            | Q(personnels__nom_prenoms__icontains=q)
+            | Q(personnels__fonction__icontains=q)
+            | Q(services__titre__icontains=q)
+        ).distinct()
+
+        # Filtrer le personnel (nom, fonction, section, direction)
+        personnels_qs = personnels_qs.filter(
+            Q(nom_prenoms__icontains=q)
+            | Q(fonction__icontains=q)
+            | Q(section__nom__icontains=q)
+            | Q(section__direction__nom__icontains=q)
+            | Q(section__direction__sigle__icontains=q)
+        ).distinct()
+
+    directions = directions_qs
+    sections = sections_qs
+    personnels = personnels_qs
+
+    context = {
+        "titre": "Organigramme de la Mairie",
+        "direction_form": direction_form,
+        "section_form": section_form,
+        "personnel_form": personnel_form,
+        "directions": directions,
+        "sections": sections,
+        "personnels": personnels,
+        "message_success": message_success,
+        "message_error": message_error,
+        "editing_direction": editing_direction,
+        "editing_section": editing_section,
+        "editing_personnel": editing_personnel,
+        "editing_service": editing_service,
+        "service_form": service_form,
+        "current_filters": {
+            "q": q,
+        },
+    }
+
+    return render(request, "admin/organigramme_mairie.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_organigramme(request):
+    """
+    Export PDF de l'organigramme sous forme de tableau.
+    """
+    q = request.GET.get("q", "").strip()
+
+    sections = (
+        SectionDirection.objects.select_related("direction")
+        .prefetch_related("personnels")
+        .order_by("direction__ordre_affichage", "ordre_affichage", "nom")
+    )
+
+    if q:
+        sections = sections.filter(
+            Q(nom__icontains=q)
+            | Q(sigle__icontains=q)
+            | Q(chef_section__icontains=q)
+            | Q(direction__nom__icontains=q)
+            | Q(direction__sigle__icontains=q)
+            | Q(personnels__nom_prenoms__icontains=q)
+            | Q(personnels__fonction__icontains=q)
+        ).distinct()
+
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="organigramme_mairie.pdf"'
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+
+    story = []
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=18,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=16,
+    )
+
+    story.append(Paragraph("Organigramme de la Mairie", title_style))
+
+    if q:
+        story.append(
+            Paragraph(
+                f"Filtre de recherche : {q}",
+                styles["Normal"],
+            )
+        )
+        story.append(Spacer(1, 0.3 * cm))
+
+    cell_style = ParagraphStyle(
+        "Cell",
+        parent=styles["Normal"],
+        fontSize=8.7,
+        leading=10,
+    )
+
+    def p(text: str) -> Paragraph:
+        return Paragraph((text or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"), cell_style)
+
+    data = [
+        [
+            "Direction",
+            "Chef de direction",
+            "Section",
+            "Chef de section",
+            "Personnel",
+            "Fonction",
+            "Contact",
+        ]
+    ]
+
+    # Lignes : 1 ligne par personnel (et une ligne vide si section sans personnel)
+    # Limite de sécurité pour éviter des PDFs trop lourds
+    max_rows = 5000
+    rows_added = 0
+
+    for s in sections:
+        direction_label = s.direction.sigle or s.direction.nom
+        chef_direction = getattr(s.direction, "chef_direction", "") or ""
+
+        section_label = s.nom
+        if s.sigle:
+            section_label += f" ({s.sigle})"
+
+        chef_section = s.chef_section or ""
+
+        personnels_qs = s.personnels.all().order_by("nom_prenoms")
+        if personnels_qs.exists():
+            for pers in personnels_qs:
+                if rows_added >= max_rows:
+                    break
+                data.append(
+                    [
+                        p(direction_label),
+                        p(chef_direction),
+                        p(section_label),
+                        p(chef_section),
+                        p(pers.nom_prenoms),
+                        p(pers.fonction),
+                        p(pers.contact),
+                    ]
+                )
+                rows_added += 1
+        else:
+            if rows_added >= max_rows:
+                break
+            data.append(
+                [
+                    p(direction_label),
+                    p(chef_direction),
+                    p(section_label),
+                    p(chef_section),
+                    p(""),
+                    p(""),
+                    p(""),
+                ]
+            )
+            rows_added += 1
+
+        if rows_added >= max_rows:
+            break
+
+    if len(data) == 1:
+        story.append(
+            Paragraph(
+                "Aucune direction / section ne correspond aux critères sélectionnés.",
+                styles["Normal"],
+            )
+        )
+    else:
+        col_widths = [
+            4.0 * cm,  # direction
+            4.0 * cm,  # chef direction
+            4.5 * cm,  # section
+            3.5 * cm,  # chef section
+            4.5 * cm,  # personnel
+            3.8 * cm,  # fonction
+            3.4 * cm,  # contact
+        ]
+
+        table = Table(data, colWidths=col_widths, repeatRows=1)
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                    ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8.7),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ]
+            )
+        )
+        story.append(table)
+
+        if rows_added >= max_rows:
+            story.append(Spacer(1, 0.25 * cm))
+            story.append(
+                Paragraph(
+                    f"Note : export limité à {max_rows} lignes pour éviter un document trop lourd.",
+                    styles["Normal"],
+                )
+            )
+
+    story.append(Spacer(1, 0.5 * cm))
+    story.append(
+        Paragraph(
+            "Document généré automatiquement depuis le tableau de bord de la Mairie de Kloto 1.",
+            styles["Normal"],
+        )
+    )
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_excel_organigramme(request):
+    """
+    Export Excel de l'organigramme (vue sections).
+    """
+    q = request.GET.get("q", "").strip()
+
+    sections = (
+        SectionDirection.objects.select_related("direction")
+        .prefetch_related("personnels", "services")
+        .order_by("direction__ordre_affichage", "ordre_affichage", "nom")
+    )
+
+    if q:
+        sections = sections.filter(
+            Q(nom__icontains=q)
+            | Q(sigle__icontains=q)
+            | Q(chef_section__icontains=q)
+            | Q(direction__nom__icontains=q)
+            | Q(direction__sigle__icontains=q)
+            | Q(personnels__nom_prenoms__icontains=q)
+            | Q(personnels__fonction__icontains=q)
+            | Q(services__titre__icontains=q)
+        ).distinct()
+
+    wb = Workbook()
+
+    # Feuille 1 : synthèse par section (avec chef de direction)
+    ws_sections = wb.active
+    ws_sections.title = "Sections"
+
+    headers_sections = [
+        "ID Section",
+        "Direction",
+        "Sigle direction",
+        "Chef de direction",
+        "Section",
+        "Sigle section",
+        "Chef de section",
+        "Nombre de personnel",
+        "Liste du personnel (résumé)",
+        "Services (résumé)",
+    ]
+    ws_sections.append(headers_sections)
+
+    for s in sections:
+        personnels_qs = s.personnels.all()
+        services_qs = getattr(s, "services", None)
+
+        personnels_labels = ", ".join(
+            personnels_qs.values_list("nom_prenoms", flat=True)[:10]
+        )
+        if personnels_qs.count() > 10:
+            personnels_labels += "…"
+
+        services_titles = ""
+        if services_qs is not None:
+            services_titles = ", ".join(
+                services_qs.values_list("titre", flat=True)[:10]
+            )
+            if services_qs.count() > 10:
+                services_titles += "…"
+
+        ws_sections.append(
+            [
+                s.id,
+                s.direction.nom,
+                s.direction.sigle or "",
+                getattr(s.direction, "chef_direction", "") or "",
+                s.nom,
+                s.sigle or "",
+                s.chef_section or "",
+                personnels_qs.count(),
+                personnels_labels,
+                services_titles,
+            ]
+        )
+
+    # Feuille 2 : directions (avec effectif global)
+    ws_dirs = wb.create_sheet(title="Directions")
+    headers_dirs = [
+        "ID Direction",
+        "Nom direction",
+        "Sigle",
+        "Chef de direction",
+        "Nombre de sections",
+        "Nombre de personnel",
+    ]
+    ws_dirs.append(headers_dirs)
+
+    # Regrouper les sections par direction
+    directions_map = {}
+    for s in sections:
+        d = s.direction
+        entry = directions_map.setdefault(
+            d.pk,
+            {
+                "direction": d,
+                "sections": [],
+                "personnels_count": 0,
+            },
+        )
+        entry["sections"].append(s)
+        entry["personnels_count"] += s.personnels.count()
+
+    for entry in sorted(
+        directions_map.values(),
+        key=lambda item: (item["direction"].ordre_affichage, item["direction"].nom),
+    ):
+        d = entry["direction"]
+        ws_dirs.append(
+            [
+                d.id,
+                d.nom,
+                d.sigle or "",
+                getattr(d, "chef_direction", "") or "",
+                len(entry["sections"]),
+                entry["personnels_count"],
+            ]
+        )
+
+    # Feuille 3 : personnel détaillé
+    ws_personnel = wb.create_sheet(title="Personnel")
+    headers_personnel = [
+        "ID Personnel",
+        "Nom et prénoms",
+        "Fonction",
+        "Section",
+        "Direction",
+        "Chef de direction",
+        "Contact",
+        "Adresse",
+        "Actif",
+    ]
+    ws_personnel.append(headers_personnel)
+
+    from mairie.models import PersonnelSection  # import local pour éviter les cycles
+
+    personnels = (
+        PersonnelSection.objects.select_related("section", "section__direction")
+        .filter(section__in=sections)
+        .order_by("section__direction__ordre_affichage", "section__ordre_affichage", "nom_prenoms")
+    )
+
+    for p in personnels:
+        section = p.section
+        direction = section.direction
+        ws_personnel.append(
+            [
+                p.id,
+                p.nom_prenoms,
+                p.fonction,
+                section.nom,
+                direction.nom,
+                getattr(direction, "chef_direction", "") or "",
+                p.contact,
+                p.adresse,
+                "Oui" if p.est_actif else "Non",
+            ]
+        )
+
+    # Ajustement simple de la largeur des colonnes pour chaque feuille
+    for ws in [ws_sections, ws_dirs, ws_personnel]:
+        for column_cells in ws.columns:
+            max_length = 0
+            column = column_cells[0].column_letter
+            for cell in column_cells:
+                try:
+                    cell_length = len(str(cell.value)) if cell.value is not None else 0
+                    if cell_length > max_length:
+                        max_length = cell_length
+                except Exception:
+                    continue
+            adjusted_width = min(max_length + 2, 60)
+            ws.column_dimensions[column].width = adjusted_width
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response[
+        "Content-Disposition"
+    ] = 'attachment; filename="organigramme_mairie.xlsx"'
+    wb.save(response)
+    return response
 
 
 @login_required
@@ -668,6 +1543,1282 @@ def liste_diaspora_tableau_bord(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+def liste_osc_tableau_bord(request):
+    """Liste des Organisations de la Société Civile (OSC) pour le tableau de bord."""
+
+    osc_qs = OrganisationSocieteCivile.objects.all().order_by("-date_enregistrement")
+
+    # Filtres simples (recherche texte + type d'OSC)
+    q = request.GET.get("q", "") or ""
+    type_osc = request.GET.get("type", "") or ""
+
+    if q:
+        osc_qs = osc_qs.filter(
+            Q(nom_osc__icontains=q)
+            | Q(sigle__icontains=q)
+            | Q(email__icontains=q)
+            | Q(telephone__icontains=q)
+        )
+
+    if type_osc:
+        osc_qs = osc_qs.filter(type_osc=type_osc)
+
+    # Choix pour le filtre et le PDF : (valeur, libellé) depuis la liste d'inscription
+    type_choices = [(v, l) for v, l in OSC_TYPE_CHOICES if v]
+
+    context = {
+        "osc_list": osc_qs,
+        "titre": "🤝 Organisations de la Société Civile (OSC)",
+        "current_filters": {
+            "q": q,
+            "type": type_osc,
+        },
+        "type_choices": type_choices,
+    }
+
+    return render(request, "admin/liste_osc.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def liste_agents_collecteurs(request):
+    """Liste des agents collecteurs de taxes."""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    from urllib.parse import urlencode
+    from django.urls import reverse
+    
+    # POST : modifier un agent depuis la modale (y compris ses affectations)
+    if request.method == "POST" and request.POST.get("action") == "modifier_agent":
+        agent_id = request.POST.get("agent_id")
+        matricule = (request.POST.get("matricule") or "").strip()
+        nom = (request.POST.get("nom") or "").strip()
+        prenom = (request.POST.get("prenom") or "").strip()
+        telephone = (request.POST.get("telephone") or "").strip()
+        email = (request.POST.get("email") or "").strip()
+        statut = request.POST.get("statut") or "actif"
+        date_embauche_str = request.POST.get("date_embauche") or ""
+        notes = (request.POST.get("notes") or "").strip()
+        username = (request.POST.get("username") or "").strip()
+        password = request.POST.get("password") or ""
+        emplacement_ids = request.POST.getlist("emplacements")
+        acteurs_ids = request.POST.getlist("acteurs")
+        institutions_ids = request.POST.getlist("institutions")
+
+        date_embauche = None
+        if date_embauche_str:
+            try:
+                from datetime import datetime as dt
+                date_embauche = dt.strptime(date_embauche_str, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                pass
+
+        erreurs = []
+        try:
+            agent = AgentCollecteur.objects.get(pk=agent_id)
+        except (AgentCollecteur.DoesNotExist, ValueError, TypeError):
+            agent = None
+            erreurs.append("Agent introuvable.")
+
+        if agent:
+            if not matricule:
+                erreurs.append("Le matricule est obligatoire.")
+            elif AgentCollecteur.objects.filter(matricule=matricule).exclude(pk=agent.pk).exists():
+                erreurs.append("Un autre agent avec ce matricule existe déjà.")
+            if not nom or not prenom:
+                erreurs.append("Le nom et le prénom sont obligatoires.")
+            if not telephone:
+                erreurs.append("Le téléphone est obligatoire.")
+            if not username:
+                erreurs.append("L'identifiant de connexion (username) est obligatoire.")
+            if User.objects.filter(username=username).exclude(pk=agent.user_id).exists():
+                erreurs.append("Ce nom d'utilisateur est déjà utilisé.")
+            if password and len(password) < 6:
+                erreurs.append("Le mot de passe doit contenir au moins 6 caractères.")
+
+            if erreurs:
+                for e in erreurs:
+                    messages.error(request, e)
+            else:
+                agent.matricule = matricule
+                agent.nom = nom
+                agent.prenom = prenom
+                agent.telephone = telephone
+                agent.email = email or ""
+                agent.statut = statut
+                agent.notes = notes
+                agent.date_embauche = date_embauche
+                agent.save()
+
+                # Emplacements (marchés / places) assignés
+                if emplacement_ids:
+                    agent.emplacements_assignes.set(
+                        EmplacementMarche.objects.filter(pk__in=emplacement_ids)
+                    )
+                else:
+                    agent.emplacements_assignes.clear()
+
+                # Acteurs économiques assignés à cet agent
+                if acteurs_ids:
+                    agent.acteurs_economiques.set(
+                        ActeurEconomique.objects.filter(pk__in=acteurs_ids)
+                    )
+                else:
+                    agent.acteurs_economiques.clear()
+
+                # Institutions financières assignées à cet agent
+                if institutions_ids:
+                    agent.institutions_financieres.set(
+                        InstitutionFinanciere.objects.filter(pk__in=institutions_ids)
+                    )
+                else:
+                    agent.institutions_financieres.clear()
+
+                user = agent.user
+                user.username = username
+                if email:
+                    user.email = email
+                if password:
+                    user.set_password(password)
+                user.save()
+
+                messages.success(request, f"Agent {agent.matricule} - {agent.nom_complet} a été modifié.")
+        
+        url = reverse("liste_agents_collecteurs")
+        params = {k: v for k, v in request.GET.items()}
+        if params:
+            url += "?" + urlencode(params)
+        return redirect(url)
+    
+    agents = (
+        AgentCollecteur.objects.select_related("user")
+        .prefetch_related("emplacements_assignes", "acteurs_economiques", "institutions_financieres")
+        .order_by("-date_creation")
+    )
+    
+    # Filtres
+    q = request.GET.get('q', '')
+    statut = request.GET.get('statut', '')
+    
+    if q:
+        agents = agents.filter(
+            Q(matricule__icontains=q) |
+            Q(nom__icontains=q) |
+            Q(prenom__icontains=q) |
+            Q(telephone__icontains=q) |
+            Q(email__icontains=q)
+        )
+    
+    if statut:
+        agents = agents.filter(statut=statut)
+    
+    emplacements = EmplacementMarche.objects.all().order_by("nom_lieu")
+    acteurs = ActeurEconomique.objects.filter(est_valide_par_mairie=True).order_by("raison_sociale")
+    institutions = InstitutionFinanciere.objects.filter(est_valide_par_mairie=True).order_by("nom_institution")
+
+    context = {
+        'agents': agents,
+        'titre': '👮 Agents Collecteurs',
+        'statut_choices': AgentCollecteur.STATUT_CHOICES,
+        'emplacements': emplacements,
+        'acteurs': acteurs,
+        'institutions': institutions,
+        'current_filters': {
+            'q': q,
+            'statut': statut
+        }
+    }
+
+    return render(request, "admin/liste_agents_collecteurs.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def ajouter_agent_collecteur(request):
+    """Formulaire d'ajout d'un agent collecteur (création User + AgentCollecteur)."""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    if request.method == "POST":
+        matricule = (request.POST.get("matricule") or "").strip()
+        nom = (request.POST.get("nom") or "").strip()
+        prenom = (request.POST.get("prenom") or "").strip()
+        telephone = (request.POST.get("telephone") or "").strip()
+        email = (request.POST.get("email") or "").strip()
+        statut = request.POST.get("statut") or "actif"
+        date_embauche_str = request.POST.get("date_embauche") or ""
+        notes = (request.POST.get("notes") or "").strip()
+        username = (request.POST.get("username") or matricule or "").strip()
+        password = request.POST.get("password") or ""
+        emplacement_ids = request.POST.getlist("emplacements")
+
+        date_embauche = None
+        if date_embauche_str:
+            try:
+                from datetime import datetime as dt
+                date_embauche = dt.strptime(date_embauche_str, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                pass
+
+        erreurs = []
+        if not matricule:
+            erreurs.append("Le matricule est obligatoire.")
+        if AgentCollecteur.objects.filter(matricule=matricule).exists():
+            erreurs.append("Un agent avec ce matricule existe déjà.")
+        if not nom or not prenom:
+            erreurs.append("Le nom et le prénom sont obligatoires.")
+        if not telephone:
+            erreurs.append("Le téléphone est obligatoire.")
+        if not username:
+            erreurs.append("L'identifiant de connexion (username) est obligatoire.")
+        if User.objects.filter(username=username).exists():
+            erreurs.append("Ce nom d'utilisateur existe déjà.")
+        if not password or len(password) < 6:
+            erreurs.append("Le mot de passe doit contenir au moins 6 caractères.")
+
+        if erreurs:
+            for e in erreurs:
+                messages.error(request, e)
+            emplacements = EmplacementMarche.objects.all().order_by("nom_lieu")
+            post = {k: request.POST.get(k) for k in ["matricule", "nom", "prenom", "telephone", "email", "statut", "date_embauche", "notes", "username"]}
+            post["emplacements"] = [int(x) for x in request.POST.getlist("emplacements") if x.isdigit()]
+            return render(request, "admin/ajouter_agent_collecteur.html", {
+                "statut_choices": AgentCollecteur.STATUT_CHOICES,
+                "emplacements": emplacements,
+                "post": post,
+            })
+
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email or username + "@mairie.local",
+            is_staff=True,
+        )
+        agent = AgentCollecteur.objects.create(
+            user=user,
+            matricule=matricule,
+            nom=nom,
+            prenom=prenom,
+            telephone=telephone,
+            email=email or "",
+            statut=statut,
+            notes=notes,
+            date_embauche=date_embauche,
+        )
+        if emplacement_ids:
+            agent.emplacements_assignes.set(EmplacementMarche.objects.filter(pk__in=emplacement_ids))
+        messages.success(request, f"Agent {agent.matricule} - {agent.nom_complet} a été créé.")
+        return redirect("liste_agents_collecteurs")
+
+    emplacements = EmplacementMarche.objects.all().order_by("nom_lieu")
+    return render(request, "admin/ajouter_agent_collecteur.html", {
+        "statut_choices": AgentCollecteur.STATUT_CHOICES,
+        "emplacements": emplacements,
+        "post": {"emplacements": []},
+    })
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def modifier_agent_collecteur(request, agent_id):
+    """Formulaire de modification d'un agent collecteur."""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    agent = get_object_or_404(
+        AgentCollecteur.objects.prefetch_related("emplacements_assignes"),
+        pk=agent_id,
+    )
+
+    if request.method == "POST":
+        matricule = (request.POST.get("matricule") or "").strip()
+        nom = (request.POST.get("nom") or "").strip()
+        prenom = (request.POST.get("prenom") or "").strip()
+        telephone = (request.POST.get("telephone") or "").strip()
+        email = (request.POST.get("email") or "").strip()
+        statut = request.POST.get("statut") or "actif"
+        date_embauche_str = request.POST.get("date_embauche") or ""
+        notes = (request.POST.get("notes") or "").strip()
+        username = (request.POST.get("username") or "").strip()
+        password = request.POST.get("password") or ""
+        emplacement_ids = request.POST.getlist("emplacements")
+
+        date_embauche = None
+        if date_embauche_str:
+            try:
+                from datetime import datetime as dt
+                date_embauche = dt.strptime(date_embauche_str, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                pass
+
+        erreurs = []
+        if not matricule:
+            erreurs.append("Le matricule est obligatoire.")
+        if AgentCollecteur.objects.filter(matricule=matricule).exclude(pk=agent.pk).exists():
+            erreurs.append("Un autre agent avec ce matricule existe déjà.")
+        if not nom or not prenom:
+            erreurs.append("Le nom et le prénom sont obligatoires.")
+        if not telephone:
+            erreurs.append("Le téléphone est obligatoire.")
+        if not username:
+            erreurs.append("L'identifiant de connexion (username) est obligatoire.")
+        if User.objects.filter(username=username).exclude(pk=agent.user_id).exists():
+            erreurs.append("Ce nom d'utilisateur est déjà utilisé.")
+        if password and len(password) < 6:
+            erreurs.append("Le mot de passe doit contenir au moins 6 caractères.")
+
+        if erreurs:
+            for e in erreurs:
+                messages.error(request, e)
+            emplacements = EmplacementMarche.objects.all().order_by("nom_lieu")
+            return render(request, "admin/modifier_agent_collecteur.html", {
+                "agent": agent,
+                "statut_choices": AgentCollecteur.STATUT_CHOICES,
+                "emplacements": emplacements,
+                "post": {
+                    "matricule": matricule,
+                    "nom": nom,
+                    "prenom": prenom,
+                    "telephone": telephone,
+                    "email": email,
+                    "statut": statut,
+                    "date_embauche": date_embauche_str,
+                    "notes": notes,
+                    "username": username,
+                    "emplacements": [int(x) for x in emplacement_ids if x.isdigit()],
+                },
+            })
+
+        agent.matricule = matricule
+        agent.nom = nom
+        agent.prenom = prenom
+        agent.telephone = telephone
+        agent.email = email or ""
+        agent.statut = statut
+        agent.notes = notes
+        agent.date_embauche = date_embauche
+        agent.save()
+
+        if emplacement_ids:
+            agent.emplacements_assignes.set(EmplacementMarche.objects.filter(pk__in=emplacement_ids))
+        else:
+            agent.emplacements_assignes.clear()
+
+        user = agent.user
+        user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.set_password(password)
+        user.save()
+
+        messages.success(request, f"Agent {agent.matricule} - {agent.nom_complet} a été modifié.")
+        return redirect("liste_agents_collecteurs")
+
+    emplacements = EmplacementMarche.objects.all().order_by("nom_lieu")
+    post = {
+        "matricule": agent.matricule,
+        "nom": agent.nom,
+        "prenom": agent.prenom,
+        "telephone": agent.telephone,
+        "email": agent.email or "",
+        "statut": agent.statut,
+        "date_embauche": agent.date_embauche.strftime("%Y-%m-%d") if agent.date_embauche else "",
+        "notes": agent.notes or "",
+        "username": agent.user.username,
+        "emplacements": list(agent.emplacements_assignes.values_list("pk", flat=True)),
+    }
+    return render(request, "admin/modifier_agent_collecteur.html", {
+        "agent": agent,
+        "statut_choices": AgentCollecteur.STATUT_CHOICES,
+        "emplacements": emplacements,
+        "post": post,
+    })
+
+
+def _parse_date(s):
+    """Parse une date au format YYYY-MM-DD. Retourne None si invalide."""
+    if not s or not isinstance(s, str):
+        return None
+    s = s.strip()
+    if not s:
+        return None
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return None
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def liste_contribuables(request):
+    """Liste des contribuables (marchés et places publiques)."""
+    
+    contribuables = Contribuable.objects.select_related('user').prefetch_related('boutiques_magasins').order_by('-date_creation')
+    
+    # Filtres
+    q = request.GET.get('q', '')
+    nationalite = request.GET.get('nationalite', '')
+    date_du = request.GET.get('date_du', '')
+    date_au = request.GET.get('date_au', '')
+    
+    if q:
+        contribuables = contribuables.filter(
+            Q(nom__icontains=q) |
+            Q(prenom__icontains=q) |
+            Q(telephone__icontains=q)
+        )
+    
+    if nationalite:
+        contribuables = contribuables.filter(nationalite__icontains=nationalite)
+    
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        contribuables = contribuables.filter(date_creation__date__gte=date_du_parsed)
+    if date_au_parsed:
+        contribuables = contribuables.filter(date_creation__date__lte=date_au_parsed)
+    
+    # Ajouter le nombre de boutiques pour chaque contribuable
+    for contribuable in contribuables:
+        contribuable.nombre_boutiques = contribuable.boutiques_magasins.count()
+    
+    context = {
+        'contribuables': contribuables,
+        'titre': '👥 Contribuables (Marchés / Places publiques)',
+        'current_filters': {
+            'q': q,
+            'nationalite': nationalite,
+            'date_du': date_du,
+            'date_au': date_au,
+        }
+    }
+    
+    return render(request, "admin/liste_contribuables.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def liste_boutiques(request):
+    """Liste et création des boutiques / magasins de marché depuis le tableau de bord."""
+
+    boutiques = BoutiqueMagasin.objects.select_related("contribuable", "emplacement", "agent_collecteur").order_by("-id")
+
+    # Filtres
+    q = request.GET.get("q", "")
+    contribuable_id = request.GET.get("contribuable", "")
+    agent_collecteur_id = request.GET.get("agent_collecteur", "")
+    date_du = request.GET.get("date_du", "")
+    date_au = request.GET.get("date_au", "")
+    if q:
+        boutiques = boutiques.filter(
+            Q(matricule__icontains=q)
+            | Q(contribuable__nom__icontains=q)
+            | Q(contribuable__prenom__icontains=q)
+            | Q(emplacement__nom_lieu__icontains=q)
+        )
+    if contribuable_id:
+        try:
+            boutiques = boutiques.filter(contribuable_id=int(contribuable_id))
+        except (ValueError, TypeError):
+            pass
+    if agent_collecteur_id:
+        try:
+            boutiques = boutiques.filter(agent_collecteur_id=int(agent_collecteur_id))
+        except (ValueError, TypeError):
+            pass
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        boutiques = boutiques.filter(date_creation__date__gte=date_du_parsed)
+    if date_au_parsed:
+        boutiques = boutiques.filter(date_creation__date__lte=date_au_parsed)
+
+    from urllib.parse import urlencode
+    from django.urls import reverse
+
+    # POST : soit créer un local (sans locataire), soit louer un local existant, soit modifier une boutique
+    if request.method == "POST":
+        action = request.POST.get("action", "louer")
+
+        if action == "modifier_boutique":
+            # Modifier une boutique existante
+            boutique_id = request.POST.get("boutique_id")
+            matricule = (request.POST.get("matricule") or "").strip()
+            emplacement_id = request.POST.get("emplacement")
+            type_local = request.POST.get("type_local") or "boutique"
+            superficie = request.POST.get("superficie_m2") or ""
+            loyer_mensuel = request.POST.get("prix_location_mensuel") or ""
+            loyer_annuel = request.POST.get("prix_location_annuel") or ""
+            contribuable_id_post = request.POST.get("contribuable")
+            agent_collecteur_id_post = request.POST.get("agent_collecteur")
+            activite = (request.POST.get("activite_vendue") or "").strip()
+            description = (request.POST.get("description") or "").strip()
+            est_actif = request.POST.get("est_actif") == "1"
+            
+            erreurs = []
+            try:
+                boutique = BoutiqueMagasin.objects.get(pk=boutique_id)
+            except (BoutiqueMagasin.DoesNotExist, ValueError, TypeError):
+                boutique = None
+                erreurs.append("Boutique introuvable.")
+            
+            if not matricule:
+                erreurs.append("La matricule du local est obligatoire.")
+            elif boutique and BoutiqueMagasin.objects.filter(matricule=matricule).exclude(pk=boutique_id).exists():
+                erreurs.append("Un local avec cette matricule existe déjà.")
+            
+            try:
+                emplacement = EmplacementMarche.objects.get(pk=emplacement_id)
+            except (EmplacementMarche.DoesNotExist, ValueError, TypeError):
+                emplacement = None
+                erreurs.append("Veuillez choisir un emplacement valide.")
+            
+            try:
+                superficie_val = Decimal(str(superficie)) if superficie else Decimal("0")
+            except (InvalidOperation, TypeError, ValueError):
+                superficie_val = Decimal("0")
+            
+            try:
+                loyer_mensuel_val = Decimal(str(loyer_mensuel)) if loyer_mensuel else Decimal("0")
+            except (InvalidOperation, TypeError, ValueError):
+                loyer_mensuel_val = Decimal("0")
+            
+            loyer_annuel_val = None
+            if loyer_annuel:
+                try:
+                    loyer_annuel_val = Decimal(str(loyer_annuel))
+                except (InvalidOperation, TypeError, ValueError):
+                    pass
+            
+            contribuable = None
+            if contribuable_id_post:
+                try:
+                    contribuable = Contribuable.objects.get(pk=contribuable_id_post)
+                except (Contribuable.DoesNotExist, ValueError, TypeError):
+                    erreurs.append("Contribuable sélectionné invalide.")
+            
+            agent_collecteur = None
+            if agent_collecteur_id_post:
+                try:
+                    agent_collecteur = AgentCollecteur.objects.get(pk=agent_collecteur_id_post)
+                except (AgentCollecteur.DoesNotExist, ValueError, TypeError):
+                    erreurs.append("Agent collecteur sélectionné invalide.")
+            
+            if erreurs:
+                for e in erreurs:
+                    messages.error(request, e)
+            elif boutique:
+                boutique.matricule = matricule
+                boutique.emplacement = emplacement
+                boutique.type_local = type_local
+                boutique.superficie_m2 = superficie_val
+                boutique.prix_location_mensuel = loyer_mensuel_val
+                boutique.prix_location_annuel = loyer_annuel_val
+                boutique.contribuable = contribuable
+                boutique.agent_collecteur = agent_collecteur
+                boutique.activite_vendue = activite
+                boutique.description = description
+                boutique.est_actif = est_actif
+                boutique.save()
+                messages.success(request, f"Boutique {boutique.matricule} modifiée avec succès.")
+                url = reverse("liste_boutiques")
+                params = {k: v for k, v in request.GET.items()}
+                if params:
+                    url += "?" + urlencode(params)
+                return redirect(url)
+
+        elif action == "creer_local":
+            # Créer un local (boutique, magasin, etc.) sans l’assigner à un locataire
+            matricule = (request.POST.get("matricule") or "").strip()
+            emplacement_id = request.POST.get("emplacement")
+            type_local = request.POST.get("type_local") or "boutique"
+            superficie = request.POST.get("superficie_m2") or ""
+            loyer_mensuel = request.POST.get("prix_location_mensuel") or ""
+            loyer_annuel = request.POST.get("prix_location_annuel") or ""
+            description = (request.POST.get("description") or "").strip()
+            erreurs = []
+            if not matricule:
+                erreurs.append("La matricule du local est obligatoire.")
+            elif BoutiqueMagasin.objects.filter(matricule=matricule).exists():
+                erreurs.append("Un local avec cette matricule existe déjà.")
+            try:
+                emplacement = EmplacementMarche.objects.get(pk=emplacement_id)
+            except (EmplacementMarche.DoesNotExist, ValueError, TypeError):
+                emplacement = None
+                erreurs.append("Veuillez choisir un emplacement valide.")
+            try:
+                superficie_val = Decimal(str(superficie)) if superficie else Decimal("0")
+            except (InvalidOperation, TypeError, ValueError):
+                superficie_val = Decimal("0")
+            try:
+                loyer_mensuel_val = Decimal(str(loyer_mensuel)) if loyer_mensuel else Decimal("0")
+            except (InvalidOperation, TypeError, ValueError):
+                loyer_mensuel_val = Decimal("0")
+            loyer_annuel_val = None
+            if loyer_annuel:
+                try:
+                    loyer_annuel_val = Decimal(str(loyer_annuel))
+                except (InvalidOperation, TypeError, ValueError):
+                    pass
+            if erreurs:
+                for e in erreurs:
+                    messages.error(request, e)
+            else:
+                BoutiqueMagasin.objects.create(
+                    matricule=matricule,
+                    emplacement=emplacement,
+                    type_local=type_local,
+                    superficie_m2=superficie_val,
+                    prix_location_mensuel=loyer_mensuel_val,
+                    prix_location_annuel=loyer_annuel_val,
+                    contribuable=None,
+                    activite_vendue="",
+                    description=description,
+                    est_actif=True,
+                )
+                messages.success(request, f"Local {matricule} créé (non occupé).")
+                url = reverse("liste_boutiques")
+                params = {k: v for k, v in request.GET.items()}
+                if params:
+                    url += "?" + urlencode(params)
+                return redirect(url)
+
+        else:
+            # Louer : assigner un local non occupé à un contribuable
+            local_id = request.POST.get("local_id")
+            contribuable_id_post = request.POST.get("contribuable")
+            agent_collecteur_id_post = request.POST.get("agent_collecteur")
+            activite = (request.POST.get("activite_vendue") or "").strip()
+            erreurs = []
+            try:
+                local = BoutiqueMagasin.objects.get(pk=local_id, contribuable__isnull=True)
+            except (BoutiqueMagasin.DoesNotExist, ValueError, TypeError):
+                local = None
+                erreurs.append("Veuillez choisir un local non occupé valide.")
+            try:
+                contribuable = Contribuable.objects.get(pk=contribuable_id_post)
+            except (Contribuable.DoesNotExist, ValueError, TypeError):
+                contribuable = None
+                erreurs.append("Veuillez choisir un contribuable (locataire) valide.")
+            if not activite:
+                erreurs.append("Veuillez renseigner l'activité exercée dans ce local.")
+            if not agent_collecteur_id_post:
+                erreurs.append("Veuillez choisir un agent collecteur assigné à ce local.")
+            agent_collecteur = None
+            if agent_collecteur_id_post:
+                try:
+                    agent_collecteur = AgentCollecteur.objects.get(pk=agent_collecteur_id_post)
+                except (AgentCollecteur.DoesNotExist, ValueError, TypeError):
+                    erreurs.append("Agent collecteur sélectionné invalide.")
+            if erreurs:
+                for e in erreurs:
+                    messages.error(request, e)
+            else:
+                local.contribuable = contribuable
+                local.activite_vendue = activite
+                local.agent_collecteur = agent_collecteur
+                local.save()
+                message = f"Local {local.matricule} loué à {contribuable.nom} {contribuable.prenom}."
+                if agent_collecteur:
+                    message += f" Agent collecteur assigné : {agent_collecteur.nom} {agent_collecteur.prenom}."
+                messages.success(request, message)
+                url = reverse("liste_boutiques")
+                params = {k: v for k, v in request.GET.items()}
+                if params:
+                    url += "?" + urlencode(params)
+                return redirect(url)
+
+    # Données pour les formulaires
+    emplacements = EmplacementMarche.objects.all().order_by("nom_lieu")
+    contribuables_all = Contribuable.objects.all().order_by("nom", "prenom")
+    agents_collecteurs = AgentCollecteur.objects.filter(statut="actif").order_by("matricule", "nom", "prenom")
+    type_local_choices = BoutiqueMagasin.TYPE_LOCAL_CHOICES
+    locaux_non_occupes = BoutiqueMagasin.objects.filter(contribuable__isnull=True).select_related(
+        "emplacement"
+    ).order_by("emplacement__nom_lieu", "matricule")
+
+    context = {
+        "boutiques": boutiques,
+        "titre": "🏪 Boutiques / Magasins (marchés)",
+        "current_filters": {
+            "q": q,
+            "contribuable": contribuable_id,
+            "agent_collecteur": agent_collecteur_id,
+            "date_du": date_du,
+            "date_au": date_au,
+        },
+        "emplacements": emplacements,
+        "contribuables_all": contribuables_all,
+        "agents_collecteurs": agents_collecteurs,
+        "type_local_choices": type_local_choices,
+        "locaux_non_occupes": locaux_non_occupes,
+    }
+
+    return render(request, "admin/liste_boutiques.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+@require_POST
+def creer_emplacement_ajax(request):
+    """Crée un emplacement (marché/place publique) via AJAX. Retourne JSON avec id et label."""
+    from django.http import JsonResponse
+    nom_lieu = (request.POST.get("nom_lieu") or "").strip()
+    quartier = (request.POST.get("quartier") or "").strip()
+    canton = (request.POST.get("canton") or "").strip()
+    village = (request.POST.get("village") or "").strip()
+    description = (request.POST.get("description") or "").strip()
+    if not nom_lieu or not quartier:
+        return JsonResponse({"success": False, "error": "Le nom du lieu et le quartier sont obligatoires."}, status=400)
+    emplacement = EmplacementMarche.objects.create(
+        nom_lieu=nom_lieu,
+        quartier=quartier,
+        canton=canton,
+        village=village,
+        description=description,
+    )
+    label = f"{emplacement.nom_lieu} - {emplacement.quartier}"
+    return JsonResponse({"success": True, "id": emplacement.id, "label": label})
+
+
+@login_required
+@user_passes_test(is_staff_user)
+@require_http_methods(["POST"])
+def sauvegarder_infrastructure_ajax(request):
+    """
+    Crée ou met à jour une InfrastructureCommune via AJAX.
+    Si `infra_id` est fourni, met à jour l'infrastructure existante, sinon en crée une nouvelle.
+    """
+    infra_id = request.POST.get("infra_id") or ""
+    type_infra = (request.POST.get("type_infrastructure") or "").strip()
+    nom = (request.POST.get("nom") or "").strip()
+    description = (request.POST.get("description") or "").strip()
+    adresse = (request.POST.get("adresse") or "").strip()
+    lat = (request.POST.get("latitude") or "").strip()
+    lng = (request.POST.get("longitude") or "").strip()
+    est_active_raw = (request.POST.get("est_active") or "").strip().lower()
+
+    if not type_infra or not nom or not lat or not lng:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Le type, le nom et les coordonnées GPS (latitude, longitude) sont obligatoires.",
+            },
+            status=400,
+        )
+
+    valid_types = {choice[0] for choice in InfrastructureCommune.TYPE_INFRASTRUCTURE_CHOICES}
+    if type_infra not in valid_types:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Type d'infrastructure invalide.",
+            },
+            status=400,
+        )
+
+    try:
+        lat_dec = Decimal(lat)
+        lng_dec = Decimal(lng)
+    except (InvalidOperation, TypeError, ValueError):
+        return JsonResponse(
+            {"success": False, "error": "Latitude ou longitude invalide."},
+            status=400,
+        )
+
+    config = ConfigurationMairie.objects.filter(est_active=True).first()
+    if not config:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Aucune configuration de commune active trouvée.",
+            },
+            status=400,
+        )
+
+    try:
+        cartographie = CartographieCommune.objects.get(configuration=config)
+    except CartographieCommune.DoesNotExist:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Aucune fiche de cartographie trouvée pour la commune active.",
+            },
+            status=400,
+        )
+
+    est_active = est_active_raw in ("1", "true", "on", "oui", "yes")
+
+    if infra_id:
+        try:
+            infra_obj = InfrastructureCommune.objects.get(id=int(infra_id), cartographie=cartographie)
+        except (ValueError, InfrastructureCommune.DoesNotExist):
+            return JsonResponse(
+                {"success": False, "error": "Infrastructure introuvable."},
+                status=404,
+            )
+        infra_obj.type_infrastructure = type_infra
+        infra_obj.nom = nom
+        infra_obj.description = description
+        infra_obj.adresse = adresse
+        infra_obj.latitude = lat_dec
+        infra_obj.longitude = lng_dec
+        infra_obj.est_active = est_active
+        infra_obj.save()
+    else:
+        infra_obj = InfrastructureCommune.objects.create(
+            cartographie=cartographie,
+            type_infrastructure=type_infra,
+            nom=nom,
+            description=description,
+            adresse=adresse,
+            latitude=lat_dec,
+            longitude=lng_dec,
+            est_active=est_active,
+        )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "id": infra_obj.id,
+            "type_infrastructure": infra_obj.type_infrastructure,
+            "nom": infra_obj.nom,
+            "description": infra_obj.description,
+            "adresse": infra_obj.adresse,
+            "latitude": str(infra_obj.latitude),
+            "longitude": str(infra_obj.longitude),
+            "est_active": infra_obj.est_active,
+        }
+    )
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def liste_contributions(request):
+    """Liste des contributions/taxes (cotisations annuelles, paiements mensuels, tickets marché)."""
+    
+    # Récupération des paramètres de filtrage
+    type_contribution = request.GET.get('type', '')
+    annee = request.GET.get('annee', '')
+    mois = request.GET.get('mois', '')
+    agent_collecteur_id = request.GET.get('agent_collecteur', '')
+    date_du = request.GET.get('date_du', '')
+    date_au = request.GET.get('date_au', '')
+    q = request.GET.get('q', '')
+    
+    cotisations_annuelles = CotisationAnnuelle.objects.select_related(
+        'boutique__contribuable', 'boutique__emplacement'
+    ).order_by('-annee', '-date_creation')
+    
+    paiements = PaiementCotisation.objects.select_related(
+        'cotisation_annuelle__boutique__contribuable',
+        'encaisse_par_agent'
+    ).order_by('-date_paiement')
+    
+    tickets = TicketMarche.objects.select_related(
+        'emplacement', 'contribuable', 'encaisse_par_agent'
+    ).order_by('-date', '-date_creation')
+    
+    # Filtres par type
+    if type_contribution == 'cotisations':
+        paiements = paiements.none()
+        tickets = tickets.none()
+    elif type_contribution == 'paiements':
+        cotisations_annuelles = cotisations_annuelles.none()
+        tickets = tickets.none()
+    elif type_contribution == 'tickets':
+        cotisations_annuelles = cotisations_annuelles.none()
+        paiements = paiements.none()
+    
+    # Filtre par année
+    if annee:
+        try:
+            annee_int = int(annee)
+            cotisations_annuelles = cotisations_annuelles.filter(annee=annee_int)
+            paiements = paiements.filter(cotisation_annuelle__annee=annee_int)
+            tickets = tickets.filter(date__year=annee_int)
+        except ValueError:
+            pass
+    
+    # Filtre par mois (paiements: mois 1-12, tickets: date__month)
+    if mois:
+        try:
+            mois_int = int(mois)
+            if 1 <= mois_int <= 12:
+                paiements = paiements.filter(mois=mois_int)
+                tickets = tickets.filter(date__month=mois_int)
+        except ValueError:
+            pass
+    
+    # Filtre par agent collecteur (paiements et tickets)
+    if agent_collecteur_id:
+        try:
+            agent_id = int(agent_collecteur_id)
+            paiements = paiements.filter(encaisse_par_agent_id=agent_id)
+            tickets = tickets.filter(encaisse_par_agent_id=agent_id)
+        except (ValueError, TypeError):
+            pass
+    
+    # Filtre par période (date_du, date_au) pour paiements et tickets
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        paiements = paiements.filter(date_paiement__date__gte=date_du_parsed)
+        tickets = tickets.filter(date__gte=date_du_parsed)
+    if date_au_parsed:
+        paiements = paiements.filter(date_paiement__date__lte=date_au_parsed)
+        tickets = tickets.filter(date__lte=date_au_parsed)
+    
+    # Recherche textuelle
+    if q:
+        cotisations_annuelles = cotisations_annuelles.filter(
+            Q(boutique__matricule__icontains=q) |
+            Q(boutique__contribuable__nom__icontains=q) |
+            Q(boutique__contribuable__prenom__icontains=q)
+        )
+        paiements = paiements.filter(
+            Q(cotisation_annuelle__boutique__matricule__icontains=q) |
+            Q(cotisation_annuelle__boutique__contribuable__nom__icontains=q) |
+            Q(cotisation_annuelle__boutique__contribuable__prenom__icontains=q)
+        )
+        tickets = tickets.filter(
+            Q(nom_vendeur__icontains=q) |
+            Q(contribuable__nom__icontains=q) |
+            Q(contribuable__prenom__icontains=q)
+        )
+    
+    # Années disponibles pour le filtre
+    annees_cotisations = sorted(
+        CotisationAnnuelle.objects.values_list('annee', flat=True).distinct(),
+        reverse=True
+    )
+    annees_tickets = sorted(
+        TicketMarche.objects.values_list('date__year', flat=True).distinct(),
+        reverse=True
+    )
+    annees_disponibles = sorted(set(annees_cotisations + annees_tickets), reverse=True)
+    agents_collecteurs = AgentCollecteur.objects.filter(statut="actif").order_by("matricule", "nom", "prenom")
+    
+    context = {
+        'cotisations_annuelles': cotisations_annuelles[:100],  # Limiter pour performance
+        'paiements': paiements[:100],
+        'tickets': tickets[:100],
+        'titre': '💰 Contributions / Taxes',
+        'annees_disponibles': annees_disponibles,
+        'agents_collecteurs': agents_collecteurs,
+        'current_filters': {
+            'type': type_contribution,
+            'annee': annee,
+            'mois': mois,
+            'agent_collecteur': agent_collecteur_id,
+            'date_du': date_du,
+            'date_au': date_au,
+            'q': q
+        }
+    }
+    
+    return render(request, "admin/liste_contributions.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def liste_cotisations_acteurs_institutions(request):
+    """Liste des acteurs économiques, institutions financières et leurs cotisations annuelles."""
+    
+    # Récupération des paramètres de filtrage
+    type_contribution = request.GET.get('type', '')  # 'acteurs' ou 'institutions' ou ''
+    annee = request.GET.get('annee', '')
+    mois = request.GET.get('mois', '')
+    agent_collecteur_id = request.GET.get('agent_collecteur', '')
+    date_du = request.GET.get('date_du', '')
+    date_au = request.GET.get('date_au', '')
+    q = request.GET.get('q', '')
+    
+    # Listes des acteurs et institutions (pour les tableaux principaux)
+    acteurs_economiques = ActeurEconomique.objects.all().order_by('raison_sociale')
+    institutions_financieres = InstitutionFinanciere.objects.all().order_by('nom_institution')
+    
+    # Cotisations et paiements
+    cotisations_acteurs = CotisationAnnuelleActeur.objects.select_related(
+        'acteur'
+    ).order_by('-annee', '-date_creation')
+    
+    cotisations_institutions = CotisationAnnuelleInstitution.objects.select_related(
+        'institution'
+    ).order_by('-annee', '-date_creation')
+    
+    paiements_acteurs = PaiementCotisationActeur.objects.select_related(
+        'cotisation_annuelle__acteur',
+        'encaisse_par_agent'
+    ).order_by('-date_paiement')
+    
+    paiements_institutions = PaiementCotisationInstitution.objects.select_related(
+        'cotisation_annuelle__institution',
+        'encaisse_par_agent'
+    ).order_by('-date_paiement')
+    
+    # Filtre recherche textuelle sur acteurs et institutions
+    if q:
+        acteurs_economiques = acteurs_economiques.filter(
+            Q(raison_sociale__icontains=q) |
+            Q(sigle__icontains=q) |
+            Q(nom_responsable__icontains=q) |
+            Q(telephone1__icontains=q) |
+            Q(email__icontains=q)
+        )
+        institutions_financieres = institutions_financieres.filter(
+            Q(nom_institution__icontains=q) |
+            Q(sigle__icontains=q) |
+            Q(nom_responsable__icontains=q) |
+            Q(telephone1__icontains=q) |
+            Q(email__icontains=q)
+        )
+        cotisations_acteurs = cotisations_acteurs.filter(
+            Q(acteur__raison_sociale__icontains=q) |
+            Q(acteur__sigle__icontains=q) |
+            Q(acteur__nom_responsable__icontains=q)
+        )
+        cotisations_institutions = cotisations_institutions.filter(
+            Q(institution__nom_institution__icontains=q) |
+            Q(institution__sigle__icontains=q) |
+            Q(institution__nom_responsable__icontains=q)
+        )
+        paiements_acteurs = paiements_acteurs.filter(
+            Q(cotisation_annuelle__acteur__raison_sociale__icontains=q) |
+            Q(cotisation_annuelle__acteur__sigle__icontains=q)
+        )
+        paiements_institutions = paiements_institutions.filter(
+            Q(cotisation_annuelle__institution__nom_institution__icontains=q) |
+            Q(cotisation_annuelle__institution__sigle__icontains=q)
+        )
+    
+    # Filtres par type (acteurs uniquement / institutions uniquement)
+    if type_contribution == 'acteurs':
+        institutions_financieres = institutions_financieres.none()
+        cotisations_institutions = cotisations_institutions.none()
+        paiements_institutions = paiements_institutions.none()
+    elif type_contribution == 'institutions':
+        acteurs_economiques = acteurs_economiques.none()
+        cotisations_acteurs = cotisations_acteurs.none()
+        paiements_acteurs = paiements_acteurs.none()
+    
+    # Filtre par année (pour cotisations et paiements)
+    if annee:
+        try:
+            annee_int = int(annee)
+            cotisations_acteurs = cotisations_acteurs.filter(annee=annee_int)
+            cotisations_institutions = cotisations_institutions.filter(annee=annee_int)
+            paiements_acteurs = paiements_acteurs.filter(cotisation_annuelle__annee=annee_int)
+            paiements_institutions = paiements_institutions.filter(cotisation_annuelle__annee=annee_int)
+        except ValueError:
+            pass
+    
+    # Filtre par mois (paiements uniquement)
+    if mois:
+        try:
+            mois_int = int(mois)
+            if 1 <= mois_int <= 12:
+                paiements_acteurs = paiements_acteurs.filter(date_paiement__month=mois_int)
+                paiements_institutions = paiements_institutions.filter(date_paiement__month=mois_int)
+        except ValueError:
+            pass
+    
+    # Filtre par agent collecteur (paiements uniquement)
+    if agent_collecteur_id:
+        try:
+            agent_id = int(agent_collecteur_id)
+            paiements_acteurs = paiements_acteurs.filter(encaisse_par_agent_id=agent_id)
+            paiements_institutions = paiements_institutions.filter(encaisse_par_agent_id=agent_id)
+        except (ValueError, TypeError):
+            pass
+    
+    # Filtre par période (date_du, date_au) pour paiements
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        paiements_acteurs = paiements_acteurs.filter(date_paiement__date__gte=date_du_parsed)
+        paiements_institutions = paiements_institutions.filter(date_paiement__date__gte=date_du_parsed)
+    if date_au_parsed:
+        paiements_acteurs = paiements_acteurs.filter(date_paiement__date__lte=date_au_parsed)
+        paiements_institutions = paiements_institutions.filter(date_paiement__date__lte=date_au_parsed)
+    
+    # Années disponibles pour le filtre
+    annees_acteurs = sorted(
+        CotisationAnnuelleActeur.objects.values_list('annee', flat=True).distinct(),
+        reverse=True
+    )
+    annees_institutions = sorted(
+        CotisationAnnuelleInstitution.objects.values_list('annee', flat=True).distinct(),
+        reverse=True
+    )
+    annees_disponibles = sorted(set(annees_acteurs + annees_institutions), reverse=True)
+    agents_collecteurs = AgentCollecteur.objects.filter(statut="actif").order_by("matricule", "nom", "prenom")
+    
+    context = {
+        'acteurs_economiques': acteurs_economiques,
+        'institutions_financieres': institutions_financieres,
+        'cotisations_acteurs': cotisations_acteurs[:100],
+        'cotisations_institutions': cotisations_institutions[:100],
+        'paiements_acteurs': paiements_acteurs[:100],
+        'paiements_institutions': paiements_institutions[:100],
+        'titre': '💰 Cotisations Acteurs & Institutions',
+        'annees_disponibles': annees_disponibles,
+        'agents_collecteurs': agents_collecteurs,
+        'current_filters': {
+            'type': type_contribution,
+            'annee': annee,
+            'mois': mois,
+            'agent_collecteur': agent_collecteur_id,
+            'date_du': date_du,
+            'date_au': date_au,
+            'q': q
+        }
+    }
+    
+    return render(request, "admin/liste_cotisations_acteurs_institutions.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def definir_taxe_acteur(request, acteur_id):
+    """Permet à l'admin de définir ou modifier la taxe (montant annuel dû) pour un acteur économique."""
+    acteur = get_object_or_404(ActeurEconomique, id=acteur_id)
+    annee_courante = timezone.now().year
+    annee_preselect = request.GET.get("annee")
+    if annee_preselect:
+        try:
+            annee_preselect = int(annee_preselect)
+        except ValueError:
+            annee_preselect = None
+
+    if request.method == "POST":
+        annee_str = request.POST.get("annee")
+        montant_str = request.POST.get("montant", "").strip()
+        if not annee_str:
+            messages.error(request, "Veuillez sélectionner une année.")
+            return redirect("definir_taxe_acteur", acteur_id=acteur.id)
+        try:
+            annee = int(annee_str)
+        except ValueError:
+            messages.error(request, "Année invalide.")
+            return redirect("definir_taxe_acteur", acteur_id=acteur.id)
+        if not montant_str:
+            messages.error(request, "Veuillez saisir le montant annuel dû (FCFA).")
+            return redirect("definir_taxe_acteur", acteur_id=acteur.id)
+        try:
+            montant = Decimal(montant_str)
+        except (InvalidOperation, TypeError, ValueError):
+            messages.error(request, "Montant invalide. Saisissez un nombre.")
+            return redirect("definir_taxe_acteur", acteur_id=acteur.id)
+        if montant < 0:
+            messages.error(request, "Le montant ne peut pas être négatif.")
+            return redirect("definir_taxe_acteur", acteur_id=acteur.id)
+
+        cotisation, created = CotisationAnnuelleActeur.objects.update_or_create(
+            acteur=acteur,
+            annee=annee,
+            defaults={"montant_annuel_du": montant},
+        )
+        if created:
+            messages.success(
+                request,
+                f"Taxe {annee} définie pour {acteur.raison_sociale}: {montant:,.0f} FCFA.",
+            )
+        else:
+            messages.success(
+                request,
+                f"Taxe {annee} mise à jour pour {acteur.raison_sociale}: {montant:,.0f} FCFA.",
+            )
+        return redirect("liste_cotisations_acteurs_institutions")
+
+    cotisations_existantes = CotisationAnnuelleActeur.objects.filter(acteur=acteur).order_by("-annee")
+    annees_possibles = list(range(annee_courante, annee_courante - 5, -1))
+
+    context = {
+        "acteur": acteur,
+        "type_entite": "acteur",
+        "cotisations_existantes": cotisations_existantes,
+        "annees_possibles": annees_possibles,
+        "annee_courante": annee_courante,
+        "annee_preselect": annee_preselect,
+        "titre": "Définir la taxe - Acteur économique",
+    }
+    return render(request, "admin/definir_taxe.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def definir_taxe_institution(request, institution_id):
+    """Permet à l'admin de définir ou modifier la taxe (montant annuel dû) pour une institution financière."""
+    institution = get_object_or_404(InstitutionFinanciere, id=institution_id)
+    annee_courante = timezone.now().year
+    annee_preselect = request.GET.get("annee")
+    if annee_preselect:
+        try:
+            annee_preselect = int(annee_preselect)
+        except ValueError:
+            annee_preselect = None
+
+    if request.method == "POST":
+        annee_str = request.POST.get("annee")
+        montant_str = request.POST.get("montant", "").strip()
+        if not annee_str:
+            messages.error(request, "Veuillez sélectionner une année.")
+            return redirect("definir_taxe_institution", institution_id=institution.id)
+        try:
+            annee = int(annee_str)
+        except ValueError:
+            messages.error(request, "Année invalide.")
+            return redirect("definir_taxe_institution", institution_id=institution.id)
+        if not montant_str:
+            messages.error(request, "Veuillez saisir le montant annuel dû (FCFA).")
+            return redirect("definir_taxe_institution", institution_id=institution.id)
+        try:
+            montant = Decimal(montant_str)
+        except (InvalidOperation, TypeError, ValueError):
+            messages.error(request, "Montant invalide. Saisissez un nombre.")
+            return redirect("definir_taxe_institution", institution_id=institution.id)
+        if montant < 0:
+            messages.error(request, "Le montant ne peut pas être négatif.")
+            return redirect("definir_taxe_institution", institution_id=institution.id)
+
+        cotisation, created = CotisationAnnuelleInstitution.objects.update_or_create(
+            institution=institution,
+            annee=annee,
+            defaults={"montant_annuel_du": montant},
+        )
+        if created:
+            messages.success(
+                request,
+                f"Taxe {annee} définie pour {institution.nom_institution}: {montant:,.0f} FCFA.",
+            )
+        else:
+            messages.success(
+                request,
+                f"Taxe {annee} mise à jour pour {institution.nom_institution}: {montant:,.0f} FCFA.",
+            )
+        return redirect("liste_cotisations_acteurs_institutions")
+
+    cotisations_existantes = CotisationAnnuelleInstitution.objects.filter(
+        institution=institution
+    ).order_by("-annee")
+    annees_possibles = list(range(annee_courante, annee_courante - 5, -1))
+
+    context = {
+        "institution": institution,
+        "type_entite": "institution",
+        "cotisations_existantes": cotisations_existantes,
+        "annees_possibles": annees_possibles,
+        "annee_courante": annee_courante,
+        "annee_preselect": annee_preselect,
+        "titre": "Définir la taxe - Institution financière",
+    }
+    return render(request, "admin/definir_taxe.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
 def detail_suggestion(request, pk):
     """Affiche le détail d'une suggestion."""
     
@@ -808,7 +2959,7 @@ def export_pdf_candidatures(request, appel_offre_id):
     filename = _make_pdf_filename("candidatures-acceptees", appel_offre.reference or appel_offre.titre)
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         "Title",
@@ -890,25 +3041,7 @@ def export_pdf_candidatures(request, appel_offre_id):
     story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
 
     def on_page(canvas, doc):
-        width, height = doc.pagesize
-        y = height - 40
-        canvas.saveState()
-        canvas.translate(width / 2, height / 2)
-        canvas.rotate(45)
-        canvas.setFont("Helvetica-Bold", 36)
-        canvas.setFillColorRGB(0.9, 0.9, 0.9)
-        canvas.drawCentredString(0, 0, (conf.nom_commune if conf else "Mairie de Kloto 1").upper())
-        canvas.restoreState()
-        if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
-            try:
-                canvas.drawImage(conf.logo.path, 40, y - 30, width=40, height=40, preserveAspectRatio=True, mask="auto")
-            except Exception:
-                pass
-        canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(100, y, f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}")
-
-        canvas.setFont("Helvetica", 9)
-        canvas.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+        _draw_pdf_header(canvas, doc, conf)
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
@@ -928,6 +3061,7 @@ def changer_statut(request, model_name, pk, action):
         'retraite': ProfilEmploi,
         'diaspora': MembreDiaspora,
         'suggestion': Suggestion,
+        'osc': OrganisationSocieteCivile,
     }
     
     ModelClass = model_map.get(model_name)
@@ -975,6 +3109,7 @@ def changer_statut(request, model_name, pk, action):
         'retraite': 'liste_retraites',
         'diaspora': 'liste_diaspora_tableau_bord',
         'suggestion': 'liste_suggestions',
+        'osc': 'liste_osc_tableau_bord',
     }
     
     return redirect(redirect_map.get(model_name, 'tableau_bord'))
@@ -1052,6 +3187,63 @@ def export_pdf_acteur_detail(request, pk):
 
     filename = _make_pdf_filename("acteur", acteur.raison_sociale)
     title = f"Fiche Acteur Économique - {acteur.raison_sociale}"
+    return _build_detail_pdf(filename, title, sections)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_osc_detail(request, pk):
+    """Génère une fiche PDF détaillée pour une OSC (comme pour un acteur économique)."""
+    osc = get_object_or_404(OrganisationSocieteCivile, pk=pk)
+
+    sections = [
+        (
+            "Informations générales",
+            [
+                ("Nom de l'OSC", osc.nom_osc),
+                ("Sigle", osc.sigle),
+                ("Type d'OSC", get_osc_type_display(osc.type_osc)),
+                ("Date de création", osc.date_creation),
+            ],
+        ),
+        (
+            "Coordonnées",
+            [
+                ("Adresse", osc.adresse),
+                ("Téléphone", osc.telephone),
+                ("Email", osc.email),
+            ],
+        ),
+        (
+            "Domaines d'intervention",
+            [
+                (
+                    "Domaines d'intervention",
+                    osc.domaines_intervention,
+                ),
+            ],
+        ),
+        (
+            "Membres / Responsables",
+            [
+                (
+                    "Membres / Responsables",
+                    osc.membres_responsables,
+                ),
+            ],
+        ),
+        (
+            "Statut et métadonnées",
+            [
+                ("Validée par la mairie", osc.est_valide_par_mairie),
+                ("Date d'enregistrement", osc.date_enregistrement),
+                ("Utilisateur associé", getattr(osc.user, "username", None)),
+            ],
+        ),
+    ]
+
+    filename = _make_pdf_filename("osc", osc.nom_osc)
+    title = f"Fiche Organisation de la Société Civile - {osc.nom_osc}"
     return _build_detail_pdf(filename, title, sections)
 
 
@@ -1407,7 +3599,7 @@ def export_pdf_acteurs(request):
             pass
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="acteurs_economiques_valides.pdf"'
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle("Title", parent=styles["Heading1"], fontSize=16, textColor=colors.HexColor("#006233"), alignment=1, spaceAfter=12)
@@ -1438,25 +3630,7 @@ def export_pdf_acteurs(request):
     story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
     
     def on_page(c, d):
-        width, height = d.pagesize
-        y = height - 40
-        c.saveState()
-        c.translate(width/2, height/2)
-        c.rotate(45)
-        c.setFont("Helvetica-Bold", 36)
-        c.setFillColorRGB(0.9, 0.9, 0.9)
-        c.drawCentredString(0, 0, (conf.nom_commune if conf else "Mairie de Kloto 1").upper())
-        c.restoreState()
-        if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
-            try:
-                c.drawImage(conf.logo.path, 40, y-30, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            except Exception:
-                pass
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(100, y, f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}")
-        
-        c.setFont("Helvetica", 9)
-        c.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+        _draw_pdf_header(c, d, conf)
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
@@ -1488,7 +3662,7 @@ def export_pdf_diaspora(request):
             pass
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="diaspora_valides.pdf"'
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle("Title", parent=styles["Heading1"], fontSize=16, textColor=colors.HexColor("#006233"), alignment=1, spaceAfter=12)
@@ -1521,25 +3695,98 @@ def export_pdf_diaspora(request):
     story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
     
     def on_page(c, d):
-        width, height = d.pagesize
-        y = height - 40
-        c.saveState()
-        c.translate(width/2, height/2)
-        c.rotate(45)
-        c.setFont("Helvetica-Bold", 36)
-        c.setFillColorRGB(0.9, 0.9, 0.9)
-        c.drawCentredString(0, 0, (conf.nom_commune if conf else "Mairie de Kloto 1").upper())
-        c.restoreState()
-        if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
-            try:
-                c.drawImage(conf.logo.path, 40, y-30, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            except Exception:
-                pass
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(100, y, f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}")
-        
-        c.setFont("Helvetica", 9)
-        c.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_osc(request):
+    """Export PDF des Organisations de la Société Civile (OSC) validées, par type et/ou période."""
+
+    start = request.GET.get("start")
+    end = request.GET.get("end")
+    type_osc = request.GET.get("type", "").strip()
+
+    qs = OrganisationSocieteCivile.objects.filter(est_valide_par_mairie=True)
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+
+    if type_osc:
+        qs = qs.filter(type_osc=type_osc)
+
+    if start:
+        try:
+            sd = datetime.strptime(start, "%Y-%m-%d").date()
+            qs = qs.filter(date_enregistrement__date__gte=sd)
+        except ValueError:
+            pass
+    if end:
+        try:
+            ed = datetime.strptime(end, "%Y-%m-%d").date()
+            qs = qs.filter(date_enregistrement__date__lte=ed)
+        except ValueError:
+            pass
+
+    type_label = get_osc_type_display(type_osc) if type_osc else ""
+    filename = "osc_valides.pdf"
+    if type_label:
+        filename = _make_pdf_filename("osc", type_label)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
+    story = []
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+    story.append(Paragraph("Organisations de la Société Civile (OSC)", title_style))
+    if type_label:
+        story.append(Paragraph(f"{type_label} validées", styles["Normal"]))
+    else:
+        story.append(Paragraph("(Uniquement les OSC validées par la mairie)", styles["Normal"]))
+    if start or end:
+        story.append(Paragraph(f"Période: {start or '...'} au {end or '...'}", styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+
+    data = [["Nom de l'OSC", "Sigle", "Type", "Téléphone", "Email"]]
+    for o in qs.order_by("-date_enregistrement")[:1000]:
+        data.append(
+            [
+                o.nom_osc,
+                o.sigle or "",
+                get_osc_type_display(o.type_osc),
+                o.telephone or "",
+                o.email or "",
+            ]
+        )
+
+    table = Table(data, colWidths=[7 * cm, 3 * cm, 6 * cm, 4 * cm, 6 * cm])
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    story.append(table)
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
@@ -2134,6 +4381,1407 @@ def export_excel_diaspora(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+def export_excel_osc(request):
+    """Exporte toutes les OSC en Excel avec les principaux champs."""
+    osc_qs = OrganisationSocieteCivile.objects.all().order_by("-date_enregistrement")
+
+    # Filtres simples
+    q = request.GET.get("q", "") or ""
+    type_osc = request.GET.get("type", "") or ""
+
+    if q:
+        osc_qs = osc_qs.filter(
+            Q(nom_osc__icontains=q)
+            | Q(sigle__icontains=q)
+            | Q(email__icontains=q)
+            | Q(telephone__icontains=q)
+        )
+    if type_osc:
+        osc_qs = osc_qs.filter(type_osc=type_osc)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "OSC"
+
+    headers = [
+        "ID",
+        "Nom de l'OSC",
+        "Sigle",
+        "Type d'OSC",
+        "Date de création",
+        "Adresse",
+        "Téléphone",
+        "Email",
+        "Domaines d'intervention",
+        "Membres / Responsables",
+        "Validé par mairie",
+        "Date d'enregistrement",
+    ]
+    ws.append(headers)
+    _style_excel_header(ws, 1)
+
+    for o in osc_qs:
+        row = [
+            o.pk,
+            o.nom_osc,
+            o.sigle or "",
+            get_osc_type_display(o.type_osc),
+            _format_excel_value(o.date_creation),
+            o.adresse or "",
+            o.telephone or "",
+            o.email or "",
+            (o.domaines_intervention or "").replace("\n", " / "),
+            (o.membres_responsables or "").replace("\n", " / "),
+            "Oui" if o.est_valide_par_mairie else "Non",
+            _format_excel_value(o.date_enregistrement),
+        ]
+        ws.append(row)
+
+    for idx, col in enumerate(ws.columns, 1):
+        ws.column_dimensions[get_column_letter(idx)].width = 25
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="osc.xlsx"'
+    wb.save(response)
+    return response
+
+
+# ========== EXPORTS AGENTS COLLECTEURS, CONTRIBUABLES, BOUTIQUES, CONTRIBUTIONS, COTISATIONS ==========
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_agents_collecteurs(request):
+    """Export PDF des agents collecteurs (avec filtres q, statut)."""
+    q = request.GET.get("q", "").strip()
+    statut = request.GET.get("statut", "").strip()
+    qs = AgentCollecteur.objects.select_related("user").prefetch_related(
+        "emplacements_assignes", "acteurs_economiques", "institutions_financieres"
+    ).order_by("-date_creation")
+    if q:
+        qs = qs.filter(
+            Q(matricule__icontains=q)
+            | Q(nom__icontains=q)
+            | Q(prenom__icontains=q)
+            | Q(telephone__icontains=q)
+            | Q(email__icontains=q)
+        )
+    if statut:
+        qs = qs.filter(statut=statut)
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="agents_collecteurs.pdf"'
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+    story.append(Paragraph("Agents Collecteurs", title_style))
+    if q or statut:
+        parts = []
+        if q:
+            parts.append(f"Recherche: {q}")
+        if statut:
+            parts.append(f"Statut: {statut}")
+        story.append(Paragraph(" | ".join(parts), styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+    data = [
+        [
+            "Matricule",
+            "Nom",
+            "Prénom",
+            "Téléphone",
+            "Email",
+            "Statut",
+            "Date embauche",
+        ]
+    ]
+    for a in qs[:1000]:
+        data.append(
+            [
+                a.matricule or "",
+                a.nom or "",
+                a.prenom or "",
+                a.telephone or "",
+                (a.email or "")[:30],
+                a.get_statut_display(),
+                a.date_embauche.strftime("%d/%m/%Y") if a.date_embauche else "",
+            ]
+        )
+    col_widths = [3 * cm, 4 * cm, 4 * cm, 3.5 * cm, 5 * cm, 2.5 * cm, 3 * cm]
+    table = Table(data, colWidths=col_widths)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    story.append(table)
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_excel_agents_collecteurs(request):
+    """Export Excel des agents collecteurs (avec filtres q, statut)."""
+    q = request.GET.get("q", "").strip()
+    statut = request.GET.get("statut", "").strip()
+    qs = AgentCollecteur.objects.select_related("user").prefetch_related(
+        "emplacements_assignes", "acteurs_economiques", "institutions_financieres"
+    ).order_by("-date_creation")
+    if q:
+        qs = qs.filter(
+            Q(matricule__icontains=q)
+            | Q(nom__icontains=q)
+            | Q(prenom__icontains=q)
+            | Q(telephone__icontains=q)
+            | Q(email__icontains=q)
+        )
+    if statut:
+        qs = qs.filter(statut=statut)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Agents Collecteurs"
+    headers = [
+        "ID",
+        "Matricule",
+        "Nom",
+        "Prénom",
+        "Téléphone",
+        "Email",
+        "Statut",
+        "Date embauche",
+        "Notes",
+        "Date création",
+    ]
+    ws.append(headers)
+    _style_excel_header(ws, 1)
+    for a in qs:
+        ws.append(
+            [
+                a.pk,
+                a.matricule or "",
+                a.nom or "",
+                a.prenom or "",
+                a.telephone or "",
+                a.email or "",
+                a.get_statut_display(),
+                _format_excel_value(a.date_embauche),
+                (a.notes or "")[:500],
+                _format_excel_value(a.date_creation),
+            ]
+        )
+    for idx in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(idx)].width = 18
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="agents_collecteurs.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_contribuables(request):
+    """Export PDF des contribuables (avec filtres q, nationalite, date_du, date_au)."""
+    q = request.GET.get("q", "").strip()
+    nationalite = request.GET.get("nationalite", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    qs = Contribuable.objects.select_related("user").prefetch_related("boutiques_magasins").order_by("-date_creation")
+    if q:
+        qs = qs.filter(
+            Q(nom__icontains=q) | Q(prenom__icontains=q) | Q(telephone__icontains=q)
+        )
+    if nationalite:
+        qs = qs.filter(nationalite__icontains=nationalite)
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        qs = qs.filter(date_creation__date__gte=date_du_parsed)
+    if date_au_parsed:
+        qs = qs.filter(date_creation__date__lte=date_au_parsed)
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="contribuables.pdf"'
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+    story.append(Paragraph("Contribuables (Marchés / Places publiques)", title_style))
+    if q or nationalite or date_du or date_au:
+        parts = []
+        if q:
+            parts.append(f"Recherche: {q}")
+        if nationalite:
+            parts.append(f"Nationalité: {nationalite}")
+        if date_du:
+            parts.append(f"Du: {date_du}")
+        if date_au:
+            parts.append(f"Au: {date_au}")
+        story.append(Paragraph(" | ".join(parts), styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+    data = [["Nom", "Prénom", "Téléphone", "Nationalité", "Nb boutiques"]]
+    for c in qs[:1000]:
+        nb = c.boutiques_magasins.count()
+        data.append([c.nom or "", c.prenom or "", c.telephone or "", c.nationalite or "", str(nb)])
+    if len(data) > 1:
+        data.append(["", "", "", "TOTAL", str(qs.count()) + " contribuable(s)"])
+    col_widths = [4 * cm, 4 * cm, 4 * cm, 4 * cm, 2.5 * cm]
+    table = Table(data, colWidths=col_widths)
+    table_style = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]
+    if len(data) > 1:
+        table_style.extend([
+            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+        ])
+    table.setStyle(TableStyle(table_style))
+    story.append(table)
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_excel_contribuables(request):
+    """Export Excel des contribuables (avec filtres q, nationalite, date_du, date_au)."""
+    q = request.GET.get("q", "").strip()
+    nationalite = request.GET.get("nationalite", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    qs = Contribuable.objects.select_related("user").prefetch_related("boutiques_magasins").order_by("-date_creation")
+    if q:
+        qs = qs.filter(
+            Q(nom__icontains=q) | Q(prenom__icontains=q) | Q(telephone__icontains=q)
+        )
+    if nationalite:
+        qs = qs.filter(nationalite__icontains=nationalite)
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        qs = qs.filter(date_creation__date__gte=date_du_parsed)
+    if date_au_parsed:
+        qs = qs.filter(date_creation__date__lte=date_au_parsed)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Contribuables"
+    headers = [
+        "ID",
+        "Nom",
+        "Prénom",
+        "Téléphone",
+        "Date naissance",
+        "Lieu naissance",
+        "Nationalité",
+        "Nb boutiques",
+        "Date création",
+    ]
+    ws.append(headers)
+    _style_excel_header(ws, 1)
+    for c in qs:
+        ws.append(
+            [
+                c.pk,
+                c.nom or "",
+                c.prenom or "",
+                c.telephone or "",
+                _format_excel_value(c.date_naissance),
+                c.lieu_naissance or "",
+                c.nationalite or "",
+                c.boutiques_magasins.count(),
+                _format_excel_value(c.date_creation),
+            ]
+        )
+    for idx in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(idx)].width = 18
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="contribuables.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_boutiques(request):
+    """Export PDF des boutiques / magasins (filtres q, contribuable, agent_collecteur, date_du, date_au)."""
+    q = request.GET.get("q", "").strip()
+    contribuable_id = request.GET.get("contribuable", "").strip()
+    agent_collecteur_id = request.GET.get("agent_collecteur", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    qs = BoutiqueMagasin.objects.select_related(
+        "contribuable", "emplacement", "agent_collecteur"
+    ).order_by("-id")
+    if q:
+        qs = qs.filter(
+            Q(matricule__icontains=q)
+            | Q(contribuable__nom__icontains=q)
+            | Q(contribuable__prenom__icontains=q)
+            | Q(emplacement__nom_lieu__icontains=q)
+        )
+    if contribuable_id:
+        try:
+            qs = qs.filter(contribuable_id=int(contribuable_id))
+        except (ValueError, TypeError):
+            pass
+    if agent_collecteur_id:
+        try:
+            qs = qs.filter(agent_collecteur_id=int(agent_collecteur_id))
+        except (ValueError, TypeError):
+            pass
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        qs = qs.filter(date_creation__date__gte=date_du_parsed)
+    if date_au_parsed:
+        qs = qs.filter(date_creation__date__lte=date_au_parsed)
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="boutiques_magasins.pdf"'
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+    story.append(Paragraph("Boutiques / Magasins (marchés)", title_style))
+    if q or contribuable_id or agent_collecteur_id or date_du or date_au:
+        parts = []
+        if q:
+            parts.append(f"Recherche: {q}")
+        if contribuable_id:
+            parts.append(f"Contribuable ID: {contribuable_id}")
+        if agent_collecteur_id:
+            parts.append(f"Agent collecteur ID: {agent_collecteur_id}")
+        if date_du:
+            parts.append(f"Du: {date_du}")
+        if date_au:
+            parts.append(f"Au: {date_au}")
+        story.append(Paragraph(" | ".join(parts), styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+    agg_bout = qs.aggregate(
+        total_loyer=Sum("prix_location_mensuel"),
+        total_superficie=Sum("superficie_m2"),
+    )
+    total_loyer_bout = agg_bout.get("total_loyer") or Decimal("0")
+    total_superficie_bout = agg_bout.get("total_superficie") or Decimal("0")
+    data = [
+        [
+            "Matricule",
+            "Emplacement",
+            "Type",
+            "Contribuable",
+            "Superficie (m²)",
+            "Loyer mensuel",
+            "Activité",
+            "Agent",
+        ]
+    ]
+    for b in qs[:1000]:
+        contrib = b.contribuable.nom_complet if b.contribuable else "—"
+        agent = f"{b.agent_collecteur.nom} {b.agent_collecteur.prenom}" if b.agent_collecteur else "—"
+        data.append(
+            [
+                b.matricule or "",
+                (b.emplacement.nom_lieu if b.emplacement else "")[:20],
+                b.get_type_local_display(),
+                contrib[:25],
+                str(b.superficie_m2) if b.superficie_m2 else "",
+                str(b.prix_location_mensuel) if b.prix_location_mensuel else "",
+                (b.activite_vendue or "")[:25],
+                agent[:20],
+            ]
+        )
+    if len(data) > 1:
+        data.append([
+            f"TOTAL ({qs.count()} boutiques)",
+            "",
+            "",
+            "",
+            str(total_superficie_bout),
+            str(total_loyer_bout) + " FCFA",
+            "",
+            "",
+        ])
+    col_widths = [3 * cm, 4 * cm, 2.5 * cm, 5 * cm, 2 * cm, 2.5 * cm, 4 * cm, 4 * cm]
+    table = Table(data, colWidths=col_widths)
+    table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+        ])
+    )
+    story.append(table)
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_excel_boutiques(request):
+    """Export Excel des boutiques / magasins (filtres q, contribuable, agent_collecteur, date_du, date_au)."""
+    q = request.GET.get("q", "").strip()
+    contribuable_id = request.GET.get("contribuable", "").strip()
+    agent_collecteur_id = request.GET.get("agent_collecteur", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    qs = BoutiqueMagasin.objects.select_related(
+        "contribuable", "emplacement", "agent_collecteur"
+    ).order_by("-id")
+    if q:
+        qs = qs.filter(
+            Q(matricule__icontains=q)
+            | Q(contribuable__nom__icontains=q)
+            | Q(contribuable__prenom__icontains=q)
+            | Q(emplacement__nom_lieu__icontains=q)
+        )
+    if contribuable_id:
+        try:
+            qs = qs.filter(contribuable_id=int(contribuable_id))
+        except (ValueError, TypeError):
+            pass
+    if agent_collecteur_id:
+        try:
+            qs = qs.filter(agent_collecteur_id=int(agent_collecteur_id))
+        except (ValueError, TypeError):
+            pass
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        qs = qs.filter(date_creation__date__gte=date_du_parsed)
+    if date_au_parsed:
+        qs = qs.filter(date_creation__date__lte=date_au_parsed)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Boutiques Magasins"
+    headers = [
+        "ID",
+        "Matricule",
+        "Emplacement",
+        "Type local",
+        "Superficie (m²)",
+        "Loyer mensuel",
+        "Loyer annuel",
+        "Contribuable",
+        "Activité",
+        "Agent collecteur",
+        "Actif",
+        "Date création",
+    ]
+    ws.append(headers)
+    _style_excel_header(ws, 1)
+    for b in qs:
+        contrib = b.contribuable.nom_complet if b.contribuable else ""
+        agent = f"{b.agent_collecteur.nom} {b.agent_collecteur.prenom}" if b.agent_collecteur else ""
+        ws.append(
+            [
+                b.pk,
+                b.matricule or "",
+                b.emplacement.nom_lieu if b.emplacement else "",
+                b.get_type_local_display(),
+                b.superficie_m2,
+                b.prix_location_mensuel,
+                b.prix_location_annuel or "",
+                contrib,
+                b.activite_vendue or "",
+                agent,
+                "Oui" if b.est_actif else "Non",
+                _format_excel_value(b.date_creation) if hasattr(b, "date_creation") else "",
+            ]
+        )
+    for idx in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(idx)].width = 18
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="boutiques_magasins.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_contributions(request):
+    """Export PDF des contributions (filtres type, annee, mois, agent_collecteur, date_du, date_au, q)."""
+    type_contribution = request.GET.get("type", "").strip()
+    annee = request.GET.get("annee", "").strip()
+    mois = request.GET.get("mois", "").strip()
+    agent_collecteur_id = request.GET.get("agent_collecteur", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    q = request.GET.get("q", "").strip()
+    cotisations = CotisationAnnuelle.objects.select_related(
+        "boutique__contribuable", "boutique__emplacement"
+    ).order_by("-annee", "-date_creation")
+    paiements = PaiementCotisation.objects.select_related(
+        "cotisation_annuelle__boutique__contribuable",
+        "encaisse_par_agent",
+    ).order_by("-date_paiement")
+    tickets = TicketMarche.objects.select_related(
+        "emplacement", "contribuable", "encaisse_par_agent"
+    ).order_by("-date", "-date_creation")
+    if type_contribution == "paiements":
+        cotisations = cotisations.none()
+        tickets = tickets.none()
+    elif type_contribution == "tickets":
+        cotisations = cotisations.none()
+        paiements = paiements.none()
+    elif type_contribution == "cotisations":
+        paiements = paiements.none()
+        tickets = tickets.none()
+    if annee:
+        try:
+            annee_int = int(annee)
+            cotisations = cotisations.filter(annee=annee_int)
+            paiements = paiements.filter(cotisation_annuelle__annee=annee_int)
+            tickets = tickets.filter(date__year=annee_int)
+        except ValueError:
+            pass
+    if mois:
+        try:
+            mois_int = int(mois)
+            if 1 <= mois_int <= 12:
+                paiements = paiements.filter(mois=mois_int)
+                tickets = tickets.filter(date__month=mois_int)
+        except ValueError:
+            pass
+    if agent_collecteur_id:
+        try:
+            agent_id = int(agent_collecteur_id)
+            paiements = paiements.filter(encaisse_par_agent_id=agent_id)
+            tickets = tickets.filter(encaisse_par_agent_id=agent_id)
+        except (ValueError, TypeError):
+            pass
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        paiements = paiements.filter(date_paiement__date__gte=date_du_parsed)
+        tickets = tickets.filter(date__gte=date_du_parsed)
+    if date_au_parsed:
+        paiements = paiements.filter(date_paiement__date__lte=date_au_parsed)
+        tickets = tickets.filter(date__lte=date_au_parsed)
+    if q:
+        cotisations = cotisations.filter(
+            Q(boutique__matricule__icontains=q)
+            | Q(boutique__contribuable__nom__icontains=q)
+            | Q(boutique__contribuable__prenom__icontains=q)
+        )
+        paiements = paiements.filter(
+            Q(cotisation_annuelle__boutique__matricule__icontains=q)
+            | Q(cotisation_annuelle__boutique__contribuable__nom__icontains=q)
+            | Q(cotisation_annuelle__boutique__contribuable__prenom__icontains=q)
+        )
+        tickets = tickets.filter(
+            Q(nom_vendeur__icontains=q)
+            | Q(contribuable__nom__icontains=q)
+            | Q(contribuable__prenom__icontains=q)
+        )
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="contributions.pdf"'
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+    story.append(Paragraph("Contributions / Taxes (marchés)", title_style))
+    parts_filtres = []
+    if type_contribution:
+        type_lib = {"cotisations": "Cotisations", "paiements": "Paiements", "tickets": "Tickets"}.get(
+            type_contribution, type_contribution
+        )
+        parts_filtres.append(f"Type: {type_lib}")
+    if annee:
+        parts_filtres.append(f"Année: {annee}")
+    if mois:
+        mois_noms = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+        try:
+            m = int(mois)
+            if 1 <= m <= 12:
+                parts_filtres.append(f"Mois: {mois_noms[m]}")
+        except ValueError:
+            parts_filtres.append(f"Mois: {mois}")
+    if agent_collecteur_id:
+        parts_filtres.append(f"Agent: {agent_collecteur_id}")
+    if date_du:
+        parts_filtres.append(f"Du: {date_du}")
+    if date_au:
+        parts_filtres.append(f"Au: {date_au}")
+    if q:
+        parts_filtres.append(f"Recherche: {q}")
+    if parts_filtres:
+        story.append(Paragraph(" | ".join(parts_filtres), styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+    data_cot, data_pay, data_tick = [[""]], [[""]], [[""]]
+    total_du_cot = total_paye_cot = total_reste_cot = Decimal("0")
+    total_recettes_pay = total_recettes_tick = Decimal("0")
+    if not type_contribution or type_contribution == "cotisations":
+        data_cot = [["Boutique", "Année", "Montant dû", "Montant payé", "Reste"]]
+        total_du_cot = Decimal("0")
+        total_paye_cot = Decimal("0")
+        total_reste_cot = Decimal("0")
+        for c in cotisations[:500]:
+            mp = c.montant_paye() if hasattr(c, "montant_paye") and callable(c.montant_paye) else Decimal("0")
+            try:
+                reste_val = c.montant_annuel_du - mp
+            except Exception:
+                reste_val = Decimal("0")
+            total_du_cot += c.montant_annuel_du
+            total_paye_cot += mp
+            total_reste_cot += reste_val
+            data_cot.append(
+                [
+                    (c.boutique.matricule if c.boutique else "")[:15],
+                    str(c.annee),
+                    str(c.montant_annuel_du),
+                    str(mp),
+                    str(reste_val),
+                ]
+            )
+        if len(data_cot) > 1:
+            data_cot.append(["TOTAL", "", str(total_du_cot), str(total_paye_cot), str(total_reste_cot)])
+            table_cot = Table(data_cot, colWidths=[3 * cm, 1.5 * cm, 3 * cm, 3 * cm, 3 * cm])
+            table_cot.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8),
+                        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                    ]
+                )
+            )
+            story.append(Paragraph("Cotisations annuelles", styles["Heading2"]))
+            story.append(table_cot)
+            story.append(Spacer(1, 0.3 * cm))
+    if not type_contribution or type_contribution == "paiements":
+        data_pay = [["Boutique", "Année", "Montant", "Date", "Agent"]]
+        total_recettes_pay = Decimal("0")
+        for p in paiements[:500]:
+            montant_val = Decimal(str(p.montant_paye)) if p.montant_paye is not None else Decimal("0")
+            total_recettes_pay += montant_val
+            data_pay.append(
+                [
+                    (p.cotisation_annuelle.boutique.matricule if p.cotisation_annuelle and p.cotisation_annuelle.boutique else "")[:15],
+                    str(getattr(p.cotisation_annuelle, "annee", "")),
+                    str(p.montant_paye),
+                    p.date_paiement.strftime("%d/%m/%Y") if hasattr(p.date_paiement, "strftime") else "",
+                    p.encaisse_par_agent.nom_complet if p.encaisse_par_agent else "—",
+                ]
+            )
+        if len(data_pay) > 1:
+            data_pay.append(["TOTAL RECETTES", "", str(total_recettes_pay), "", ""])
+            table_pay = Table(data_pay, colWidths=[3 * cm, 1.5 * cm, 3 * cm, 3 * cm, 5 * cm])
+            table_pay.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8),
+                        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                    ]
+                )
+            )
+            story.append(Paragraph("Paiements", styles["Heading2"]))
+            story.append(table_pay)
+            story.append(Spacer(1, 0.3 * cm))
+    if not type_contribution or type_contribution == "tickets":
+        data_tick = [["Emplacement", "Vendeur", "Montant", "Date", "Agent"]]
+        total_recettes_tick = Decimal("0")
+        for t in tickets[:500]:
+            montant_val = Decimal(str(t.montant)) if t.montant is not None else Decimal("0")
+            total_recettes_tick += montant_val
+            data_tick.append(
+                [
+                    (t.emplacement.nom_lieu if t.emplacement else "")[:15],
+                    (t.nom_vendeur or (t.contribuable.nom_complet if t.contribuable else ""))[:20],
+                    str(t.montant),
+                    t.date.strftime("%d/%m/%Y") if hasattr(t.date, "strftime") else "",
+                    t.encaisse_par_agent.nom_complet if t.encaisse_par_agent else "—",
+                ]
+            )
+        if len(data_tick) > 1:
+            data_tick.append(["TOTAL RECETTES (tickets marché)", "", str(total_recettes_tick), "", ""])
+            table_tick = Table(data_tick, colWidths=[4 * cm, 5 * cm, 3 * cm, 3 * cm, 5 * cm])
+            table_tick.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8),
+                        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                    ]
+                )
+            )
+            story.append(Paragraph("Tickets marché", styles["Heading2"]))
+            story.append(table_tick)
+    # Récapitulatif global des totaux
+    recap_parts = []
+    if (not type_contribution or type_contribution == "cotisations") and len(data_cot) > 1:
+        recap_parts.append(f"Cotisations: Dû {total_du_cot} | Payé {total_paye_cot} | Reste à payer {total_reste_cot} FCFA")
+    if (not type_contribution or type_contribution == "paiements") and len(data_pay) > 1:
+        recap_parts.append(f"Recettes paiements: {total_recettes_pay} FCFA")
+    if (not type_contribution or type_contribution == "tickets") and len(data_tick) > 1:
+        recap_parts.append(f"Recettes tickets: {total_recettes_tick} FCFA")
+    if recap_parts:
+        story.append(Spacer(1, 0.4 * cm))
+        recap_style = ParagraphStyle(
+            "Recap",
+            parent=styles["Normal"],
+            fontSize=11,
+            textColor=colors.HexColor("#006233"),
+            fontName="Helvetica-Bold",
+            spaceBefore=6,
+            spaceAfter=6,
+        )
+        story.append(Paragraph("RÉCAPITULATIF DES TOTAUX", recap_style))
+        for part in recap_parts:
+            story.append(Paragraph(f"• {part}", styles["Normal"]))
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_excel_contributions(request):
+    """Export Excel des contributions (filtres type, annee, mois, agent_collecteur, date_du, date_au, q)."""
+    type_contribution = request.GET.get("type", "").strip()
+    annee = request.GET.get("annee", "").strip()
+    mois = request.GET.get("mois", "").strip()
+    agent_collecteur_id = request.GET.get("agent_collecteur", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    q = request.GET.get("q", "").strip()
+    cotisations = CotisationAnnuelle.objects.select_related(
+        "boutique__contribuable", "boutique__emplacement"
+    ).order_by("-annee", "-date_creation")
+    paiements = PaiementCotisation.objects.select_related(
+        "cotisation_annuelle__boutique__contribuable",
+        "encaisse_par_agent",
+    ).order_by("-date_paiement")
+    tickets = TicketMarche.objects.select_related(
+        "emplacement", "contribuable", "encaisse_par_agent"
+    ).order_by("-date", "-date_creation")
+    if type_contribution == "paiements":
+        cotisations = cotisations.none()
+        tickets = tickets.none()
+    elif type_contribution == "tickets":
+        cotisations = cotisations.none()
+        paiements = paiements.none()
+    elif type_contribution == "cotisations":
+        paiements = paiements.none()
+        tickets = tickets.none()
+    if annee:
+        try:
+            annee_int = int(annee)
+            cotisations = cotisations.filter(annee=annee_int)
+            paiements = paiements.filter(cotisation_annuelle__annee=annee_int)
+            tickets = tickets.filter(date__year=annee_int)
+        except ValueError:
+            pass
+    if mois:
+        try:
+            mois_int = int(mois)
+            if 1 <= mois_int <= 12:
+                paiements = paiements.filter(mois=mois_int)
+                tickets = tickets.filter(date__month=mois_int)
+        except ValueError:
+            pass
+    if agent_collecteur_id:
+        try:
+            agent_id = int(agent_collecteur_id)
+            paiements = paiements.filter(encaisse_par_agent_id=agent_id)
+            tickets = tickets.filter(encaisse_par_agent_id=agent_id)
+        except (ValueError, TypeError):
+            pass
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        paiements = paiements.filter(date_paiement__date__gte=date_du_parsed)
+        tickets = tickets.filter(date__gte=date_du_parsed)
+    if date_au_parsed:
+        paiements = paiements.filter(date_paiement__date__lte=date_au_parsed)
+        tickets = tickets.filter(date__lte=date_au_parsed)
+    if q:
+        cotisations = cotisations.filter(
+            Q(boutique__matricule__icontains=q)
+            | Q(boutique__contribuable__nom__icontains=q)
+            | Q(boutique__contribuable__prenom__icontains=q)
+        )
+        paiements = paiements.filter(
+            Q(cotisation_annuelle__boutique__matricule__icontains=q)
+            | Q(cotisation_annuelle__boutique__contribuable__nom__icontains=q)
+            | Q(cotisation_annuelle__boutique__contribuable__prenom__icontains=q)
+        )
+        tickets = tickets.filter(
+            Q(nom_vendeur__icontains=q)
+            | Q(contribuable__nom__icontains=q)
+            | Q(contribuable__prenom__icontains=q)
+        )
+    wb = Workbook()
+    # Feuille Cotisations
+    ws_cot = wb.active
+    ws_cot.title = "Cotisations"
+    h_cot = ["Boutique", "Emplacement", "Contribuable", "Année", "Montant dû", "Montant payé", "Reste"]
+    ws_cot.append(h_cot)
+    _style_excel_header(ws_cot, 1)
+    for c in cotisations:
+        mp = c.montant_paye() if callable(c.montant_paye) else getattr(c, "montant_paye", 0)
+        reste = c.montant_annuel_du - mp
+        contrib = c.boutique.contribuable.nom_complet if c.boutique and c.boutique.contribuable else ""
+        ws_cot.append(
+            [
+                c.boutique.matricule if c.boutique else "",
+                c.boutique.emplacement.nom_lieu if c.boutique and c.boutique.emplacement else "",
+                contrib,
+                c.annee,
+                c.montant_annuel_du,
+                mp,
+                reste,
+            ]
+        )
+    # Feuille Paiements
+    ws_pay = wb.create_sheet("Paiements")
+    h_pay = ["Boutique", "Année", "Montant", "Date paiement", "Agent"]
+    ws_pay.append(h_pay)
+    _style_excel_header(ws_pay, 1)
+    for p in paiements:
+        ws_pay.append(
+            [
+                p.cotisation_annuelle.boutique.matricule if p.cotisation_annuelle and p.cotisation_annuelle.boutique else "",
+                getattr(p.cotisation_annuelle, "annee", ""),
+                p.montant_paye,
+                _format_excel_value(p.date_paiement),
+                p.encaisse_par_agent.nom_complet if p.encaisse_par_agent else "",
+            ]
+        )
+    # Feuille Tickets
+    ws_tick = wb.create_sheet("Tickets")
+    h_tick = ["Emplacement", "Vendeur", "Contribuable", "Montant", "Date", "Agent"]
+    ws_tick.append(h_tick)
+    _style_excel_header(ws_tick, 1)
+    for t in tickets:
+        ws_tick.append(
+            [
+                t.emplacement.nom_lieu if t.emplacement else "",
+                t.nom_vendeur or "",
+                t.contribuable.nom_complet if t.contribuable else "",
+                t.montant,
+                _format_excel_value(t.date),
+                t.encaisse_par_agent.nom_complet if t.encaisse_par_agent else "",
+            ]
+        )
+    for sheet in [ws_cot, ws_pay, ws_tick]:
+        for idx in range(1, 15):
+            sheet.column_dimensions[get_column_letter(idx)].width = 18
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="contributions.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_cotisations_acteurs_institutions(request):
+    """Export PDF des cotisations acteurs / institutions (filtres type, annee, mois, agent, date_du, date_au, q)."""
+    type_contribution = request.GET.get("type", "").strip()
+    annee = request.GET.get("annee", "").strip()
+    mois = request.GET.get("mois", "").strip()
+    agent_collecteur_id = request.GET.get("agent_collecteur", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    q = request.GET.get("q", "").strip()
+    cot_acteurs = CotisationAnnuelleActeur.objects.select_related("acteur").order_by("-annee", "-date_creation")
+    cot_inst = CotisationAnnuelleInstitution.objects.select_related("institution").order_by("-annee", "-date_creation")
+    paiements_acteurs = PaiementCotisationActeur.objects.select_related(
+        "cotisation_annuelle__acteur", "encaisse_par_agent"
+    ).order_by("-date_paiement")
+    paiements_inst = PaiementCotisationInstitution.objects.select_related(
+        "cotisation_annuelle__institution", "encaisse_par_agent"
+    ).order_by("-date_paiement")
+    if type_contribution == "institutions":
+        cot_acteurs = cot_acteurs.none()
+        paiements_acteurs = paiements_acteurs.none()
+    elif type_contribution == "acteurs":
+        cot_inst = cot_inst.none()
+        paiements_inst = paiements_inst.none()
+    if annee:
+        try:
+            annee_int = int(annee)
+            cot_acteurs = cot_acteurs.filter(annee=annee_int)
+            cot_inst = cot_inst.filter(annee=annee_int)
+            paiements_acteurs = paiements_acteurs.filter(cotisation_annuelle__annee=annee_int)
+            paiements_inst = paiements_inst.filter(cotisation_annuelle__annee=annee_int)
+        except ValueError:
+            pass
+    if mois:
+        try:
+            mois_int = int(mois)
+            if 1 <= mois_int <= 12:
+                paiements_acteurs = paiements_acteurs.filter(date_paiement__month=mois_int)
+                paiements_inst = paiements_inst.filter(date_paiement__month=mois_int)
+        except ValueError:
+            pass
+    if agent_collecteur_id:
+        try:
+            agent_id = int(agent_collecteur_id)
+            paiements_acteurs = paiements_acteurs.filter(encaisse_par_agent_id=agent_id)
+            paiements_inst = paiements_inst.filter(encaisse_par_agent_id=agent_id)
+        except (ValueError, TypeError):
+            pass
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        paiements_acteurs = paiements_acteurs.filter(date_paiement__date__gte=date_du_parsed)
+        paiements_inst = paiements_inst.filter(date_paiement__date__gte=date_du_parsed)
+    if date_au_parsed:
+        paiements_acteurs = paiements_acteurs.filter(date_paiement__date__lte=date_au_parsed)
+        paiements_inst = paiements_inst.filter(date_paiement__date__lte=date_au_parsed)
+    if q:
+        cot_acteurs = cot_acteurs.filter(
+            Q(acteur__raison_sociale__icontains=q)
+            | Q(acteur__sigle__icontains=q)
+            | Q(acteur__nom_responsable__icontains=q)
+        )
+        cot_inst = cot_inst.filter(
+            Q(institution__nom_institution__icontains=q)
+            | Q(institution__sigle__icontains=q)
+            | Q(institution__nom_responsable__icontains=q)
+        )
+        paiements_acteurs = paiements_acteurs.filter(
+            Q(cotisation_annuelle__acteur__raison_sociale__icontains=q)
+            | Q(cotisation_annuelle__acteur__sigle__icontains=q)
+        )
+        paiements_inst = paiements_inst.filter(
+            Q(cotisation_annuelle__institution__nom_institution__icontains=q)
+            | Q(cotisation_annuelle__institution__sigle__icontains=q)
+        )
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="cotisations_acteurs_institutions.pdf"'
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+    story.append(Paragraph("Cotisations Acteurs & Institutions", title_style))
+    parts_filtres = []
+    if type_contribution:
+        parts_filtres.append(f"Type: {'Acteurs économiques' if type_contribution == 'acteurs' else 'Institutions financières'}")
+    if annee:
+        parts_filtres.append(f"Année: {annee}")
+    if mois:
+        mois_noms = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+        try:
+            m = int(mois)
+            if 1 <= m <= 12:
+                parts_filtres.append(f"Mois: {mois_noms[m]}")
+        except ValueError:
+            parts_filtres.append(f"Mois: {mois}")
+    if agent_collecteur_id:
+        parts_filtres.append(f"Agent: {agent_collecteur_id}")
+    if date_du:
+        parts_filtres.append(f"Du: {date_du}")
+    if date_au:
+        parts_filtres.append(f"Au: {date_au}")
+    if q:
+        parts_filtres.append(f"Recherche: {q}")
+    if parts_filtres:
+        story.append(Paragraph(" | ".join(parts_filtres), styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+    if not type_contribution or type_contribution == "acteurs":
+        data_act = [["Acteur", "Montant dû", "Montant payé", "Reste"]]
+        total_du_act = total_paye_act = total_reste_act = Decimal("0")
+        for c in cot_acteurs[:500]:
+            mp = c.montant_paye() if callable(c.montant_paye) else Decimal("0")
+            reste = c.montant_annuel_du - mp
+            total_du_act += c.montant_annuel_du
+            total_paye_act += mp
+            total_reste_act += reste
+            data_act.append(
+                [
+                    (c.acteur.raison_sociale if c.acteur else "")[:30],
+                    str(c.montant_annuel_du),
+                    str(mp),
+                    str(reste),
+                ]
+            )
+        if len(data_act) > 1:
+            data_act.append(["TOTAL", str(total_du_act), str(total_paye_act), str(total_reste_act)])
+            table_act = Table(data_act, colWidths=[8 * cm, 3 * cm, 3 * cm, 3 * cm])
+            table_act.setStyle(
+                TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                ])
+            )
+            story.append(Paragraph("Acteurs économiques", styles["Heading2"]))
+            story.append(table_act)
+            story.append(Spacer(1, 0.3 * cm))
+    if not type_contribution or type_contribution == "institutions":
+        data_inst = [["Institution", "Montant dû", "Montant payé", "Reste"]]
+        total_du_inst = total_paye_inst = total_reste_inst = Decimal("0")
+        for c in cot_inst[:500]:
+            mp = c.montant_paye() if callable(c.montant_paye) else Decimal("0")
+            reste = c.montant_annuel_du - mp
+            total_du_inst += c.montant_annuel_du
+            total_paye_inst += mp
+            total_reste_inst += reste
+            data_inst.append(
+                [
+                    (c.institution.nom_institution if c.institution else "")[:30],
+                    str(c.montant_annuel_du),
+                    str(mp),
+                    str(reste),
+                ]
+            )
+        if len(data_inst) > 1:
+            data_inst.append(["TOTAL", str(total_du_inst), str(total_paye_inst), str(total_reste_inst)])
+            table_inst = Table(data_inst, colWidths=[8 * cm, 3 * cm, 3 * cm, 3 * cm])
+            table_inst.setStyle(
+                TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                ])
+            )
+            story.append(Paragraph("Institutions financières", styles["Heading2"]))
+            story.append(table_inst)
+    # Paiements acteurs
+    if not type_contribution or type_contribution == "acteurs":
+        agg_pay_act = paiements_acteurs.aggregate(total=Sum("montant_paye"))
+        total_recettes_pay_act = agg_pay_act.get("total") or Decimal("0")
+        data_pay_act = [["Acteur", "Année", "Montant", "Date paiement", "Agent"]]
+        for p in paiements_acteurs[:300]:
+            data_pay_act.append(
+                [
+                    (p.cotisation_annuelle.acteur.raison_sociale if p.cotisation_annuelle and p.cotisation_annuelle.acteur else "")[:25],
+                    str(getattr(p.cotisation_annuelle, "annee", "")),
+                    str(p.montant_paye),
+                    p.date_paiement.strftime("%d/%m/%Y") if hasattr(p.date_paiement, "strftime") else "",
+                    (p.encaisse_par_agent.nom_complet or "—")[:20] if p.encaisse_par_agent else "—",
+                ]
+            )
+        if len(data_pay_act) > 1:
+            data_pay_act.append(["TOTAL RECETTES", "", str(total_recettes_pay_act), "", ""])
+            story.append(Paragraph("Paiements Acteurs économiques", styles["Heading2"]))
+            table_pay_act = Table(data_pay_act, colWidths=[5 * cm, 1.5 * cm, 2.5 * cm, 2.5 * cm, 4 * cm])
+            table_pay_act.setStyle(
+                TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                ])
+            )
+            story.append(table_pay_act)
+            story.append(Spacer(1, 0.3 * cm))
+    # Paiements institutions
+    if not type_contribution or type_contribution == "institutions":
+        agg_pay_inst = paiements_inst.aggregate(total=Sum("montant_paye"))
+        total_recettes_pay_inst = agg_pay_inst.get("total") or Decimal("0")
+        data_pay_inst = [["Institution", "Année", "Montant", "Date paiement", "Agent"]]
+        for p in paiements_inst[:300]:
+            data_pay_inst.append(
+                [
+                    (p.cotisation_annuelle.institution.nom_institution if p.cotisation_annuelle and p.cotisation_annuelle.institution else "")[:25],
+                    str(getattr(p.cotisation_annuelle, "annee", "")),
+                    str(p.montant_paye),
+                    p.date_paiement.strftime("%d/%m/%Y") if hasattr(p.date_paiement, "strftime") else "",
+                    (p.encaisse_par_agent.nom_complet or "—")[:20] if p.encaisse_par_agent else "—",
+                ]
+            )
+        if len(data_pay_inst) > 1:
+            data_pay_inst.append(["TOTAL RECETTES", "", str(total_recettes_pay_inst), "", ""])
+            story.append(Paragraph("Paiements Institutions financières", styles["Heading2"]))
+            table_pay_inst = Table(data_pay_inst, colWidths=[5 * cm, 1.5 * cm, 2.5 * cm, 2.5 * cm, 4 * cm])
+            table_pay_inst.setStyle(
+                TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                ])
+            )
+            story.append(table_pay_inst)
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_excel_cotisations_acteurs_institutions(request):
+    """Export Excel des cotisations acteurs / institutions (filtres type, annee, mois, agent, date_du, date_au, q)."""
+    type_contribution = request.GET.get("type", "").strip()
+    annee = request.GET.get("annee", "").strip()
+    mois = request.GET.get("mois", "").strip()
+    agent_collecteur_id = request.GET.get("agent_collecteur", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    q = request.GET.get("q", "").strip()
+    cot_acteurs = CotisationAnnuelleActeur.objects.select_related("acteur").order_by("-annee", "-date_creation")
+    cot_inst = CotisationAnnuelleInstitution.objects.select_related("institution").order_by("-annee", "-date_creation")
+    paiements_acteurs = PaiementCotisationActeur.objects.select_related(
+        "cotisation_annuelle__acteur", "encaisse_par_agent"
+    ).order_by("-date_paiement")
+    paiements_inst = PaiementCotisationInstitution.objects.select_related(
+        "cotisation_annuelle__institution", "encaisse_par_agent"
+    ).order_by("-date_paiement")
+    if type_contribution == "institutions":
+        cot_acteurs = cot_acteurs.none()
+        paiements_acteurs = paiements_acteurs.none()
+    elif type_contribution == "acteurs":
+        cot_inst = cot_inst.none()
+        paiements_inst = paiements_inst.none()
+    if annee:
+        try:
+            annee_int = int(annee)
+            cot_acteurs = cot_acteurs.filter(annee=annee_int)
+            cot_inst = cot_inst.filter(annee=annee_int)
+            paiements_acteurs = paiements_acteurs.filter(cotisation_annuelle__annee=annee_int)
+            paiements_inst = paiements_inst.filter(cotisation_annuelle__annee=annee_int)
+        except ValueError:
+            pass
+    if mois:
+        try:
+            mois_int = int(mois)
+            if 1 <= mois_int <= 12:
+                paiements_acteurs = paiements_acteurs.filter(date_paiement__month=mois_int)
+                paiements_inst = paiements_inst.filter(date_paiement__month=mois_int)
+        except ValueError:
+            pass
+    if agent_collecteur_id:
+        try:
+            agent_id = int(agent_collecteur_id)
+            paiements_acteurs = paiements_acteurs.filter(encaisse_par_agent_id=agent_id)
+            paiements_inst = paiements_inst.filter(encaisse_par_agent_id=agent_id)
+        except (ValueError, TypeError):
+            pass
+    date_du_parsed = _parse_date(date_du)
+    date_au_parsed = _parse_date(date_au)
+    if date_du_parsed:
+        paiements_acteurs = paiements_acteurs.filter(date_paiement__date__gte=date_du_parsed)
+        paiements_inst = paiements_inst.filter(date_paiement__date__gte=date_du_parsed)
+    if date_au_parsed:
+        paiements_acteurs = paiements_acteurs.filter(date_paiement__date__lte=date_au_parsed)
+        paiements_inst = paiements_inst.filter(date_paiement__date__lte=date_au_parsed)
+    if q:
+        cot_acteurs = cot_acteurs.filter(
+            Q(acteur__raison_sociale__icontains=q)
+            | Q(acteur__sigle__icontains=q)
+            | Q(acteur__nom_responsable__icontains=q)
+        )
+        cot_inst = cot_inst.filter(
+            Q(institution__nom_institution__icontains=q)
+            | Q(institution__sigle__icontains=q)
+            | Q(institution__nom_responsable__icontains=q)
+        )
+        paiements_acteurs = paiements_acteurs.filter(
+            Q(cotisation_annuelle__acteur__raison_sociale__icontains=q)
+            | Q(cotisation_annuelle__acteur__sigle__icontains=q)
+        )
+        paiements_inst = paiements_inst.filter(
+            Q(cotisation_annuelle__institution__nom_institution__icontains=q)
+            | Q(cotisation_annuelle__institution__sigle__icontains=q)
+        )
+    wb = Workbook()
+    ws_act = wb.active
+    ws_act.title = "Cotisations Acteurs"
+    h_act = ["Acteur", "Sigle", "Année", "Montant dû", "Montant payé", "Reste"]
+    ws_act.append(h_act)
+    _style_excel_header(ws_act, 1)
+    for c in cot_acteurs:
+        mp = c.montant_paye() if callable(c.montant_paye) else Decimal("0")
+        reste = c.montant_annuel_du - mp
+        ws_act.append(
+            [
+                c.acteur.raison_sociale if c.acteur else "",
+                c.acteur.sigle if c.acteur else "",
+                c.annee,
+                c.montant_annuel_du,
+                mp,
+                reste,
+            ]
+        )
+    ws_inst = wb.create_sheet("Cotisations Institutions")
+    h_inst = ["Institution", "Sigle", "Année", "Montant dû", "Montant payé", "Reste"]
+    ws_inst.append(h_inst)
+    _style_excel_header(ws_inst, 1)
+    for c in cot_inst:
+        mp = c.montant_paye() if callable(c.montant_paye) else Decimal("0")
+        reste = c.montant_annuel_du - mp
+        ws_inst.append(
+            [
+                c.institution.nom_institution if c.institution else "",
+                c.institution.sigle if c.institution else "",
+                c.annee,
+                c.montant_annuel_du,
+                mp,
+                reste,
+            ]
+        )
+    ws_pay_act = wb.create_sheet("Paiements Acteurs")
+    h_pay_act = ["Acteur", "Année", "Montant", "Date paiement", "Agent"]
+    ws_pay_act.append(h_pay_act)
+    _style_excel_header(ws_pay_act, 1)
+    for p in paiements_acteurs:
+        ws_pay_act.append(
+            [
+                p.cotisation_annuelle.acteur.raison_sociale if p.cotisation_annuelle and p.cotisation_annuelle.acteur else "",
+                getattr(p.cotisation_annuelle, "annee", ""),
+                p.montant_paye,
+                _format_excel_value(p.date_paiement),
+                p.encaisse_par_agent.nom_complet if p.encaisse_par_agent else "",
+            ]
+        )
+    ws_pay_inst = wb.create_sheet("Paiements Institutions")
+    h_pay_inst = ["Institution", "Année", "Montant", "Date paiement", "Agent"]
+    ws_pay_inst.append(h_pay_inst)
+    _style_excel_header(ws_pay_inst, 1)
+    for p in paiements_inst:
+        ws_pay_inst.append(
+            [
+                p.cotisation_annuelle.institution.nom_institution if p.cotisation_annuelle and p.cotisation_annuelle.institution else "",
+                getattr(p.cotisation_annuelle, "annee", ""),
+                p.montant_paye,
+                _format_excel_value(p.date_paiement),
+                p.encaisse_par_agent.nom_complet if p.encaisse_par_agent else "",
+            ]
+        )
+    for sheet in [ws_act, ws_inst, ws_pay_act, ws_pay_inst]:
+        for idx in range(1, 10):
+            sheet.column_dimensions[get_column_letter(idx)].width = 20
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="cotisations_acteurs_institutions.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
 def export_excel_candidatures(request):
     """Exporte toutes les candidatures en Excel avec tous les champs."""
     candidatures = Candidature.objects.all().select_related('appel_offre', 'candidat').order_by('-date_soumission')
@@ -2226,7 +5874,7 @@ def export_pdf_entreprises(request):
             pass
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="entreprises_valides.pdf"'
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle("Title", parent=styles["Heading1"], fontSize=16, textColor=colors.HexColor("#006233"), alignment=1, spaceAfter=12)
@@ -2256,25 +5904,7 @@ def export_pdf_entreprises(request):
     story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
     
     def on_page(c, d):
-        width, height = d.pagesize
-        y = height - 40
-        c.saveState()
-        c.translate(width/2, height/2)
-        c.rotate(45)
-        c.setFont("Helvetica-Bold", 36)
-        c.setFillColorRGB(0.9, 0.9, 0.9)
-        c.drawCentredString(0, 0, (conf.nom_commune if conf else "Mairie de Kloto 1").upper())
-        c.restoreState()
-        if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
-            try:
-                c.drawImage(conf.logo.path, 40, y-30, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            except Exception:
-                pass
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(100, y, f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}")
-        
-        c.setFont("Helvetica", 9)
-        c.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+        _draw_pdf_header(c, d, conf)
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
@@ -2308,7 +5938,7 @@ def export_pdf_institutions(request):
 
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="institutions_financieres_valides.pdf"'
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
@@ -2358,41 +5988,7 @@ def export_pdf_institutions(request):
     )
 
     def on_page(c, d):
-        width, height = d.pagesize
-        y = height - 40
-        c.saveState()
-        c.translate(width / 2, height / 2)
-        c.rotate(45)
-        c.setFont("Helvetica-Bold", 36)
-        c.setFillColorRGB(0.9, 0.9, 0.9)
-        c.drawCentredString(
-            0,
-            0,
-            (conf.nom_commune if conf else "Mairie de Kloto 1").upper(),
-        )
-        c.restoreState()
-        if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
-            try:
-                c.drawImage(
-                    conf.logo.path,
-                    40,
-                    y - 30,
-                    width=40,
-                    height=40,
-                    preserveAspectRatio=True,
-                    mask="auto",
-                )
-            except Exception:
-                pass
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(
-            100,
-            y,
-            f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}",
-        )
-
-        c.setFont("Helvetica", 9)
-        c.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+        _draw_pdf_header(c, d, conf)
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
@@ -2424,7 +6020,7 @@ def export_pdf_diaspora(request):
             pass
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="diaspora_valides.pdf"'
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle("Title", parent=styles["Heading1"], fontSize=16, textColor=colors.HexColor("#006233"), alignment=1, spaceAfter=12)
@@ -2457,25 +6053,7 @@ def export_pdf_diaspora(request):
     story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
     
     def on_page(c, d):
-        width, height = d.pagesize
-        y = height - 40
-        c.saveState()
-        c.translate(width/2, height/2)
-        c.rotate(45)
-        c.setFont("Helvetica-Bold", 36)
-        c.setFillColorRGB(0.9, 0.9, 0.9)
-        c.drawCentredString(0, 0, (conf.nom_commune if conf else "Mairie de Kloto 1").upper())
-        c.restoreState()
-        if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
-            try:
-                c.drawImage(conf.logo.path, 40, y-30, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            except Exception:
-                pass
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(100, y, f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}")
-        
-        c.setFont("Helvetica", 9)
-        c.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+        _draw_pdf_header(c, d, conf)
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
@@ -3162,7 +6740,7 @@ def export_pdf_jeunes(request):
             pass
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="jeunes_demandeurs_valides.pdf"'
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle("Title", parent=styles["Heading1"], fontSize=16, textColor=colors.HexColor("#006233"), alignment=1, spaceAfter=12)
@@ -3194,25 +6772,7 @@ def export_pdf_jeunes(request):
     story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
     
     def on_page(c, d):
-        width, height = d.pagesize
-        y = height - 40
-        c.saveState()
-        c.translate(width/2, height/2)
-        c.rotate(45)
-        c.setFont("Helvetica-Bold", 36)
-        c.setFillColorRGB(0.9, 0.9, 0.9)
-        c.drawCentredString(0, 0, (conf.nom_commune if conf else "Mairie de Kloto 1").upper())
-        c.restoreState()
-        if conf and getattr(conf, "logo", None) and getattr(conf.logo, "path", None):
-            try:
-                c.drawImage(conf.logo.path, 40, y-30, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            except Exception:
-                pass
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(100, y, f"République Togolaise – {conf.nom_commune if conf else 'Mairie de Kloto 1'}")
-        
-        c.setFont("Helvetica", 9)
-        c.drawString(40, 30, timezone.now().strftime("Édité le %d/%m/%Y %H:%M"))
+        _draw_pdf_header(c, d, conf)
 
     doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
@@ -3244,7 +6804,7 @@ def export_pdf_diaspora(request):
             pass
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="diaspora_valides.pdf"'
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle("Title", parent=styles["Heading1"], fontSize=16, textColor=colors.HexColor("#006233"), alignment=1, spaceAfter=12)
@@ -3982,7 +7542,7 @@ def export_pdf_retraites(request):
             pass
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="retraites_actifs_valides.pdf"'
-    doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+    doc = SimpleDocTemplate(response, pagesize=landscape(A4), topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle("Title", parent=styles["Heading1"], fontSize=16, textColor=colors.HexColor("#006233"), alignment=1, spaceAfter=12)

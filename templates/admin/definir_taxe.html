@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre }} - Tableau de Bord</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+        .topbar {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 0.85rem 1.25rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .topbar-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .topbar-brand { font-size: 1.1rem; font-weight: 600; }
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .back-link:hover { opacity: 1; text-decoration: underline; }
+        .container { max-width: 700px; margin: 0 auto; padding: 2rem; }
+        .page-header {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .page-header h2 { color: var(--primary); margin-bottom: 0.5rem; }
+        .page-header p { color: #666; font-size: 0.95rem; }
+        .section {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section h3 { color: var(--primary); margin-bottom: 1rem; font-size: 1rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.4rem; color: #333; }
+        .form-control {
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .btn-primary:hover { background: #004d28; }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 999px;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-right: 0.5rem;
+        }
+        .btn-secondary:hover { color: white; background: #5a6268; }
+        .montant { font-weight: 600; color: var(--primary); }
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th, td { padding: 0.6rem; text-align: left; font-size: 0.9rem; border-bottom: 1px solid #eee; }
+        th { background: var(--light); color: #333; }
+        .msg { 
+            padding: 0.75rem 1rem; 
+            border-radius: 6px; 
+            margin-bottom: 1rem;
+            animation: slideDownMessage 0.3s ease-out;
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+        }
+        .msg-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .msg-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        @keyframes slideDownMessage {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .msg.fade-out {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <div class="topbar-brand">{{ titre }}</div>
+            <a href="{% url 'liste_cotisations_acteurs_institutions' %}" class="back-link">← Retour aux cotisations</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>{% if type_entite == 'acteur' %}🏢 {{ acteur.raison_sociale }}{% else %}🏦 {{ institution.nom_institution }}{% endif %}</h2>
+            <p>Définir ou modifier le montant annuel dû (taxe) pour une année donnée. La mairie fixe ce montant pour chaque entreprise ou institution.</p>
+        </div>
+
+        <!-- Zone pour les messages dynamiques -->
+        <div class="section" id="messages-section" style="display: none;"></div>
+
+        <div class="section">
+            <h3>💰 Définir la taxe</h3>
+            <form method="post" action="" id="taxe-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="annee">Année</label>
+                    <select name="annee" id="annee" class="form-control" required>
+                        <option value="">-- Choisir l'année --</option>
+                        {% for an in annees_possibles %}
+                        <option value="{{ an }}" {% if annee_preselect and an == annee_preselect %}selected{% elif not annee_preselect and an == annee_courante %}selected{% endif %}>{{ an }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="montant">Montant annuel dû (FCFA)</label>
+                    <input type="number" name="montant" id="montant" class="form-control" min="0" step="1" placeholder="Ex: 150000" required>
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button type="submit" class="btn-primary">Enregistrer la taxe</button>
+                    <a href="{% url 'liste_cotisations_acteurs_institutions' %}" class="btn-secondary">Annuler</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="section">
+            <h3>📋 Taxes déjà définies</h3>
+            {% if cotisations_existantes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Montant dû</th>
+                        <th>Montant payé</th>
+                        <th>Reste à payer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cot in cotisations_existantes %}
+                    <tr data-annee="{{ cot.annee }}">
+                        <td class="montant">{{ cot.montant_annuel_du|floatformat:0 }} FCFA</td>
+                        <td class="montant">{{ cot.montant_paye|floatformat:0 }} FCFA</td>
+                        <td class="montant">
+                            {% with reste=cot.reste_a_payer %}
+                            {% if reste > 0 %}{{ reste|floatformat:0 }} FCFA{% else %}0 FCFA (payé){% endif %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p style="margin-top: 0.75rem; color: #666; font-size: 0.9rem;">Pour modifier une année, sélectionnez-la ci-dessus et saisissez le nouveau montant.</p>
+            {% else %}
+            <p style="color: #888;">Aucune taxe définie pour le moment. Utilisez le formulaire ci-dessus pour en ajouter.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('taxe-form');
+            const messagesSection = document.getElementById('messages-section');
+            const anneeSelect = document.getElementById('annee');
+            const montantInput = document.getElementById('montant');
+            
+            // Vérifier s'il y a des messages Django (erreurs uniquement - on ignore les messages de succès)
+            // Les messages de succès sont affichés uniquement au clic sur le bouton
+            {% if messages %}
+            {% for message in messages %}
+            {% if message.tags == 'error' %}
+            // Afficher uniquement les erreurs Django
+            if (messagesSection) {
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'msg msg-error';
+                errorMsg.textContent = '{{ message|escapejs }}';
+                messagesSection.appendChild(errorMsg);
+                messagesSection.style.display = 'block';
+                // Faire disparaître après 5 secondes aussi
+                setTimeout(function() {
+                    fadeOutMessage(errorMsg);
+                }, 5000);
+            }
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+
+            // Intercepter la soumission du formulaire
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Valider que les champs sont remplis
+                    if (!anneeSelect.value || !montantInput.value) {
+                        return; // Laisser la validation HTML native se faire
+                    }
+
+                    // Afficher le message de confirmation immédiatement
+                    const annee = anneeSelect.options[anneeSelect.selectedIndex].text;
+                    const montant = parseFloat(montantInput.value).toLocaleString('fr-FR');
+                    const nomEntite = '{% if type_entite == "acteur" %}{{ acteur.raison_sociale|escapejs }}{% else %}{{ institution.nom_institution|escapejs }}{% endif %}';
+                    
+                    // Vérifier si une cotisation existe déjà pour cette année (attribut data-annee sur la ligne)
+                    const anneeValue = parseInt(anneeSelect.value);
+                    const tableRows = document.querySelectorAll('table tbody tr[data-annee]');
+                    let isUpdate = false;
+                    tableRows.forEach(function(row) {
+                        if (parseInt(row.getAttribute('data-annee')) === anneeValue) {
+                            isUpdate = true;
+                        }
+                    });
+                    
+                    let messageText;
+                    if (isUpdate) {
+                        messageText = 'Taxe ' + annee + ' mise à jour pour ' + nomEntite + ': ' + montant + ' FCFA.';
+                    } else {
+                        messageText = 'Taxe ' + annee + ' définie pour ' + nomEntite + ': ' + montant + ' FCFA.';
+                    }
+
+                    // Créer et afficher le message
+                    showSuccessMessage(messageText);
+                    
+                    // Le formulaire se soumet normalement après
+                });
+            }
+        });
+
+        function showSuccessMessage(text) {
+            const messagesSection = document.getElementById('messages-section');
+            if (!messagesSection) return;
+
+            // Nettoyer les anciens messages
+            messagesSection.innerHTML = '';
+            
+            // Créer le nouveau message
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'msg msg-success';
+            messageDiv.textContent = text;
+            messagesSection.appendChild(messageDiv);
+            
+            // Afficher la section
+            messagesSection.style.display = 'block';
+            
+            // Faire disparaître après 5 secondes
+            setTimeout(function() {
+                fadeOutMessage(messageDiv);
+            }, 5000);
+        }
+
+        function fadeOutMessage(messageElement) {
+            if (messageElement && messageElement.parentNode) {
+                messageElement.classList.add('fade-out');
+                setTimeout(function() {
+                    if (messageElement.parentNode) {
+                        messageElement.remove();
+                        // Si c'était le dernier message dans la section, masquer la section
+                        const messagesSection = document.getElementById('messages-section');
+                        if (messagesSection && messagesSection.querySelectorAll('.msg').length === 0) {
+                            messagesSection.style.display = 'none';
+                        }
+                    }
+                }, 400);
+            }
+        }
+    </script>
+</body>
+</html>

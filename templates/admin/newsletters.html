@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletters - Tableau de Bord</title>
+    <style>
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            margin: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1.2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.6rem;
+        }
+        .header-actions a {
+            color: var(--white);
+            text-decoration: none;
+            margin-left: 1rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+        }
+        .header-actions a:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 1.5rem auto;
+            background: var(--white);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .top-bar-info {
+            font-size: 0.95rem;
+        }
+        .btn-newsletter {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1.1rem;
+            border-radius: 20px;
+            border: none;
+            background: var(--secondary);
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+        }
+        .btn-newsletter:hover {
+            background: #e6b800;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+        thead {
+            background: var(--primary);
+            color: var(--white);
+        }
+        th, td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+        }
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .badge-muted {
+            background: #e5e7eb;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📨 Newsletters - Inscriptions</h1>
+        <div class="header-actions">
+            <a href="{% url 'tableau_bord' %}">← Retour au tableau de bord</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="top-bar">
+            <div class="top-bar-info">
+                <div><strong>Total abonnés :</strong> {{ abonnements|length }}</div>
+                <div><strong>Actifs :</strong> {{ emails_actifs|length }}</div>
+                <div><strong>Email mairie :</strong> {{ mairie_email }}</div>
+            </div>
+            {% if emails_actifs %}
+                <a
+                    class="btn-newsletter"
+                    href="mailto:{{ mairie_email }}?subject={{ 'Newsletter Mairie Kloto 1'|urlencode }}&bcc={{ bcc_emails|urlencode }}"
+                >
+                    ✉️ Envoyer une newsletter
+                </a>
+            {% endif %}
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Statut</th>
+                    <th>Source</th>
+                    <th>Date d'inscription</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for abo in abonnements %}
+                    <tr>
+                        <td>{{ abo.email }}</td>
+                        <td>
+                            {% if abo.est_actif %}
+                                <span class="badge badge-success">Actif</span>
+                            {% else %}
+                                <span class="badge badge-muted">Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ abo.source|default:"-" }}</td>
+                        <td>{{ abo.date_inscription|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">Aucun abonné à la newsletter pour le moment.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+

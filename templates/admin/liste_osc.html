@@ -1,0 +1,433 @@
+{% load osc_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre }} - Tableau de Bord</title>
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% endif %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+        }
+
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            opacity: 0.9;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-header h2 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            margin: 0.2rem 0;
+        }
+
+        .badge-total {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 999px;
+            background: var(--light);
+            font-size: 0.9rem;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-control {
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 98, 51, 0.2);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            align-self: flex-end;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #004d28;
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            display: inline-block;
+            align-self: flex-end;
+        }
+
+        .btn-reset:hover {
+            background: #5a6268;
+        }
+
+        .btn-export {
+            background: #17a2b8;
+        }
+
+        .btn-export:hover {
+            background: #138496;
+        }
+
+        .table-container {
+            background: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 1.5rem;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+
+        thead {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--light);
+            vertical-align: top;
+        }
+
+        tbody tr:hover {
+            background: var(--light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-valide {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-en-attente {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .osc-contact {
+            line-height: 1.4;
+        }
+
+        .osc-muted {
+            color: #888;
+            font-style: italic;
+        }
+
+        .btn-action {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--white);
+            transition: transform 0.2s;
+            margin: 0 2px;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-accept {
+            background-color: var(--primary);
+        }
+
+        .btn-reject {
+            background-color: var(--accent);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--dark);
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>{{ titre }}</h1>
+            <div>
+                <a href="{% url 'tableau_bord' %}" class="back-link">← Retour au tableau de bord</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>{{ titre }}</h2>
+            <p>
+                <span class="badge-total">Total : {{ osc_list.count }} organisation(s)</span>
+            </p>
+
+            <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end;">
+                <form method="get" action="{% url 'export_pdf_osc' %}" style="display:inline-flex; gap:0.5rem; align-items:flex-end; flex-wrap:wrap;">
+                    <div class="form-group" style="margin:0;">
+                        <label for="pdf-type">Type d'OSC</label>
+                        <select name="type" id="pdf-type" class="form-control" style="min-width:180px;">
+                            <option value="">Tous les types</option>
+                            {% for value, label in type_choices %}
+                            <option value="{{ value }}" {% if current_filters.type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="pdf-start">Début</label>
+                        <input type="date" name="start" id="pdf-start" class="form-control" placeholder="Début">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="pdf-end">Fin</label>
+                        <input type="date" name="end" id="pdf-end" class="form-control" placeholder="Fin">
+                    </div>
+                    <button type="submit" class="btn-primary btn-export" style="padding:0.5rem 1rem;">
+                        📄 Télécharger PDF des OSC validées
+                    </button>
+                </form>
+                <form method="get" action="{% url 'export_excel_osc' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="q" value="{{ current_filters.q }}">
+                    <input type="hidden" name="type" value="{{ current_filters.type }}">
+                    <button type="submit" class="btn-primary btn-export" style="padding:0.5rem 1rem;">
+                        📊 Exporter en Excel
+                    </button>
+                </form>
+            </div>
+
+            <form method="get" class="search-form">
+                <div class="form-group">
+                    <label for="search">Recherche</label>
+                    <input type="text" name="q" id="search" class="form-control" placeholder="Nom, sigle, email, téléphone..." value="{{ current_filters.q }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="type">Type d'OSC</label>
+                    <select name="type" id="type" class="form-control">
+                        <option value="">Tous les types</option>
+                        {% for value, label in type_choices %}
+                        <option value="{{ value }}" {% if current_filters.type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary">Filtrer</button>
+                <a href="{% url 'liste_osc_tableau_bord' %}" class="btn-reset">Réinitialiser</a>
+            </form>
+        </div>
+
+        <div class="table-container">
+            {% if osc_list %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom de l'OSC</th>
+                        <th>Sigle</th>
+                        <th>Type</th>
+                        <th>Contact</th>
+                        <th>Adresse</th>
+                        <th>Date d'enregistrement</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for osc in osc_list %}
+                    <tr>
+                        <td><strong>{{ osc.nom_osc }}</strong></td>
+                        <td>{{ osc.sigle }}</td>
+                        <td>{{ osc.type_osc|osc_type_display }}</td>
+                        <td>
+                            <div class="osc-contact">
+                                {% if osc.telephone %}
+                                    <div>📞 {{ osc.telephone }}</div>
+                                {% endif %}
+                                {% if osc.email %}
+                                    <div>✉️ {{ osc.email }}</div>
+                                {% endif %}
+                                {% if not osc.telephone and not osc.email %}
+                                    <span class="osc-muted">Aucun contact renseigné</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if osc.adresse %}
+                                {{ osc.adresse|linebreaksbr }}
+                            {% else %}
+                                <span class="osc-muted">Non renseignée</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ osc.date_enregistrement|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if osc.est_valide_par_mairie %}
+                                <span class="badge badge-valide">Validée</span>
+                            {% else %}
+                                <span class="badge badge-en-attente">En attente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex;">
+                                <form method="post" action="{% url 'changer_statut' 'osc' osc.pk 'accepter' %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="redirect_to" value="{% url 'liste_osc_tableau_bord' %}">
+                                    <button type="submit" class="btn-action btn-accept" title="Valider">✓</button>
+                                </form>
+                                <form method="post" action="{% url 'changer_statut' 'osc' osc.pk 'refuser' %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="redirect_to" value="{% url 'liste_osc_tableau_bord' %}">
+                                    <button type="submit" class="btn-action btn-reject" title="Refuser">✗</button>
+                                </form>
+                                <a href="{% url 'export_pdf_osc_detail' osc.pk %}" class="btn-action btn-pdf" title="Générer PDF">📄</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <p>Aucune organisation de la société civile enregistrée pour le moment.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+

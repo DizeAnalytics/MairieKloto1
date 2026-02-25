@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulaire d’Enregistrement des OSC</title>
+  <style>
+    :root {
+      --primary: #1565c0;
+      --success: #2e7d32;
+      --danger: #c62828;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --border: #dcdfe3;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+      background: var(--bg);
+    }
+
+    form {
+      background: var(--card);
+      padding: 25px 30px;
+      border-radius: 12px;
+      max-width: 950px;
+      margin: auto;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      border: 1px solid var(--border);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: var(--primary);
+      text-align: center;
+    }
+
+    h3 {
+      margin-top: 25px;
+      color: #333;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 5px;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 10px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      transition: 0.2s;
+      box-sizing: border-box;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(21,101,192,0.15);
+    }
+
+    textarea { resize: vertical; }
+
+    .row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .row > div { flex: 1; }
+
+    .member, .sector {
+      background: #f9fafb;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    button {
+      margin-top: 12px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .add-btn {
+      background: var(--success);
+      color: white;
+    }
+
+    .add-btn:hover { background: #256b2a; }
+
+    .remove-btn {
+      background: var(--danger);
+      color: white;
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .remove-btn:hover { background: #a61b1b; }
+
+    .submit-btn {
+      background: var(--primary);
+      color: white;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 25px;
+      padding: 12px;
+    }
+
+    .submit-btn:hover { background: #0d47a1; }
+  </style>
+</head>
+<body>
+
+<form>
+  <h2>Formulaire d’Enregistrement des OSC</h2>
+
+  <label>Nom de l’OSC</label>
+  <input type="text" name="nom_osc" required>
+
+  <label>Sigle</label>
+  <input type="text" name="sigle">
+
+  <label>Type d’OSC</label>
+  <select name="type">
+    <optgroup label="Structures de base">
+      <option>CDQ (Comité de Développement de Quartier)</option>
+      <option>CVD (Comité Villageois de Développement)</option>
+      <option>Chefferie traditionnelle</option>
+      <option>Organisation religieuse</option>
+      <option>ONG</option>
+      <option>Représentation communautaire</option>
+    </optgroup>
+
+    <optgroup label="Groupements communautaires">
+      <option>Association de femmes</option>
+      <option>Association de jeunes</option>
+      <option>Comité de développement local</option>
+      <option>Association culturelle et artistique</option>
+      <option>Association sportive</option>
+    </optgroup>
+
+    <optgroup label="Organisations socioprofessionnelles">
+      <option>Coopérative</option>
+      <option>Syndicat</option>
+      <option>Association de commerçants</option>
+      <option>Organisation de producteurs</option>
+      <option>Chambe de métiers</option>
+    </optgroup>
+
+    <optgroup label="Secteur éducatif et social">
+      <option>Association de parents d’élèves (APE)</option>
+      <option>Club scolaire / universitaire</option>
+      <option>Centre d’alphabétisation</option>
+      <option>Association d’étudiants</option>
+    </optgroup>
+
+    <optgroup label="Santé et humanitaire">
+      <option>Association communautaire de santé</option>
+      <option>Croix-Rouge / Humanitaire</option>
+      <option>Organisation de personnes handicapées</option>
+      <option>Association d’entraide / solidarité</option>
+    </optgroup>
+
+    <optgroup label="Environnement">
+      <option>Association écologique</option>
+      <option>Comité de gestion des ressources naturelles</option>
+      <option>Organisation de protection eau / forêts</option>
+    </optgroup>
+
+    <optgroup label="Citoyenneté et gouvernance">
+      <option>Organisation de défense des droits humains</option>
+      <option>Association de consommateurs</option>
+      <option>Observatoire citoyen</option>
+      <option>Organisation de veille / transparence</option>
+    </optgroup>
+
+    <optgroup label="Autres structures">
+      <option>Média local / Radio communautaire</option>
+      <option>Leader d’opinion / Notable</option>
+      <option>Association de la diaspora</option>
+    </optgroup>
+  </select>
+
+  <label>Date de création</label>
+  <input type="date" name="date_creation">
+
+  <label>Adresse</label>
+  <textarea name="adresse"></textarea>
+
+  <div class="row">
+    <div>
+      <label>Téléphone</label>
+      <input type="tel" name="telephone">
+    </div>
+    <div>
+      <label>Email</label>
+      <input type="email" name="email">
+    </div>
+  </div>
+
+  <h3>Domaines d’intervention</h3>
+  <div id="sectors"></div>
+  <button type="button" class="add-btn" onclick="addSector()">+ Ajouter un domaine</button>
+
+  <h3>Membres / Responsables</h3>
+  <div id="members"></div>
+  <button type="button" class="add-btn" onclick="addMember()">+ Ajouter un membre</button>
+
+  <button type="submit" class="submit-btn">Enregistrer l’OSC</button>
+</form>
+
+<script>
+function addMember() {
+  const container = document.getElementById("members");
+  const div = document.createElement("div");
+  div.className = "member";
+  div.innerHTML = `
+    <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Supprimer</button>
+    <div class="row">
+      <div>
+        <label>Nom</label>
+        <input type="text" name="member_nom[]">
+      </div>
+      <div>
+        <label>Fonction</label>
+        <input type="text" name="member_fonction[]">
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function addSector() {
+  const container = document.getElementById("sectors");
+  const div = document.createElement("div");
+  div.className = "sector";
+  div.innerHTML = `
+    <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Supprimer</button>
+    <label>Domaine</label>
+    <input type="text" name="sector[]">
+  `;
+  container.appendChild(div);
+}
+</script>
+
+</body>
+</html>

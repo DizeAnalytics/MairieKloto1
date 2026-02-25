@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="osc-wrapper">
+    <div class="osc-header">
+        <div>
+            <h1>🤝 Mes Organisations de la Société Civile</h1>
+            <p>Vue synthétique de vos OSC, inspirée du tableau de bord des acteurs économiques.</p>
+        </div>
+        <div class="osc-header-actions">
+            <span class="osc-count">
+                Total : <strong>{{ organisations.count }}</strong> organisation(s)
+            </span>
+        </div>
+    </div>
+
+    {% if organisations %}
+    <div class="osc-table-container">
+        <table class="osc-table">
+            <thead>
+                <tr>
+                    <th>Nom de l'organisation</th>
+                    <th>Type</th>
+                    <th>Domaine(s) d'intervention</th>
+                    <th>Localisation</th>
+                    <th>Contact</th>
+                    <th>Date d'enregistrement</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for osc in organisations %}
+                <tr>
+                    <td>
+                        <strong>{{ osc.nom_osc }}</strong>
+                    </td>
+                    <td>{{ osc.type_osc }}</td>
+                    <td>
+                        {% if osc.domaines_intervention %}
+                            {{ osc.domaines_intervention|linebreaksbr }}
+                        {% else %}
+                            <span class="osc-muted">Non renseigné</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if osc.quartier or osc.canton %}
+                            {{ osc.quartier }}{% if osc.canton %}, {{ osc.canton }}{% endif %}
+                        {% else %}
+                            <span class="osc-muted">Non renseigné</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="osc-contact">
+                            {% if osc.telephone %}
+                                <div>📞 {{ osc.telephone }}</div>
+                            {% endif %}
+                            {% if osc.email %}
+                                <div>✉️ {{ osc.email }}</div>
+                            {% endif %}
+                            {% if not osc.telephone and not osc.email %}
+                                <span class="osc-muted">Aucun contact renseigné</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>{{ osc.date_enregistrement|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        <a href="{% url 'osc:modifier' osc.id %}" class="osc-btn osc-btn-primary">
+                            ✏️ Modifier
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="osc-empty">
+        <div class="osc-empty-icon">🤝</div>
+        <h2>Aucune organisation enregistrée pour le moment</h2>
+        <p>Retournez sur la plateforme d'inscription pour enregistrer votre première OSC.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --osc-primary: #006233;
+        --osc-secondary: #FFCD00;
+        --osc-light: #f5f5f5;
+        --osc-white: #ffffff;
+        --osc-dark: #1a1a1a;
+    }
+
+    .osc-wrapper {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem 2rem;
+    }
+
+    .osc-header {
+        background: var(--osc-white);
+        border-radius: 12px;
+        padding: 1.5rem 1.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        border-left: 5px solid var(--osc-primary);
+    }
+
+    .osc-header h1 {
+        margin: 0;
+        font-size: 1.7rem;
+        color: var(--osc-primary);
+    }
+
+    .osc-header p {
+        margin: 0.25rem 0 0;
+        color: #555;
+    }
+
+    .osc-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .osc-count {
+        background: var(--osc-light);
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        color: var(--osc-dark);
+    }
+
+    .osc-table-container {
+        background: var(--osc-white);
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        overflow: hidden;
+        overflow-x: auto;
+    }
+
+    .osc-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+    }
+
+    .osc-table thead {
+        background: var(--osc-primary);
+        color: var(--osc-white);
+    }
+
+    .osc-table th,
+    .osc-table td {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--osc-light);
+        font-size: 0.95rem;
+    }
+
+    .osc-table th {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .osc-table tbody tr:hover {
+        background: var(--osc-light);
+    }
+
+    .osc-contact div {
+        line-height: 1.4;
+    }
+
+    .osc-muted {
+        color: #888;
+        font-style: italic;
+    }
+
+    .osc-btn {
+        display: inline-block;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .osc-btn-primary {
+        background: var(--osc-secondary);
+        color: var(--osc-dark);
+    }
+
+    .osc-btn-primary:hover {
+        background: #e6b800;
+        color: var(--osc-dark);
+        transform: translateY(-1px);
+    }
+
+    .osc-empty {
+        text-align: center;
+        padding: 4rem 1rem;
+        background: var(--osc-white);
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        margin-top: 1.5rem;
+    }
+
+    .osc-empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+
+    .osc-empty h2 {
+        margin-bottom: 0.5rem;
+        color: var(--osc-primary);
+    }
+
+    .osc-empty p {
+        margin: 0;
+        color: #555;
+    }
+
+    @media (max-width: 768px) {
+        .osc-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .osc-header h1 {
+            font-size: 1.4rem;
+        }
+    }
+</style>
+{% endblock %}
+

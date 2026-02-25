@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+        }
+        .topbar {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .topbar-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .topbar-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+        .topbar-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.8);
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+        }
+        .back-link:hover {
+            background: var(--white);
+            color: var(--primary);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1.5rem 2.5rem;
+        }
+        .grid-forms {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+        }
+        .card h2 {
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+        .card p {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 1rem;
+        }
+        .badge-total {
+            display: inline-block;
+            margin-top: 0.25rem;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 0.9rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+            color: #555;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 0.9rem;
+        }
+        .form-group small {
+            display: block;
+            font-size: 0.75rem;
+            color: #777;
+            margin-top: 0.2rem;
+        }
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            color: #555;
+        }
+        .form-check input[type="checkbox"] {
+            width: auto;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1.2rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-primary:hover {
+            background: #004d28;
+        }
+        .btn-table {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.8rem;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            margin-right: 0.25rem;
+        }
+        .btn-table:hover {
+            text-decoration: none;
+        }
+        .btn-edit {
+            background: #007bff;
+            color: #fff;
+        }
+        .btn-edit:hover {
+            background: #0056b3;
+        }
+        .actions-cell form {
+            display: inline;
+        }
+        .service-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.25rem;
+            margin-bottom: 0.15rem;
+        }
+        .service-title {
+            font-size: 0.8rem;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+        }
+        .grid-lists {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 1.5rem;
+        }
+        .table-container {
+            margin-top: 0.5rem;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            background: var(--white);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+        }
+        thead {
+            background: var(--primary);
+            color: #fff;
+        }
+        th, td {
+            padding: 0.6rem 0.8rem;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+        tbody tr:nth-child(even) { background: #fafafa; }
+        tbody tr:hover { background: #f1f1f1; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 999px;
+            font-size: 0.75rem;
+        }
+        .muted {
+            color: #777;
+            font-size: 0.8rem;
+        }
+        .messages {
+            margin: 1rem 0;
+        }
+        .messages .message {
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+        }
+        .messages .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .messages .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .filters-bar {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 1rem;
+        }
+        .filters-bar form {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .filters-bar .form-group {
+            margin-bottom: 0.4rem;
+        }
+        .btn-secondary {
+            background: #ffffff;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            border-radius: 999px;
+            padding: 0.45rem 1rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-decoration: none;
+        }
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        @media (max-width: 992px) {
+            .grid-lists {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            .topbar { padding: 0.75rem 1rem; }
+            .topbar-inner { padding: 0; }
+            .topbar-title { font-size: 1.2rem; }
+            .container { margin: 1rem auto 2rem; padding: 0 1rem; }
+            .card { padding: 1.1rem; }
+            .grid-forms { gap: 1rem; }
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            table { min-width: 600px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <div>
+                <div class="topbar-title">{{ titre }}</div>
+                <div class="topbar-subtitle">Mairie de Kloto 1 · Tableau de bord</div>
+            </div>
+            <div class="topbar-actions">
+                <a href="{% url 'tableau_bord' %}" class="back-link">← Retour au tableau de bord</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if message_success or message_error %}
+        <div class="messages">
+            {% if message_success %}
+            <div class="message success">{{ message_success }}</div>
+            {% endif %}
+            {% if message_error %}
+            <div class="message error">{{ message_error }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="grid-forms">
+            <div class="card">
+                <h2>{% if editing_direction %}Modifier une direction{% else %}Ajouter une direction{% endif %}</h2>
+                <p>{% if editing_direction %}Mettez à jour les informations de la direction sélectionnée.{% else %}Créez une nouvelle direction rattachée au Secrétaire Général.{% endif %}</p>
+                <span class="badge-total">Directions actuelles : {{ directions|length }}</span>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="{% if editing_direction %}update_direction{% else %}create_direction{% endif %}">
+                    {% if editing_direction %}
+                    <input type="hidden" name="direction_id" value="{{ editing_direction.id }}">
+                    {% endif %}
+                    <div class="form-group">
+                        <label>Nom de la direction *</label>
+                        {{ direction_form.nom }}
+                    </div>
+                    <div class="form-group">
+                        <label>Sigle</label>
+                        {{ direction_form.sigle }}
+                    </div>
+                    <div class="form-group">
+                        <label>Chef de direction *</label>
+                        {{ direction_form.chef_direction }}
+                    </div>
+                    <div class="form-group">
+                        <label>Ordre d'affichage</label>
+                        {{ direction_form.ordre_affichage }}
+                        <small>Plus petit = plus à gauche.</small>
+                    </div>
+                    <div class="form-group form-check">
+                        {{ direction_form.est_active }}
+                        <label for="{{ direction_form.est_active.id_for_label }}">Direction active</label>
+                    </div>
+                    <button type="submit" class="btn-primary">✅ Enregistrer la direction</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>{% if editing_section %}Modifier une section{% else %}Ajouter une section{% endif %}</h2>
+                <p>{% if editing_section %}Mettez à jour les informations de la section sélectionnée.{% else %}Créez une section rattachée à une direction existante.{% endif %}</p>
+                <span class="badge-total">Sections actuelles : {{ sections|length }}</span>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="{% if editing_section %}update_section{% else %}create_section{% endif %}">
+                    {% if editing_section %}
+                    <input type="hidden" name="section_id" value="{{ editing_section.id }}">
+                    {% endif %}
+                    <div class="form-group">
+                        <label>Direction *</label>
+                        {{ section_form.direction }}
+                    </div>
+                    <div class="form-group">
+                        <label>Nom de la section *</label>
+                        {{ section_form.nom }}
+                    </div>
+                    <div class="form-group">
+                        <label>Sigle</label>
+                        {{ section_form.sigle }}
+                    </div>
+                    <div class="form-group">
+                        <label>Chef de section</label>
+                        {{ section_form.chef_section }}
+                    </div>
+                    <div class="form-group">
+                        <label>Ordre d'affichage</label>
+                        {{ section_form.ordre_affichage }}
+                        <small>Plus petit = affiché en premier dans la direction.</small>
+                    </div>
+                    <div class="form-group form-check">
+                        {{ section_form.est_active }}
+                        <label for="{{ section_form.est_active.id_for_label }}">Section active</label>
+                    </div>
+                    <button type="submit" class="btn-primary">✅ Enregistrer la section</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>{% if editing_service %}Modifier un service{% else %}Ajouter un service{% endif %}</h2>
+                <p>{% if editing_service %}Mettez à jour un service rattaché à une section.{% else %}Ajoutez un service rattaché à une section de direction.{% endif %}</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="{% if editing_service %}update_service{% else %}create_service{% endif %}">
+                    {% if editing_service %}
+                    <input type="hidden" name="service_id" value="{{ editing_service.id }}">
+                    {% endif %}
+                    <div class="form-group">
+                        <label>Section *</label>
+                        {{ service_form.section }}
+                    </div>
+                    <div class="form-group">
+                        <label>Titre du service *</label>
+                        {{ service_form.titre }}
+                    </div>
+                    <div class="form-group">
+                        <label>Responsable</label>
+                        {{ service_form.responsable }}
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        {{ service_form.description }}
+                    </div>
+                    <div class="form-group">
+                        <label>Ordre d'affichage</label>
+                        {{ service_form.ordre_affichage }}
+                    </div>
+                    <div class="form-group form-check">
+                        {{ service_form.est_actif }}
+                        <label for="{{ service_form.est_actif.id_for_label }}">Service actif</label>
+                    </div>
+                    <button type="submit" class="btn-primary">✅ {% if editing_service %}Mettre à jour le service{% else %}Enregistrer le service{% endif %}</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>{% if editing_personnel %}Modifier un membre du personnel{% else %}Ajouter un membre du personnel{% endif %}</h2>
+                <p>{% if editing_personnel %}Mettez à jour les informations du membre du personnel sélectionné.{% else %}Ajoutez un agent rattaché à une section de direction.{% endif %}</p>
+                <span class="badge-total">Personnel actuel : {{ personnels|length }}</span>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="{% if editing_personnel %}update_personnel{% else %}create_personnel{% endif %}">
+                    {% if editing_personnel %}
+                    <input type="hidden" name="personnel_id" value="{{ editing_personnel.id }}">
+                    {% endif %}
+                    <div class="form-group">
+                        <label>Section *</label>
+                        {{ personnel_form.section }}
+                    </div>
+                    <div class="form-group">
+                        <label>Nom et prénoms *</label>
+                        {{ personnel_form.nom_prenoms }}
+                    </div>
+                    <div class="form-group">
+                        <label>Fonction *</label>
+                        {{ personnel_form.fonction }}
+                    </div>
+                    <div class="form-group">
+                        <label>Contact</label>
+                        {{ personnel_form.contact }}
+                    </div>
+                    <div class="form-group">
+                        <label>Adresse</label>
+                        {{ personnel_form.adresse }}
+                    </div>
+                    <div class="form-group">
+                        <label>Ordre d'affichage</label>
+                        {{ personnel_form.ordre_affichage }}
+                    </div>
+                    <div class="form-group form-check">
+                        {{ personnel_form.est_actif }}
+                        <label for="{{ personnel_form.est_actif.id_for_label }}">Actif</label>
+                    </div>
+                    <button type="submit" class="btn-primary">✅ Enregistrer le personnel</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="grid-lists">
+            <div class="card">
+                <div class="section-title">Vue d'ensemble par direction</div>
+                <p class="muted">Aperçu hiérarchique : directions, sections et effectifs.</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Direction</th>
+                                <th>Chef de direction</th>
+                                <th>Sections</th>
+                                <th>Personnel</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in directions %}
+                            <tr>
+                                <td>
+                                    <strong>{{ d.nom }}</strong><br>
+                                    {% if d.sigle %}<span class="muted">{{ d.sigle }}</span>{% endif %}
+                                </td>
+                                <td>{{ d.chef_direction }}</td>
+                                <td>
+                                    {% with d.sections.all as d_sections %}
+                                        {{ d_sections|length }} section(s)
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    {{ d.total_personnels }} agent(s)
+                                </td>
+                                <td class="actions-cell">
+                                    <a href="?edit_direction={{ d.id }}" class="btn-table btn-edit">✏️ Modifier</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" style="text-align:center;padding:1rem;color:#777;">
+                                    Aucune direction enregistrée pour le moment.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">Liste détaillée des sections</div>
+                <p class="muted">Sections et responsables, triées par direction.</p>
+                <div class="filters-bar">
+                    <form method="get" action="{% url 'tableau_bord_organigramme' %}">
+                        <div class="form-group">
+                            <label for="search-q">Recherche</label>
+                            <input
+                                type="text"
+                                id="search-q"
+                                name="q"
+                                value="{{ current_filters.q }}"
+                                placeholder="Nom section, direction, chef, service..."
+                            >
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn-primary">🔍 Filtrer</button>
+                            <a href="{% url 'tableau_bord_organigramme' %}" class="btn-secondary">↺ Réinitialiser</a>
+                        </div>
+                    </form>
+                    <form method="get" action="{% url 'export_pdf_organigramme' %}">
+                        <input type="hidden" name="q" value="{{ current_filters.q }}">
+                        <button type="submit" class="btn-primary">📄 Exporter en PDF</button>
+                    </form>
+                    <form method="get" action="{% url 'export_excel_organigramme' %}">
+                        <input type="hidden" name="q" value="{{ current_filters.q }}">
+                        <button type="submit" class="btn-primary" style="background:#2e7d32;">📊 Exporter en Excel</button>
+                    </form>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Section</th>
+                                <th>Direction</th>
+                                <th>Chef de section</th>
+                                <th>Personnel</th>
+                                <th>Services</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in sections %}
+                            <tr>
+                                <td>
+                                    <strong>{{ s.nom }}</strong><br>
+                                    {% if s.sigle %}<span class="muted">{{ s.sigle }}</span>{% endif %}
+                                </td>
+                                <td>{{ s.direction.sigle|default:s.direction.nom }}</td>
+                                <td>{{ s.chef_section|default:"—" }}</td>
+                                <td>{{ s.personnels.all|length }} agent(s)</td>
+                                <td>
+                                    {% with s.services.all as s_services %}
+                                        {{ s_services|length }} service(s)<br>
+                                        {% for svc in s_services %}
+                                        <div class="service-item">
+                                            <span class="muted service-title" title="{{ svc.description }}">{{ svc.titre }}</span>
+                                            <div>
+                                                <a href="?edit_service={{ svc.id }}&edit_section={{ s.id }}" class="btn-table btn-edit" title="Modifier le service">✏️</a>
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                            <span class="muted">Aucun service</span>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </td>
+                                <td class="actions-cell">
+                                    <a href="?edit_section={{ s.id }}" class="btn-table btn-edit">✏️ Modifier</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" style="text-align:center;padding:1rem;color:#777;">
+                                    Aucune section enregistrée pour le moment.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    />
+    <style>
+        .hero-cartographie {
+            background: linear-gradient(135deg, rgba(0,98,51,0.9), rgba(0,77,40,0.9));
+            color: var(--white);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .hero-cartographie h2 {
+            font-size: 2.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-cartographie p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        .cartographie-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        #map-commune {
+            width: 100%;
+            height: 480px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            margin-bottom: 2rem;
+            background: #f5f7fb;
+        }
+
+        .cartographie-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr;
+            gap: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1.5rem;
+            border-radius: 14px;
+            text-align: left;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-card span {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .stat-card p {
+            margin-top: 0.8rem;
+            font-size: 0.95rem;
+            opacity: 0.95;
+        }
+
+        .panel {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            box-shadow: 0 5px 18px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .panel h3 {
+            margin-bottom: 0.8rem;
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        .panel ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .panel ul li {
+            padding: 0.35rem 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.97rem;
+        }
+
+        .panel ul li:last-child {
+            border-bottom: none;
+        }
+
+        .badge-pill {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            background: rgba(0,98,51,0.08);
+            color: var(--primary);
+            margin-right: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .tags-activites {
+            margin-top: 0.8rem;
+        }
+
+        @media (max-width: 992px) {
+            .cartographie-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <section class="hero-cartographie">
+        <h2>
+            {% if cartographie %}
+                Cartographie de la commune de {{ cartographie.configuration.nom_commune }}
+            {% else %}
+                Cartographie de la commune
+            {% endif %}
+        </h2>
+        <p>
+            Vue d’ensemble de la commune : carte interactive, population, densité,
+            infrastructures clés et principales activités.
+        </p>
+    </section>
+
+    {% if cartographie %}
+        <section class="cartographie-container">
+            <div id="map-commune"></div>
+            <script type="application/json" id="infrastructuresData">{{ infrastructures_json|safe }}</script>
+            <script type="application/json" id="communeBoundaryData">{{ commune_boundary_json|safe }}</script>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span>Population totale estimée</span>
+                    <h3>{{ cartographie.population_totale|floatformat:0 }}</h3>
+                    <p>
+                        Habitants sur environ {{ cartographie.superficie_km2 }} km².
+                    </p>
+                </div>
+                <div class="stat-card">
+                    <span>Densité de population</span>
+                    <h3>{{ cartographie.densite_hab_km2 }} hab/km²</h3>
+                    <p>
+                        Densité moyenne sur l’ensemble de la commune.
+                    </p>
+                </div>
+                <div class="stat-card">
+                    <span>Dynamique démographique</span>
+                    <h3>+{{ cartographie.taux_croissance_pourcent }} % / an</h3>
+                    <p>
+                        Natalité : {{ cartographie.taux_natalite_pour_mille }}‰ – Mortalité : {{ cartographie.taux_mortalite_pour_mille }}‰.
+                    </p>
+                </div>
+            </div>
+
+            <div class="cartographie-grid">
+                <div>
+                    <div class="panel">
+                        <h3>Principales activités économiques</h3>
+                        <p>
+                            Les secteurs dominants structurent la vie économique de la commune
+                            de {{ cartographie.configuration.nom_commune }}.
+                        </p>
+                        <div class="tags-activites">
+                            {% for activite in cartographie.principales_activites_list %}
+                                <span class="badge-pill">{{ activite }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h3>Réseau viaire et voirie</h3>
+                        <ul>
+                            {% for item in cartographie.infrastructures_routes_list %}
+                                <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="panel">
+                        <h3>Infrastructures de santé</h3>
+                        <ul>
+                            {% if sante_types %}
+                                {% for t in sante_types %}
+                                    <li>
+                                        <strong>{{ t.label }}</strong>
+                                        — {{ t.count }} structure(s)
+                                        {% if t.noms %}
+                                            <br>
+                                            <small>
+                                                {% for nom in t.noms %}
+                                                    {{ nom }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </small>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            {% else %}
+                                {% for item in cartographie.infrastructures_sante_list %}
+                                    <li>{{ item }}</li>
+                                {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="panel">
+                        <h3>Infrastructures éducatives</h3>
+                        <ul>
+                            {% if education_types %}
+                                {% for t in education_types %}
+                                    <li>
+                                        <strong>{{ t.label }}</strong>
+                                        — {{ t.count }} établissement(s)
+                                        {% if t.noms %}
+                                            <br>
+                                            <small>
+                                                {% for nom in t.noms %}
+                                                    {{ nom }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </small>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            {% else %}
+                                {% for item in cartographie.infrastructures_education_list %}
+                                    <li>{{ item }}</li>
+                                {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="panel">
+                        <h3>Administrations et services publics</h3>
+                        <ul>
+                            {% for item in cartographie.infrastructures_administration_list %}
+                                <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Graphiques des catégories et types d'infrastructures</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
+                    <div>
+                        <h4 style="margin-bottom:0.5rem;">Santé</h4>
+                        <canvas id="santeChart" height="160"></canvas>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom:0.5rem;">Éducation</h4>
+                        <canvas id="educationChart" height="160"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% else %}
+        <section class="cartographie-container">
+            <div class="panel">
+                <h3>Données non configurées</h3>
+                <p>
+                    Les données de cartographie de la commune ne sont pas encore configurées dans l’administration.
+                    Merci à l’équipe de la mairie de créer une entrée dans
+                    <strong>Configuration de la mairie &gt; Cartographie de la commune</strong>.
+                </p>
+            </div>
+        </section>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Leaflet JS -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
+    <!-- Chart.js pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-hO11dAkXNB+Y5o2lWVJqIkli68lEetM7qF8wvSM9roqfUWatw+pqVW2onptTjvAX" crossorigin="anonymous"></script>
+    {% if cartographie %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const centerLat = parseFloat("{{ cartographie.centre_latitude|floatformat:'6' }}".replace(',', '.')) || 0;
+                const centerLng = parseFloat("{{ cartographie.centre_longitude|floatformat:'6' }}".replace(',', '.')) || 0;
+                const zoomLevel = parseInt("{{ cartographie.zoom_carte }}", 10) || 12;
+
+                const map = L.map('map-commune').setView([centerLat, centerLng], zoomLevel);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                // Délimitation de la commune (polygone approximatif)
+                try {
+                    const boundaryRaw = document.getElementById('communeBoundaryData')?.textContent || '[]';
+                    const boundaryCoords = JSON.parse(boundaryRaw);
+                    if (Array.isArray(boundaryCoords) && boundaryCoords.length >= 3) {
+                        const boundary = L.polygon(boundaryCoords, {
+                            color: '#006233',
+                            weight: 2,
+                            fillColor: '#006233',
+                            fillOpacity: 0.05,
+                        }).addTo(map);
+                        map.fitBounds(boundary.getBounds());
+                    }
+                } catch (e) {
+                    // Si problème de parsing, on garde le centrage par défaut
+                }
+
+                // Marqueur central (mairie / centre de la commune)
+                const centerMarker = L.marker([centerLat, centerLng]).addTo(map);
+                centerMarker.bindPopup(
+                    `<b>Commune de {{ cartographie.configuration.nom_commune }}</b><br/>
+                     Population estimée : {{ cartographie.population_totale|floatformat:0 }} habitants`
+                );
+
+                // Infrastructures géolocalisées
+                const infraRaw = document.getElementById('infrastructuresData')?.textContent || '[]';
+                let infrastructures = [];
+                try {
+                    infrastructures = JSON.parse(infraRaw);
+                } catch (e) {
+                    infrastructures = [];
+                }
+
+                const typeIcons = {
+                    "sante": "🏥",
+                    "education": "🏫",
+                    "voirie": "🛣️",
+                    "administration": "🏛️",
+                };
+
+                infrastructures.forEach((infra) => {
+                    if (!infra || typeof infra.lat !== "number" || typeof infra.lng !== "number") {
+                        return;
+                    }
+                    const emoji = typeIcons[infra.type] || "📍";
+                    const icon = L.divIcon({
+                        html: `<div style="font-size:20px;">${emoji}</div>`,
+                        iconSize: [24, 24],
+                        className: "infra-marker-icon",
+                    });
+                    const marker = L.marker([infra.lat, infra.lng], { icon }).addTo(map);
+                    const description = infra.description ? `<br/><small>${infra.description}</small>` : "";
+                    const adresse = infra.adresse ? `<br/><small><strong>Adresse :</strong> ${infra.adresse}</small>` : "";
+                    marker.bindPopup(
+                        `<b>${infra.nom}</b>${description}${adresse}`
+                    );
+                });
+
+                // Graphiques des catégories / types
+                const santeChartEl = document.getElementById('santeChart');
+                const educationChartEl = document.getElementById('educationChart');
+
+                try {
+                    const santeChartData = {{ sante_chart_data|default:"{}"|safe }};
+                    if (santeChartEl && santeChartData.labels && santeChartData.labels.length) {
+                        new Chart(santeChartEl.getContext('2d'), {
+                            type: 'bar',
+                            data: {
+                                labels: santeChartData.labels,
+                                datasets: [{
+                                    label: "Infrastructures de santé",
+                                    data: santeChartData.data,
+                                    backgroundColor: "#16a34a",
+                                }],
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { display: false },
+                                },
+                                scales: {
+                                    x: { ticks: { font: { size: 10 } } },
+                                    y: { beginAtZero: true, precision: 0 },
+                                },
+                            },
+                        });
+                    }
+                } catch (e) {
+                    // ignore
+                }
+
+                try {
+                    const educationChartData = {{ education_chart_data|default:"{}"|safe }};
+                    if (educationChartEl && educationChartData.labels && educationChartData.labels.length) {
+                        new Chart(educationChartEl.getContext('2d'), {
+                            type: 'bar',
+                            data: {
+                                labels: educationChartData.labels,
+                                datasets: [{
+                                    label: "Infrastructures éducatives",
+                                    data: educationChartData.data,
+                                    backgroundColor: "#2563eb",
+                                }],
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { display: false },
+                                },
+                                scales: {
+                                    x: { ticks: { font: { size: 10 } } },
+                                    y: { beginAtZero: true, precision: 0 },
+                                },
+                            },
+                        });
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            });
+        </script>
+    {% endif %}
+{% endblock %}
+

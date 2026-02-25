@@ -432,7 +432,6 @@
 {% endblock %}
 {% block content %}
     <div class="container">
-        <a href="{% url 'mairie:accueil' %}" class="back-link">← Retour à l'accueil</a>
         <header>
             {% if mairie_config and mairie_config.logo %}
             <img src="{{ mairie_config.logo.url }}" alt="Logo" class="logo-image">

@@ -1,9 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
+import json
 from django.utils import timezone
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
 from django.contrib import messages
 from django.db import models
+from django.views.decorators.http import require_http_methods
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
@@ -13,8 +16,8 @@ from reportlab.lib import colors
 from .models import (
     MotMaire,
     Collaborateur,
+    DirectionMairie,
     InformationMairie,
-    EtatCivilPage,
     AppelOffre,
     Candidature,
     ImageCarousel,
@@ -23,10 +26,16 @@ from .models import (
     Suggestion,
     DonMairie,
     ConfigurationMairie,
+    CartographieCommune,
+    InfrastructureCommune,
+    Contribuable,
+    SectionDirection,
+    ServiceSection,
 )
-from .forms import CandidatureForm, SuggestionForm
+from .forms import CandidatureForm, SuggestionForm, ContribuableForm
 from acteurs.models import ActeurEconomique, InstitutionFinanciere
 from emploi.models import ProfilEmploi
+from mairie_kloto_platform.views import _draw_pdf_header, NumberedCanvas, PDF_HEADER_HEIGHT_CM
 
 
 def accueil(request):
@@ -51,15 +60,230 @@ def accueil(request):
     return render(request, 'mairie/accueil.html', context)
 
 
-def etat_civil(request):
-    """Page listant toutes les démarches d'état civil (actes de naissance, mariage, décès, etc.)."""
+def cartographie_commune(request):
+    """
+    Page de cartographie de la commune :
+    affiche la carte, des indicateurs démographiques et les grandes informations de synthèse.
+    Pour l'instant, les données sont statiques et pourront être reliées à des modèles plus tard.
+    """
 
-    rubriques = EtatCivilPage.objects.filter(est_visible=True).order_by("ordre_affichage", "titre")
+    # Récupérer la configuration active et, si elle existe, la fiche de cartographie associée
+    mairie_config = ConfigurationMairie.objects.filter(est_active=True).first()
+
+    cartographie = None
+    infrastructures_data = []
+    commune_boundary = []
+    sante_types = []
+    education_types = []
+    sante_chart_data = {}
+    education_chart_data = {}
+
+    if mairie_config:
+        try:
+            cartographie = mairie_config.cartographie
+        except CartographieCommune.DoesNotExist:
+            cartographie = None
+
+    if cartographie:
+        infrastructures_qs = (
+            InfrastructureCommune.objects.filter(
+                cartographie=cartographie,
+                est_active=True,
+            ).order_by("type_infrastructure", "nom")
+        )
+        for infra in infrastructures_qs:
+            infrastructures_data.append(
+                {
+                    "id": infra.id,
+                    "nom": infra.nom,
+                    "type": infra.type_infrastructure,
+                    "description": infra.description,
+                    "adresse": infra.adresse,
+                    "lat": float(infra.latitude),
+                    "lng": float(infra.longitude),
+                }
+            )
+
+        # Regrouper les infrastructures de santé par type (centre hospitalier, centres de santé, postes, cliniques…)
+        def _classify_sante(nom: str) -> str:
+            nom_l = (nom or "").lower()
+            if "hospitalier" in nom_l or "hôpital" in nom_l or "hopital" in nom_l or "chp" in nom_l:
+                return "centre_hospitalier"
+            if ("centre" in nom_l and ("santé" in nom_l or "sante" in nom_l)) or "csu" in nom_l:
+                return "centre_sante_quartier"
+            if "poste" in nom_l or "dispensaire" in nom_l:
+                return "poste_peripherique"
+            if "clinique" in nom_l or "cabinet" in nom_l or "polyclinique" in nom_l:
+                return "clinique_privee"
+            return "autres"
+
+        SANTE_LABELS = {
+            "centre_hospitalier": "Centres hospitaliers",
+            "centre_sante_quartier": "Centres de santé de quartiers",
+            "poste_peripherique": "Postes de santé périphériques",
+            "clinique_privee": "Cliniques et cabinets privés",
+            "autres": "Autres infrastructures de santé",
+        }
+
+        sante_groups = {}
+        # Utiliser en priorité les enregistrements BD, sinon retomber sur la fiche texte
+        sante_noms = [
+            infra.nom
+            for infra in infrastructures_qs.filter(type_infrastructure="sante")
+        ]
+        if not sante_noms and cartographie.infrastructures_sante_list:
+            sante_noms = list(cartographie.infrastructures_sante_list)
+
+        for nom_sante in sante_noms:
+            key = _classify_sante(nom_sante)
+            group = sante_groups.setdefault(
+                key,
+                {"label": SANTE_LABELS.get(key, key), "noms": []},
+            )
+            group["noms"].append(nom_sante)
+
+        sante_types = [
+            {
+                "key": key,
+                "label": value["label"],
+                "count": len(value["noms"]),
+                "noms": sorted(value["noms"]),
+            }
+            for key, value in sante_groups.items()
+            if value["noms"]
+        ]
+        sante_types.sort(key=lambda x: x["label"])
+
+        # Regrouper les infrastructures éducatives par niveau (maternelle, primaire, collège, lycée, collège/lycée…)
+        def _classify_education(nom: str) -> str:
+            nom_l = (nom or "").lower()
+            has_college = "collège" in nom_l or "college" in nom_l or "ceg" in nom_l
+            has_lycee = "lycée" in nom_l or "lycee" in nom_l
+            if "maternelle" in nom_l or "préscolaire" in nom_l or "prescolaire" in nom_l:
+                return "maternelle"
+            if "primaire" in nom_l or "epp" in nom_l:
+                return "primaire"
+            if has_college and has_lycee:
+                return "college_lycee"
+            if has_college:
+                return "college"
+            if has_lycee:
+                return "lycee"
+            return "autres"
+
+        EDU_LABELS = {
+            "maternelle": "Écoles maternelles / préscolaires",
+            "primaire": "Écoles primaires",
+            "college": "Collèges",
+            "lycee": "Lycées",
+            "college_lycee": "Collèges / Lycées",
+            "autres": "Autres établissements éducatifs",
+        }
+
+        edu_groups = {}
+        # Utiliser en priorité les enregistrements BD, sinon retomber sur la fiche texte
+        education_noms = [
+            infra.nom
+            for infra in infrastructures_qs.filter(type_infrastructure="education")
+        ]
+        if not education_noms and cartographie.infrastructures_education_list:
+            education_noms = list(cartographie.infrastructures_education_list)
+
+        for nom_edu in education_noms:
+            key = _classify_education(nom_edu)
+            group = edu_groups.setdefault(
+                key,
+                {"label": EDU_LABELS.get(key, key), "noms": []},
+            )
+            group["noms"].append(nom_edu)
+
+        education_types = [
+            {
+                "key": key,
+                "label": value["label"],
+                "count": len(value["noms"]),
+                "noms": sorted(value["noms"]),
+            }
+            for key, value in edu_groups.items()
+            if value["noms"]
+        ]
+        education_types.sort(key=lambda x: x["label"])
+
+        # Données pour les graphiques (barres simples par type)
+        if sante_types:
+            sante_chart_data = {
+                "labels": [t["label"] for t in sante_types],
+                "data": [t["count"] for t in sante_types],
+            }
+        if education_types:
+            education_chart_data = {
+                "labels": [t["label"] for t in education_types],
+                "data": [t["count"] for t in education_types],
+            }
+
+        # Polygone approximatif délimitant la commune (à ajuster si nécessaire)
+        center_lat = float(cartographie.centre_latitude)
+        center_lng = float(cartographie.centre_longitude)
+        lat_delta = 0.05
+        lng_delta = 0.05
+        commune_boundary = [
+            [center_lat + lat_delta, center_lng - lng_delta],
+            [center_lat + lat_delta, center_lng + lng_delta],
+            [center_lat - lat_delta, center_lng + lng_delta],
+            [center_lat - lat_delta, center_lng - lng_delta],
+        ]
 
     context = {
-        "rubriques": rubriques,
+        "cartographie": cartographie,
+        "infrastructures_json": json.dumps(infrastructures_data, ensure_ascii=False),
+        "commune_boundary_json": json.dumps(commune_boundary, ensure_ascii=False),
+        "sante_types": sante_types,
+        "education_types": education_types,
+        "sante_chart_data": json.dumps(sante_chart_data, ensure_ascii=False),
+        "education_chart_data": json.dumps(education_chart_data, ensure_ascii=False),
     }
-    return render(request, "mairie/etat_civil.html", context)
+    return render(request, "mairie/cartographie.html", context)
+
+
+def organigramme_mairie(request):
+    """
+    Page affichant l'organigramme de la mairie :
+    Conseil communal → Maire de la commune → Secrétaire Général → Directions → Sections → Personnel.
+    """
+
+    directions = (
+        DirectionMairie.objects.filter(est_active=True)
+        .prefetch_related("sections__personnels", "sections__services")
+        .order_by("ordre_affichage", "nom")
+    )
+
+    context = {
+        "directions": directions,
+    }
+    return render(request, "mairie/organigramme.html", context)
+
+
+def section_services_detail(request, pk: int):
+    """
+    Page publique affichant les services rattachés à une section donnée.
+    """
+    section = get_object_or_404(
+        SectionDirection.objects.select_related("direction").prefetch_related("services"),
+        pk=pk,
+        est_active=True,
+    )
+
+    services = (
+        section.services.filter(est_actif=True)
+        .order_by("ordre_affichage", "titre")
+    )
+
+    context = {
+        "section": section,
+        "direction": section.direction,
+        "services": services,
+    }
+    return render(request, "mairie/section_services.html", context)
 
 
 def contactez_nous(request):
@@ -198,7 +422,8 @@ def generer_pdf_appel_offre(request, pk: int):
     filename = f"appel_offres_{appel.reference or appel.pk}.pdf"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-    doc = SimpleDocTemplate(response, pagesize=A4)
+    # Aligné avec les autres PDF pour laisser la place à l'en-tête
+    doc = SimpleDocTemplate(response, pagesize=A4, topMargin=PDF_HEADER_HEIGHT_CM * cm, bottomMargin=1.5 * cm)
     story = []
     styles = getSampleStyleSheet()
 
@@ -297,7 +522,12 @@ def generer_pdf_appel_offre(request, pk: int):
     # Note finale
     story.append(Paragraph("Pour plus d'informations, consultez la plateforme web de la Mairie de Kloto 1.", styles["Normal"]))
 
-    doc.build(story)
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
     return response
 
 
@@ -418,4 +648,40 @@ def detail_projet(request, slug):
     }
     
     return render(request, 'mairie/projet_detail.html', context)
+
+
+@require_http_methods(["GET", "POST"])
+def inscrire_contribuable(request):
+    """Vue pour l'inscription des contribuables (marchés / places publiques)."""
+    
+    if request.method == "POST":
+        form = ContribuableForm(request.POST, user=request.user)
+        if form.is_valid():
+            if request.user.is_authenticated:
+                user = request.user
+            else:
+                # Récupérer les données
+                username = form.cleaned_data.get('username')
+                password = form.cleaned_data.get('password')
+                
+                # Créer l'utilisateur
+                user = User.objects.create_user(username=username, password=password)
+                
+                # Connecter l'utilisateur
+                login(request, user, backend='mairie_kloto_platform.backends.EmailOrUsernameBackend')
+            
+            # Créer le contribuable lié
+            contribuable = form.save(commit=False)
+            contribuable.user = user
+            contribuable.save()
+            
+            messages.success(request, "Inscription réussie ! Bienvenue dans votre espace contribuable.")
+            return redirect('comptes:profil')
+    else:
+        form = ContribuableForm(user=request.user)
+
+    context = {
+        "form": form,
+    }
+    return render(request, "mairie/inscription-contribuable.html", context)
 

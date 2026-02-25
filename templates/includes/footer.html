@@ -62,6 +62,49 @@
                 <li><a href="{% url 'politique_cookies' %}">Politique de cookies</a></li>
             </ul>
         </div>
+        <div class="footer-column">
+            <h4>Newsletter</h4>
+            {% if not newsletter_deja_inscrit %}
+            <p>Recevez les actualités et informations de la Mairie de Kloto 1 par email.</p>
+            <form method="post" action="{% url 'newsletter_inscription' %}" class="footer-newsletter-form">
+                {% csrf_token %}
+                <input
+                    type="email"
+                    name="email"
+                    class="footer-newsletter-input"
+                    placeholder="Votre adresse email"
+                    required
+                />
+                <button type="submit" class="footer-newsletter-btn">S'inscrire</button>
+            </form>
+            {% else %}
+            <p>Vous êtes déjà inscrit(e) à la newsletter de la mairie.</p>
+            {% endif %}
+        </div>
+        {% if partenaires %}
+        <div class="footer-column">
+            <h4>Nos Partenaires</h4>
+            <div class="footer-partenaires">
+                {% for partenaire in partenaires %}
+                {% if partenaire.url_site %}
+                <a href="{{ partenaire.url_site }}" class="footer-partenaire-item" target="_blank" rel="noopener noreferrer" title="{{ partenaire.nom }}">
+                    {% if partenaire.logo %}
+                    <img src="{{ partenaire.logo.url }}" alt="{{ partenaire.nom }}" class="footer-partenaire-logo">
+                    {% endif %}
+                    <span class="footer-partenaire-nom">{{ partenaire.nom }}</span>
+                </a>
+                {% else %}
+                <span class="footer-partenaire-item">
+                    {% if partenaire.logo %}
+                    <img src="{{ partenaire.logo.url }}" alt="{{ partenaire.nom }}" class="footer-partenaire-logo">
+                    {% endif %}
+                    <span class="footer-partenaire-nom">{{ partenaire.nom }}</span>
+                </span>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
     <div class="footer-bottom">
         <p>© 2026 Mairie de Kloto 1 - Tous droits réservés | Plateforme économique municipale. Développé par DIZEANALYTICS</p>

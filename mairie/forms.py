@@ -1,6 +1,19 @@
 from django import forms
+from django.contrib.auth.models import User
 
-from .models import Candidature, CampagnePublicitaire, Publicite, Suggestion, DonMairie
+from .models import (
+    Candidature,
+    CampagnePublicitaire,
+    Publicite,
+    Suggestion,
+    DonMairie,
+    NewsletterSubscription,
+    Contribuable,
+    DirectionMairie,
+    SectionDirection,
+    PersonnelSection,
+    ServiceSection,
+)
 
 
 class CandidatureForm(forms.ModelForm):
@@ -221,3 +234,293 @@ class DonForm(forms.ModelForm):
         if montant and montant <= 0:
             raise forms.ValidationError("Le montant doit être supérieur à zéro.")
         return montant
+
+
+class NewsletterSubscriptionForm(forms.ModelForm):
+    """Formulaire très simple pour l'inscription à la newsletter (email uniquement)."""
+
+    class Meta:
+        model = NewsletterSubscription
+        fields = ["email"]
+        widgets = {
+            "email": forms.EmailInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Votre email pour recevoir les actualités",
+                    "required": True,
+                }
+            ),
+        }
+
+
+class ContribuableForm(forms.ModelForm):
+    """Formulaire d'inscription des contribuables (marchés / places publiques)."""
+
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label="Nom d'utilisateur",
+        help_text="Choisissez un nom d'utilisateur unique pour votre compte."
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label="Mot de passe",
+        help_text="Créez un mot de passe pour accéder à votre espace personnel."
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label="Confirmer le mot de passe"
+    )
+
+    class Meta:
+        model = Contribuable
+        fields = [
+            "nom",
+            "prenom",
+            "telephone",
+            "date_naissance",
+            "lieu_naissance",
+            "nationalite",
+        ]
+        widgets = {
+            "nom": forms.TextInput(attrs={"class": "form-control"}),
+            "prenom": forms.TextInput(attrs={"class": "form-control"}),
+            "telephone": forms.TextInput(attrs={"class": "form-control"}),
+            "date_naissance": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "lieu_naissance": forms.TextInput(attrs={"class": "form-control"}),
+            "nationalite": forms.TextInput(attrs={"class": "form-control"}),
+        }
+        labels = {
+            "nom": "Nom de famille",
+            "prenom": "Prénom(s)",
+            "telephone": "Numéro de téléphone",
+            "date_naissance": "Date de naissance",
+            "lieu_naissance": "Lieu de naissance",
+            "nationalite": "Nationalité",
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+        username = cleaned_data.get("username")
+
+        if username and User.objects.filter(username=username).exists():
+            self.add_error('username', "Ce nom d'utilisateur est déjà utilisé.")
+
+        if password and confirm_password and password != confirm_password:
+            self.add_error('confirm_password', "Les mots de passe ne correspondent pas.")
+
+        return cleaned_data
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if self.user and self.user.is_authenticated:
+            if 'username' in self.fields:
+                del self.fields['username']
+            if 'password' in self.fields:
+                del self.fields['password']
+            if 'confirm_password' in self.fields:
+                del self.fields['confirm_password']
+
+
+class DirectionMairieForm(forms.ModelForm):
+    """Formulaire pour créer ou modifier une Direction de la mairie depuis le tableau de bord."""
+
+    class Meta:
+        model = DirectionMairie
+        fields = ["nom", "sigle", "chef_direction", "ordre_affichage", "est_active"]
+        widgets = {
+            "nom": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Nom complet de la direction",
+                    "required": True,
+                }
+            ),
+            "sigle": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Sigle (ex: DAF, DST…)",
+                }
+            ),
+            "chef_direction": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Nom du directeur / de la directrice",
+                    "required": True,
+                }
+            ),
+            "ordre_affichage": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                }
+            ),
+            "est_active": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input",
+                }
+            ),
+        }
+
+
+class SectionDirectionForm(forms.ModelForm):
+    """Formulaire pour créer une Section rattachée à une Direction."""
+
+    class Meta:
+        model = SectionDirection
+        fields = ["direction", "nom", "sigle", "chef_section", "ordre_affichage", "est_active"]
+        widgets = {
+            "direction": forms.Select(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "nom": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Nom complet de la section",
+                    "required": True,
+                }
+            ),
+            "sigle": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Sigle (facultatif)",
+                }
+            ),
+            "chef_section": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Nom du chef de section (facultatif)",
+                }
+            ),
+            "ordre_affichage": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                }
+            ),
+            "est_active": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input",
+                }
+            ),
+        }
+
+
+class PersonnelSectionForm(forms.ModelForm):
+    """Formulaire pour créer un membre du personnel rattaché à une Section."""
+
+    class Meta:
+        model = PersonnelSection
+        fields = [
+            "section",
+            "nom_prenoms",
+            "adresse",
+            "contact",
+            "fonction",
+            "ordre_affichage",
+            "est_actif",
+        ]
+        widgets = {
+            "section": forms.Select(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "nom_prenoms": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Nom et prénoms",
+                    "required": True,
+                }
+            ),
+            "adresse": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Adresse (facultatif)",
+                }
+            ),
+            "contact": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Téléphone ou email (facultatif)",
+                }
+            ),
+            "fonction": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Fonction occupée dans la section",
+                    "required": True,
+                }
+            ),
+            "ordre_affichage": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                }
+            ),
+            "est_actif": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input",
+                }
+            ),
+        }
+
+
+class ServiceSectionForm(forms.ModelForm):
+    """Formulaire pour créer ou modifier un service rattaché à une Section."""
+
+    class Meta:
+        model = ServiceSection
+        fields = [
+            "section",
+            "titre",
+            "responsable",
+            "description",
+            "ordre_affichage",
+            "est_actif",
+        ]
+        widgets = {
+            "section": forms.Select(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                }
+            ),
+            "titre": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Titre du service",
+                    "required": True,
+                }
+            ),
+            "responsable": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Responsable du service (facultatif)",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Description des missions du service (facultatif)",
+                }
+            ),
+            "ordre_affichage": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 0,
+                }
+            ),
+            "est_actif": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input",
+                }
+            ),
+        }

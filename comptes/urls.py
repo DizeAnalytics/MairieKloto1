@@ -13,4 +13,9 @@ urlpatterns = [
     path('notifications/<int:pk>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
     path('publicites/demander/', views.demander_campagne_publicitaire, name='demande_publicite'),
     path('publicites/creer/', views.creer_publicite, name='creer_publicite'),
+    # Espace agent collecteur
+    path('espace-agent/', views.espace_agent, name='espace_agent'),
+    path('payer-contribuable/<int:contribuable_id>/', views.payer_contribuable, name='payer_contribuable'),
+    path('payer-acteur/<int:acteur_id>/', views.payer_acteur, name='payer_acteur'),
+    path('payer-institution/<int:institution_id>/', views.payer_institution, name='payer_institution'),
 ]

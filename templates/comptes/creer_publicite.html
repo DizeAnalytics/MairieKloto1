@@ -1,84 +1,411 @@
 {% extends 'base.html' %}
 
-{% block content %}
-<div style="max-width: 900px; margin: 2rem auto; padding: 0 1rem;">
-    <h1 style="color: var(--primary); margin-bottom: 0.5rem;">Créer une publicité</h1>
-    {% if campagne %}
-        <p style="color: #555; margin-bottom: 1rem;">
-            Campagne actuelle : <strong>{{ campagne.titre }}</strong> (statut : {{ campagne.get_statut_display }})
-        </p>
-    {% endif %}
-    <p style="color: #777; margin-bottom: 1.5rem;">
-        La publicité sera affichée sur le site de la mairie sous forme de fenêtre modale aléatoire pour les visiteurs.
-    </p>
-
-    <div style="background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-
-            <div class="mb-3">
-                <label for="{{ form.titre.id_for_label }}" class="form-label"><strong>Titre de la publicité</strong></label>
-                {{ form.titre }}
-                {% if form.titre.errors %}
-                    <div class="text-danger" style="margin-top: 0.25rem;">{{ form.titre.errors|striptags }}</div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.texte.id_for_label }}" class="form-label"><strong>Texte du message</strong></label>
-                {{ form.texte }}
-                {% if form.texte.errors %}
-                    <div class="text-danger" style="margin-top: 0.25rem;">{{ form.texte.errors|striptags }}</div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.image.id_for_label }}" class="form-label"><strong>Image (optionnelle)</strong></label>
-                {{ form.image }}
-                {% if form.image.errors %}
-                    <div class="text-danger" style="margin-top: 0.25rem;">{{ form.image.errors|striptags }}</div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.url_cible.id_for_label }}" class="form-label"><strong>Lien cible (optionnel)</strong></label>
-                {{ form.url_cible }}
-                <small style="display:block; color:#777; margin-top:0.25rem;">
-                    Si renseigné, un bouton « En savoir plus » ouvrira ce lien dans un nouvel onglet.
-                </small>
-                {% if form.url_cible.errors %}
-                    <div class="text-danger" style="margin-top: 0.25rem;">{{ form.url_cible.errors|striptags }}</div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label"><strong>Période de diffusion (optionnelle)</strong></label>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-                    <div>
-                        <label for="{{ form.date_debut.id_for_label }}" class="form-label">Date de début</label>
-                        {{ form.date_debut }}
-                    </div>
-                    <div>
-                        <label for="{{ form.date_fin.id_for_label }}" class="form-label">Date de fin</label>
-                        {{ form.date_fin }}
-                    </div>
-                </div>
-                <small style="display:block; color:#777; margin-top:0.25rem;">
-                    Si vous laissez ces champs vides, la mairie utilisera la durée définie pour la campagne.
-                </small>
-                {% if form.date_debut.errors or form.date_fin.errors %}
-                    <div class="text-danger" style="margin-top: 0.25rem;">
-                        {{ form.date_debut.errors|striptags }} {{ form.date_fin.errors|striptags }}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
-                <a href="{% url 'comptes:profil' %}" class="btn btn-secondary">Annuler</a>
-                <button type="submit" class="btn btn-primary">Enregistrer la publicité</button>
-            </div>
-        </form>
-    </div>
-</div>
+{% block extra_css %}
+<style>
+    .pub-creer-page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+    
+    /* En-tête */
+    .pub-creer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
+    }
+    .pub-creer-header h1 {
+        color: var(--primary);
+        font-size: 1.9rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+        letter-spacing: -0.02em;
+    }
+    .pub-creer-header p {
+        color: #64748b;
+        max-width: 580px;
+        font-size: 1rem;
+        line-height: 1.55;
+    }
+    .pub-campagne-badge {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+        border-radius: 12px;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(6, 95, 70, 0.1);
+    }
+    
+    /* Layout principal */
+    .pub-creer-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        gap: 2rem;
+        align-items: start;
+    }
+    
+    /* Carte formulaire */
+    .pub-form-card {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+    .pub-form-header {
+        background: linear-gradient(135deg, #006233 0%, #047857 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+    .pub-form-header-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .pub-form-header h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    .pub-form-header p {
+        font-size: 0.88rem;
+        opacity: 0.9;
+        margin: 0.2rem 0 0 0;
+    }
+    .pub-form-body { padding: 2rem 2rem 2.5rem; }
+    
+    /* Champs de formulaire */
+    .pub-form-group {
+        margin-bottom: 1.6rem;
+    }
+    .pub-form-group:last-of-type { margin-bottom: 0; }
+    .pub-form-label {
+        display: block;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    .pub-form-label .optional {
+        font-weight: 500;
+        color: #94a3b8;
+        font-size: 0.85em;
+    }
+    .pub-form-card .form-control,
+    .pub-form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: inherit;
+    }
+    .pub-form-card .form-control:focus,
+    .pub-form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(0, 98, 51, 0.12);
+    }
+    .pub-form-card .form-control::placeholder { color: #94a3b8; }
+    .pub-form-card .form-control:hover:not(:focus) { border-color: #cbd5e1; }
+    .pub-form-card textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+    }
+    
+    /* Zone de téléchargement d'image */
+    .pub-file-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 14px;
+        padding: 1.5rem 1.25rem;
+        background: #f8fafc;
+        transition: all 0.25s;
+        cursor: pointer;
+    }
+    .pub-file-zone:hover {
+        border-color: var(--primary);
+        background: rgba(0, 98, 51, 0.04);
+    }
+    .pub-file-zone.has-file {
+        border-color: var(--primary);
+        background: rgba(0, 98, 51, 0.06);
+    }
+    .pub-file-zone input[type="file"] {
+        width: 100%;
+        font-size: 0.9rem;
+        cursor: pointer;
+        padding: 0.5rem 0;
+    }
+    
+    /* Grille dates */
+    .pub-dates-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    .pub-form-hint {
+        display: block;
+        color: #64748b;
+        font-size: 0.82rem;
+        margin-top: 0.4rem;
+        line-height: 1.4;
+    }
+    .pub-form-error {
+        color: #dc2626;
+        font-size: 0.85rem;
+        margin-top: 0.35rem;
+    }
+    
+    /* Boutons */
+    .pub-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f1f5f9;
+    }
+    .pub-btn {
+        padding: 0.7rem 1.6rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: none;
+        font-family: inherit;
+    }
+    .pub-btn-primary {
+        background: linear-gradient(135deg, var(--secondary), #ffd633);
+        color: #1a1a1a;
+        box-shadow: 0 4px 14px rgba(255, 205, 0, 0.4);
+    }
+    .pub-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 205, 0, 0.45);
+    }
+    .pub-btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+        border: 2px solid #e2e8f0;
+    }
+    .pub-btn-secondary:hover {
+        background: #e2e8f0;
+        color: #334155;
+    }
+    
+    /* Sidebar */
+    .pub-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+    .pub-info-card {
+        background: linear-gradient(135deg, #006233, #059669);
+        color: #ecfdf5;
+        border-radius: 18px;
+        padding: 1.5rem 1.6rem;
+        box-shadow: 0 12px 30px rgba(4, 120, 87, 0.35);
+    }
+    .pub-info-card h3 {
+        font-size: 1.05rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .pub-info-card ol, .pub-info-card ul {
+        margin: 0;
+        padding-left: 1.2rem;
+        font-size: 0.9rem;
+        line-height: 1.65;
+    }
+    .pub-info-card li { margin-bottom: 0.3rem; }
+    
+    .pub-tips-card {
+        background: #f8fafc;
+        border-radius: 18px;
+        padding: 1.4rem 1.5rem;
+        border: 1px dashed #cbd5e1;
+    }
+    .pub-tips-card h3 {
+        font-size: 1rem;
+        color: #0f172a;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+    }
+    .pub-tips-card ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        font-size: 0.9rem;
+        color: #475569;
+        line-height: 1.6;
+    }
+    .pub-tips-card li { margin-bottom: 0.25rem; }
+    
+    /* Responsive */
+    @media (max-width: 900px) {
+        .pub-creer-grid { grid-template-columns: 1fr; }
+        .pub-sidebar { order: -1; }
+        .pub-dates-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+        .pub-creer-page { padding: 1.5rem 1rem; }
+        .pub-form-body { padding: 1.5rem 1.25rem; }
+        .pub-form-actions { flex-direction: column; }
+        .pub-btn { justify-content: center; }
+        .pub-campagne-badge { white-space: normal; }
+    }
+</style>
 {% endblock %}
 
+{% block content %}
+<div class="pub-creer-page">
+    <div class="pub-creer-header">
+        <div>
+            <h1>Créer une publicité</h1>
+            <p>
+                Mettez en avant votre message auprès des visiteurs du site de la mairie.
+                Votre publicité s'affichera sous forme de fenêtre modale de manière aléatoire.
+            </p>
+        </div>
+        {% if campagne %}
+        <div class="pub-campagne-badge">
+            ✓ {{ campagne.titre }} — {{ campagne.get_statut_display }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="pub-creer-grid">
+        <div class="pub-form-card">
+            <div class="pub-form-header">
+                <div class="pub-form-header-icon">📢</div>
+                <div>
+                    <h2>Informations de la publicité</h2>
+                    <p>Remplissez les champs ci-dessous pour diffuser votre message</p>
+                </div>
+            </div>
+            <div class="pub-form-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="pub-form-group">
+                        <label for="{{ form.titre.id_for_label }}" class="pub-form-label">Titre de la publicité</label>
+                        {{ form.titre }}
+                        {% if form.titre.errors %}
+                        <div class="pub-form-error">{{ form.titre.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="pub-form-group">
+                        <label for="{{ form.texte.id_for_label }}" class="pub-form-label">Message publicitaire</label>
+                        {{ form.texte }}
+                        {% if form.texte.errors %}
+                        <div class="pub-form-error">{{ form.texte.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="pub-form-group">
+                        <label for="{{ form.image.id_for_label }}" class="pub-form-label">
+                            Visuel <span class="optional">(optionnel)</span>
+                        </label>
+                        <div class="pub-file-zone" id="fileZone">
+                            {{ form.image }}
+                        </div>
+                        <span class="pub-form-hint">PNG, JPG ou WebP — max. 5 Mo. Une image attirera davantage l'attention.</span>
+                        {% if form.image.errors %}
+                        <div class="pub-form-error">{{ form.image.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="pub-form-group">
+                        <label for="{{ form.url_cible.id_for_label }}" class="pub-form-label">
+                            Lien de destination <span class="optional">(optionnel)</span>
+                        </label>
+                        {{ form.url_cible }}
+                        <span class="pub-form-hint">Si renseigné, un bouton « En savoir plus » ouvrira ce lien dans un nouvel onglet.</span>
+                        {% if form.url_cible.errors %}
+                        <div class="pub-form-error">{{ form.url_cible.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="pub-form-group">
+                        <label class="pub-form-label">
+                            Période de diffusion <span class="optional">(optionnel)</span>
+                        </label>
+                        <div class="pub-dates-grid">
+                            <div>
+                                <label for="{{ form.date_debut.id_for_label }}" class="pub-form-label" style="font-size:0.88rem; font-weight:500;">Date de début</label>
+                                {{ form.date_debut }}
+                            </div>
+                            <div>
+                                <label for="{{ form.date_fin.id_for_label }}" class="pub-form-label" style="font-size:0.88rem; font-weight:500;">Date de fin</label>
+                                {{ form.date_fin }}
+                            </div>
+                        </div>
+                        <span class="pub-form-hint">Laisser vide pour utiliser la durée définie par la campagne.</span>
+                        {% if form.date_debut.errors or form.date_fin.errors %}
+                        <div class="pub-form-error">
+                            {{ form.date_debut.errors|striptags }} {{ form.date_fin.errors|striptags }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="pub-form-actions">
+                        <a href="{% url 'comptes:profil' %}" class="pub-btn pub-btn-secondary">Annuler</a>
+                        <button type="submit" class="pub-btn pub-btn-primary">Enregistrer la publicité</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <aside class="pub-sidebar">
+            <div class="pub-info-card">
+                <h3>💡 Comment ça marche ?</h3>
+                <ol>
+                    <li>Rédigez un titre accrocheur et un message clair.</li>
+                    <li>Ajoutez une image pour renforcer l’impact visuel.</li>
+                    <li>Indiquez un lien si vous souhaitez rediriger vers votre site.</li>
+                    <li>Votre publicité sera diffusée aux visiteurs du portail de la mairie.</li>
+                </ol>
+            </div>
+            <div class="pub-tips-card">
+                <h3>✨ Conseils pour une publicité efficace</h3>
+                <ul>
+                    <li>Utilisez un titre court et percutant.</li>
+                    <li>Mettez en valeur l’offre ou le bénéfice principal.</li>
+                    <li>Privilégiez une image de bonne qualité (paysage).</li>
+                    <li>Un lien vers votre site augmente les conversions.</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var zone = document.getElementById('fileZone');
+    var input = zone && zone.querySelector('input[type="file"]');
+    if (input) {
+        input.addEventListener('change', function() {
+            zone.classList.toggle('has-file', this.files && this.files.length > 0);
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'actualites',
     'comptes',  # Gestion de l'authentification
     'diaspora',  # Enregistrement et gestion de la diaspora
+    'osc',  # Organisations de la Société Civile
 ]
 
 MIDDLEWARE = [
@@ -81,6 +82,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'mairie.context_processors.mairie_config',
                 'mairie.context_processors.publicite_globale',
+                'mairie.context_processors.partenaires_footer',
             ],
         },
     },

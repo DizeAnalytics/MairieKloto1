@@ -83,6 +83,44 @@
         text-decoration: none;
     }
 
+    /* Nos Partenaires */
+    .footer-partenaires {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .footer-partenaire-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--white, #ffffff);
+        text-decoration: none;
+        transition: opacity 0.3s;
+    }
+
+    .footer-partenaire-item:hover {
+        opacity: 0.9;
+    }
+
+    a.footer-partenaire-item:hover {
+        color: var(--secondary, #FFCD00);
+        text-decoration: none;
+    }
+
+    .footer-partenaire-logo {
+        max-width: 80px;
+        max-height: 50px;
+        object-fit: contain;
+    }
+
+    .footer-partenaire-nom {
+        font-size: 0.85rem;
+        text-align: center;
+    }
+
     .footer-bottom {
         text-align: center;
         padding-top: 2rem;
@@ -91,6 +129,46 @@
     .footer-bottom p { 
         white-space: normal;
         word-wrap: break-word;
+    }
+
+    /* Newsletter footer */
+    .footer-newsletter-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .footer-newsletter-input {
+        flex: 1 1 180px;
+        min-width: 0;
+        padding: 0.5rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        background: rgba(0, 0, 0, 0.1);
+        color: var(--white, #ffffff);
+        font-size: 0.9rem;
+    }
+
+    .footer-newsletter-input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .footer-newsletter-btn {
+        border-radius: 999px;
+        padding: 0.5rem 1rem;
+        border: none;
+        background: var(--secondary, #FFCD00);
+        color: var(--dark, #1a1a1a);
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .footer-newsletter-btn:hover {
+        background: #e6b800;
+        transform: translateY(-1px);
     }
 
     @media (max-width: 768px) {
@@ -148,6 +226,14 @@
             font-size: 0.75rem;
             line-height: 1.6;
             padding: 0 0.5rem;
+        }
+
+        .footer-newsletter-form {
+            flex-direction: column;
+        }
+
+        .footer-newsletter-btn {
+            width: 100%;
         }
     }
 

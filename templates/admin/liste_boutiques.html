@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+        }
+        .topbar {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .topbar-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+        .topbar-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.8);
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+        }
+        .back-link:hover {
+            background: var(--white);
+            color: var(--primary);
+        }
+        .btn-louer {
+            background: var(--secondary);
+            color: var(--dark);
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-louer:hover {
+            background: #e6b800;
+        }
+        .btn-creer-local {
+            background: #0d6efd;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-creer-local:hover {
+            background: #0b5ed7;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .page-grid {
+            display: block;
+        }
+        .card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+        }
+        .card h2 {
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        .badge-total {
+            display: inline-block;
+            margin-top: 0.25rem;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .search-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            align-items: flex-end;
+        }
+        .search-form .form-field {
+            flex: 1 1 180px;
+            min-width: 0;
+        }
+        .search-form .form-actions {
+            flex: 0 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .search-form label {
+            font-size: 0.85rem;
+            color: #555;
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+        .search-form input,
+        .search-form select {
+            padding: 0.5rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 280px;
+        }
+        .search-form .searchable-select input,
+        .search-form .searchable-select select {
+            max-width: none;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1.2rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1.2rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+        .table-container {
+            margin-top: 1.5rem;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+        }
+        thead {
+            background: var(--primary);
+            color: #fff;
+        }
+        th, td {
+            padding: 0.75rem 0.9rem;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
+        tbody tr:hover {
+            background: #f1f1f1;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 999px;
+            font-size: 0.75rem;
+        }
+        .form-group {
+            margin-bottom: 0.9rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+            color: #555;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 0.9rem;
+        }
+        .form-group small {
+            display: block;
+            font-size: 0.75rem;
+            color: #777;
+            margin-top: 0.2rem;
+        }
+        .messages {
+            margin-bottom: 1rem;
+        }
+        .messages .message {
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+        }
+        .messages .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .messages .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        /* Searchable select */
+        .searchable-select-wrapper { min-width: 0; }
+        .searchable-select {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .searchable-select .select-search {
+            padding: 0.5rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        .searchable-select select {
+            width: 100%;
+            max-height: 200px;
+            padding: 0.5rem 0.6rem;
+        }
+        /* Messages Django - style comme base.html */
+        .django-messages {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            max-width: 90%;
+            width: 100%;
+            max-width: 600px;
+            padding: 0 1rem;
+        }
+        .django-messages .message {
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            animation: slideDownMessage 0.3s ease-out;
+            font-weight: 500;
+        }
+        @keyframes slideDownMessage {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .django-messages .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .django-messages .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .django-messages .message-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+            padding: 0;
+            line-height: 1;
+        }
+        .django-messages .message-close:hover { opacity: 1; }
+        /* Modales */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-backdrop.active { display: flex; }
+        .modal-box {
+            background: var(--white);
+            border-radius: 12px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { margin: 0; color: var(--primary); font-size: 1.2rem; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        .modal-body { padding: 1.25rem; }
+        .add-emplacement-link {
+            display: inline-block;
+            font-size: 0.85rem;
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: none;
+            padding: 0.5rem 0.8rem;
+            border: 1px solid var(--primary);
+            border-radius: 999px;
+            background: transparent;
+        }
+        .add-emplacement-link:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+        .form-actions .add-emplacement-link {
+            align-self: flex-end;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .topbar { padding: 0.75rem 1rem; }
+            .topbar-inner { flex-wrap: wrap; gap: 0.5rem; }
+            .topbar-title { font-size: 1.2rem; }
+            .topbar-actions {
+                width: 100%;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+            .btn-louer { font-size: 0.85rem; padding: 0.4rem 0.9rem; }
+            .container { margin: 1rem auto; padding: 0 1rem; }
+            .card { padding: 1rem; }
+            .card h2 { font-size: 1.2rem; }
+            .search-form .form-field { flex: 1 1 100%; }
+            .search-form input,
+            .search-form select { max-width: none; }
+            .search-form .form-actions { flex: 1 1 100%; }
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-left: -1rem;
+                margin-right: -1rem;
+                border-radius: 0;
+            }
+            .table-container table { min-width: 600px; }
+            th, td { padding: 0.5rem 0.6rem; font-size: 0.8rem; }
+            .modal-box { margin: 0.5rem; max-height: 95vh; }
+            .modal-body { padding: 1rem; }
+        }
+        @media (max-width: 480px) {
+            .topbar-title { font-size: 1rem; }
+            .topbar-subtitle { font-size: 0.8rem; }
+            .btn-louer, .back-link { font-size: 0.8rem; padding: 0.35rem 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <div>
+                <div class="topbar-title">{{ titre }}</div>
+                <div class="topbar-subtitle">Mairie de Kloto 1 · Tableau de bord</div>
+            </div>
+            <div class="topbar-actions">
+                <a href="{% url 'tableau_bord' %}" class="back-link">← Retour</a>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="django-messages" id="djangoMessages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}" role="alert">
+            <span class="message-content">{{ message }}</span>
+            <button type="button" class="message-close" aria-label="Fermer" onclick="closeBoutiqueMessage(this)">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="container">
+        <div class="page-grid">
+            <div class="card">
+                <h2>Liste des boutiques / magasins</h2>
+                <p>Locaux de marché avec leurs locataires (contribuables).</p>
+                <span class="badge-total">Total: {{ boutiques.count }} boutique(s)</span>
+                <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <form method="get" action="{% url 'export_pdf_boutiques' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                        <input type="hidden" name="q" value="{{ current_filters.q }}">
+                        <input type="hidden" name="contribuable" value="{{ current_filters.contribuable }}">
+                        <input type="hidden" name="agent_collecteur" value="{{ current_filters.agent_collecteur }}">
+                        <input type="hidden" name="date_du" value="{{ current_filters.date_du }}">
+                        <input type="hidden" name="date_au" value="{{ current_filters.date_au }}">
+                        <button type="submit" class="btn-primary" style="padding:0.5rem 1rem;">📄 Exporter en PDF</button>
+                    </form>
+                    <form method="get" action="{% url 'export_excel_boutiques' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                        <input type="hidden" name="q" value="{{ current_filters.q }}">
+                        <input type="hidden" name="contribuable" value="{{ current_filters.contribuable }}">
+                        <input type="hidden" name="agent_collecteur" value="{{ current_filters.agent_collecteur }}">
+                        <input type="hidden" name="date_du" value="{{ current_filters.date_du }}">
+                        <input type="hidden" name="date_au" value="{{ current_filters.date_au }}">
+                        <button type="submit" class="btn-primary" style="padding:0.5rem 1rem; background: #2e7d32;">📊 Exporter en Excel</button>
+                    </form>
+                </div>
+                <form method="get" class="search-form">
+                    <div class="form-field">
+                        <label>Recherche</label>
+                        <input type="text" name="q" value="{{ current_filters.q }}" placeholder="Matricule, emplacement...">
+                    </div>
+                    <div class="form-field searchable-select-wrapper">
+                        <label>Contribuable (locataire)</label>
+                        <div class="searchable-select" data-target="filter_contribuable">
+                            <input type="text" class="select-search" placeholder="Taper pour rechercher..." autocomplete="off">
+                            <select name="contribuable" id="filter_contribuable">
+                                <option value="">-- Tous --</option>
+                                {% for c in contribuables_all %}
+                                <option value="{{ c.id }}" data-search="{{ c.nom|lower }} {{ c.prenom|lower }} {{ c.telephone|default:'' }}" {% if current_filters.contribuable == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nom }} {{ c.prenom }}{% if c.telephone %} - {{ c.telephone }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label>Agent collecteur</label>
+                        <select name="agent_collecteur">
+                            <option value="">-- Tous --</option>
+                            {% for a in agents_collecteurs %}
+                            <option value="{{ a.id }}" {% if current_filters.agent_collecteur == a.id|stringformat:"s" %}selected{% endif %}>{{ a.matricule }} - {{ a.nom }} {{ a.prenom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Du (date)</label>
+                        <input type="date" name="date_du" value="{{ current_filters.date_du }}" placeholder="AAAA-MM-JJ" title="Période : date de début">
+                    </div>
+                    <div class="form-field">
+                        <label>Au (date)</label>
+                        <input type="date" name="date_au" value="{{ current_filters.date_au }}" placeholder="AAAA-MM-JJ" title="Période : date de fin">
+                    </div>
+                    <div class="form-field form-actions">
+                        <button type="submit" class="btn-primary">🔍 Filtrer</button>
+                        <a href="{% url 'liste_boutiques' %}" class="btn-secondary">↺ Réinitialiser</a>
+                        <button type="button" class="btn-louer" onclick="openModalBoutique()">🏪 Louer une boutique/Magasin</button>
+                        <button type="button" class="btn-creer-local" onclick="openModalCreerLocal()">➕ Créer un local</button>
+                        <a class="add-emplacement-link" onclick="openModalEmplacement()">+ Ajouter un emplacement</a>
+                    </div>
+                </form>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Matricule</th>
+                                <th>Emplacement</th>
+                                <th>Contribuable (locataire)</th>
+                                <th>Type</th>
+                                <th>Loyer mensuel</th>
+                                <th>Activité</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in boutiques %}
+                            <tr>
+                                <td><strong>{{ b.matricule }}</strong></td>
+                                <td>{{ b.emplacement.nom_lieu }}</td>
+                                <td>
+                                    {% if b.contribuable %}
+                                        {{ b.contribuable.nom }} {{ b.contribuable.prenom }}
+                                    {% else %}
+                                        <span class="badge" style="background:#fff3cd;color:#856404;border-color:#ffeeba;">Non attribuée</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ b.get_type_local_display }}</td>
+                                <td>{{ b.prix_location_mensuel|floatformat:0 }} FCFA</td>
+                                <td>{{ b.activite_vendue }}</td>
+                                <td>
+                                    <button type="button" class="btn-modifier" 
+                                        data-boutique-id="{{ b.id }}"
+                                        data-matricule="{{ b.matricule }}"
+                                        data-emplacement-id="{{ b.emplacement.id }}"
+                                        data-type-local="{{ b.type_local }}"
+                                        data-superficie="{{ b.superficie_m2|stringformat:"f" }}"
+                                        data-loyer-mensuel="{{ b.prix_location_mensuel|stringformat:"f" }}"
+                                        data-loyer-annuel="{% if b.prix_location_annuel %}{{ b.prix_location_annuel|stringformat:"f" }}{% endif %}"
+                                        data-contribuable-id="{% if b.contribuable %}{{ b.contribuable.id }}{% endif %}"
+                                        data-agent-collecteur-id="{% if b.agent_collecteur %}{{ b.agent_collecteur.id }}{% endif %}"
+                                        data-activite="{{ b.activite_vendue|default:"" }}"
+                                        data-description="{{ b.description|default:"" }}"
+                                        data-est-actif="{{ b.est_actif|yesno:"1,0" }}"
+                                        onclick="openModalModifierBoutique(this)" 
+                                        style="background: #007bff; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">✏️ Modifier</button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" style="text-align:center; padding: 1.5rem; color:#777;">
+                                    Aucune boutique / aucun magasin enregistré pour le moment.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale : Louer un local (assigner à un contribuable) -->
+    <div class="modal-backdrop" id="modalBoutique">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🏪 Louer un local (boutique / magasin / kiosque…)</h3>
+                <button type="button" class="modal-close" onclick="closeModalBoutique()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="formBoutique" action="{% url 'liste_boutiques' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="louer">
+
+                    <div class="form-group">
+                        <label for="id_local_id">Local (non occupé)</label>
+                        <select id="id_local_id" name="local_id" required>
+                            <option value="">-- Choisir un local --</option>
+                            {% for loc in locaux_non_occupes %}
+                            <option value="{{ loc.id }}">{{ loc.matricule }} — {{ loc.get_type_local_display }} — {{ loc.emplacement.nom_lieu }}</option>
+                            {% endfor %}
+                        </select>
+                        <small>Seuls les locaux non encore loués sont affichés.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_contribuable">Contribuable (locataire)</label>
+                        <div class="searchable-select" data-target="id_contribuable">
+                            <input type="text" class="select-search" placeholder="Taper le nom ou sélectionner..." autocomplete="off">
+                            <select id="id_contribuable" name="contribuable" required>
+                                <option value="">-- Choisir un contribuable --</option>
+                                {% for c in contribuables_all %}
+                                <option value="{{ c.id }}" data-search="{{ c.nom|lower }} {{ c.prenom|lower }} {{ c.telephone|default:'' }}" {% if current_filters.contribuable == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nom }} {{ c.prenom }}{% if c.telephone %} - {{ c.telephone }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <small>Le local sera attribué à ce contribuable.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_agent_collecteur">Agent collecteur</label>
+                        <select id="id_agent_collecteur" name="agent_collecteur" required>
+                            <option value="">-- Choisir un agent collecteur --</option>
+                            {% for agent in agents_collecteurs %}
+                            <option value="{{ agent.id }}">{{ agent.matricule }} - {{ agent.nom }} {{ agent.prenom }}{% if agent.telephone %} - {{ agent.telephone }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <small>Agent collecteur assigné à ce local pour la collecte des cotisations (obligatoire).</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_activite_vendue">Activité exercée</label>
+                        <input type="text" id="id_activite_vendue" name="activite_vendue" required placeholder="Ex: Vente de légumes">
+                    </div>
+
+                    <button type="submit" class="btn-primary">✅ Louer ce local</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale : Créer un local (sans locataire) -->
+    <div class="modal-backdrop" id="modalCreerLocal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>➕ Créer un local (non occupé)</h3>
+                <button type="button" class="modal-close" onclick="closeModalCreerLocal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="formCreerLocal" action="{% url 'liste_boutiques' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="creer_local">
+
+                    <div class="form-group">
+                        <label for="creer_matricule">Matricule du local</label>
+                        <input type="text" id="creer_matricule" name="matricule" required placeholder="Ex: MKT-2026-001">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creer_emplacement">Emplacement (marché / place publique)</label>
+                        <select id="creer_emplacement" name="emplacement" required>
+                            <option value="">-- Choisir un emplacement --</option>
+                            {% for e in emplacements %}
+                            <option value="{{ e.id }}">{{ e.nom_lieu }} - {{ e.quartier }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creer_type_local">Type de local</label>
+                        <select id="creer_type_local" name="type_local">
+                            {% for value, label in type_local_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creer_superficie_m2">Superficie (m²)</label>
+                        <input type="number" step="0.01" id="creer_superficie_m2" name="superficie_m2" placeholder="Ex: 10" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creer_prix_location_mensuel">Prix de location mensuel (FCFA)</label>
+                        <input type="number" step="0.01" id="creer_prix_location_mensuel" name="prix_location_mensuel" placeholder="Ex: 20000" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creer_prix_location_annuel">Prix de location annuel (FCFA) (facultatif)</label>
+                        <input type="number" step="0.01" id="creer_prix_location_annuel" name="prix_location_annuel" placeholder="Laisser vide si 12 × mensuel">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="creer_description">Description (facultatif)</label>
+                        <textarea id="creer_description" name="description" rows="2" placeholder="Notes sur le local..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">✅ Créer le local</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale : Modifier une boutique -->
+    <div class="modal-backdrop" id="modalModifierBoutique">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✏️ Modifier une boutique/magasin</h3>
+                <button type="button" class="modal-close" onclick="closeModalModifierBoutique()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="formModifierBoutique" action="{% url 'liste_boutiques' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="modifier_boutique">
+                    <input type="hidden" id="modifier_boutique_id" name="boutique_id" value="">
+
+                    <div class="form-group">
+                        <label for="modifier_matricule">Matricule du local</label>
+                        <input type="text" id="modifier_matricule" name="matricule" required placeholder="Ex: MKT-2026-001">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_emplacement">Emplacement (marché / place publique)</label>
+                        <select id="modifier_emplacement" name="emplacement" required>
+                            <option value="">-- Choisir un emplacement --</option>
+                            {% for e in emplacements %}
+                            <option value="{{ e.id }}">{{ e.nom_lieu }} - {{ e.quartier }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_type_local">Type de local</label>
+                        <select id="modifier_type_local" name="type_local">
+                            {% for value, label in type_local_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_superficie_m2">Superficie (m²)</label>
+                        <input type="number" step="0.01" id="modifier_superficie_m2" name="superficie_m2" placeholder="Ex: 10" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_prix_location_mensuel">Prix de location mensuel (FCFA)</label>
+                        <input type="number" step="0.01" id="modifier_prix_location_mensuel" name="prix_location_mensuel" placeholder="Ex: 20000" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_prix_location_annuel">Prix de location annuel (FCFA) (facultatif)</label>
+                        <input type="number" step="0.01" id="modifier_prix_location_annuel" name="prix_location_annuel" placeholder="Laisser vide si 12 × mensuel">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_contribuable">Contribuable (locataire)</label>
+                        <div class="searchable-select" data-target="modifier_contribuable">
+                            <input type="text" class="select-search" placeholder="Taper le nom ou sélectionner..." autocomplete="off">
+                            <select id="modifier_contribuable" name="contribuable">
+                                <option value="">-- Aucun (local non occupé) --</option>
+                                {% for c in contribuables_all %}
+                                <option value="{{ c.id }}" data-search="{{ c.nom|lower }} {{ c.prenom|lower }} {{ c.telephone|default:'' }}">{{ c.nom }} {{ c.prenom }}{% if c.telephone %} - {{ c.telephone }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_agent_collecteur">Agent collecteur</label>
+                        <select id="modifier_agent_collecteur" name="agent_collecteur">
+                            <option value="">-- Choisir un agent collecteur --</option>
+                            {% for agent in agents_collecteurs %}
+                            <option value="{{ agent.id }}">{{ agent.matricule }} - {{ agent.nom }} {{ agent.prenom }}{% if agent.telephone %} - {{ agent.telephone }}{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <small>Agent collecteur assigné à ce local pour la collecte des cotisations.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_activite_vendue">Activité exercée</label>
+                        <input type="text" id="modifier_activite_vendue" name="activite_vendue" placeholder="Ex: Vente de légumes">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modifier_description">Description (facultatif)</label>
+                        <textarea id="modifier_description" name="description" rows="2" placeholder="Notes sur le local..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="modifier_est_actif" name="est_actif" value="1" checked>
+                            Local actif
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary">✅ Enregistrer les modifications</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale : Ajouter un emplacement -->
+    <div class="modal-backdrop" id="modalEmplacement">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📍 Ajouter un emplacement (marché / place publique)</h3>
+                <button type="button" class="modal-close" onclick="closeModalEmplacement()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formEmplacement">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="emplacement_nom_lieu">Nom du lieu *</label>
+                        <input type="text" id="emplacement_nom_lieu" required placeholder="Ex: Marché central de Kpalimé">
+                    </div>
+                    <div class="form-group">
+                        <label for="emplacement_quartier">Quartier *</label>
+                        <input type="text" id="emplacement_quartier" required placeholder="Ex: Centre-ville">
+                    </div>
+                    <div class="form-group">
+                        <label for="emplacement_canton">Canton (facultatif)</label>
+                        <input type="text" id="emplacement_canton" placeholder="Ex: Kpalimé">
+                    </div>
+                    <div class="form-group">
+                        <label for="emplacement_village">Village (facultatif)</label>
+                        <input type="text" id="emplacement_village" placeholder="Ex: Agou-Nyogbo">
+                    </div>
+                    <div class="form-group">
+                        <label for="emplacement_description">Description (facultatif)</label>
+                        <textarea id="emplacement_description" rows="2" placeholder="Accès, horaires..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">✅ Ajouter l'emplacement</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModalBoutique() {
+            document.getElementById('modalBoutique').classList.add('active');
+        }
+        function closeModalBoutique() {
+            document.getElementById('modalBoutique').classList.remove('active');
+        }
+        function openModalCreerLocal() {
+            document.getElementById('modalCreerLocal').classList.add('active');
+        }
+        function closeModalCreerLocal() {
+            document.getElementById('modalCreerLocal').classList.remove('active');
+        }
+        function openModalEmplacement() {
+            document.getElementById('modalEmplacement').classList.add('active');
+        }
+        function closeModalEmplacement() {
+            document.getElementById('modalEmplacement').classList.remove('active');
+        }
+        function openModalModifierBoutique(button) {
+            // Récupérer les données depuis les attributs data-*
+            // Utiliser dataset pour éviter les problèmes d'échappement
+            var boutiqueId = button.dataset.boutiqueId || '';
+            var matricule = button.dataset.matricule || '';
+            var emplacementId = button.dataset.emplacementId || '';
+            var typeLocal = button.dataset.typeLocal || 'boutique';
+            var superficie = button.dataset.superficie || '';
+            var loyerMensuel = button.dataset.loyerMensuel || '';
+            var loyerAnnuel = button.dataset.loyerAnnuel || '';
+            var contribuableId = button.dataset.contribuableId || '';
+            var agentCollecteurId = button.dataset.agentCollecteurId || '';
+            var activite = button.dataset.activite || '';
+            var description = button.dataset.description || '';
+            var estActif = button.dataset.estActif === '1';
+            
+            // Remplir les champs du formulaire
+            document.getElementById('modifier_boutique_id').value = boutiqueId;
+            document.getElementById('modifier_matricule').value = matricule;
+            document.getElementById('modifier_emplacement').value = emplacementId;
+            document.getElementById('modifier_type_local').value = typeLocal;
+            
+            // Gérer les valeurs numériques (superficie, loyers)
+            var superficieVal = superficie ? parseFloat(superficie.replace(',', '.')) : 0;
+            var loyerMensuelVal = loyerMensuel ? parseFloat(loyerMensuel.replace(',', '.')) : 0;
+            var loyerAnnuelVal = loyerAnnuel ? parseFloat(loyerAnnuel.replace(',', '.')) : '';
+            
+            document.getElementById('modifier_superficie_m2').value = isNaN(superficieVal) ? 0 : superficieVal;
+            document.getElementById('modifier_prix_location_mensuel').value = isNaN(loyerMensuelVal) ? 0 : loyerMensuelVal;
+            document.getElementById('modifier_prix_location_annuel').value = (loyerAnnuelVal && !isNaN(loyerAnnuelVal)) ? loyerAnnuelVal : '';
+            
+            // Gérer les sélections (contribuable, agent collecteur)
+            document.getElementById('modifier_contribuable').value = contribuableId || '';
+            document.getElementById('modifier_agent_collecteur').value = agentCollecteurId || '';
+            
+            // Gérer les champs texte (les valeurs sont déjà décodées par dataset)
+            document.getElementById('modifier_activite_vendue').value = activite;
+            document.getElementById('modifier_description').value = description;
+            document.getElementById('modifier_est_actif').checked = estActif;
+            
+            // Mettre à jour le champ de recherche du select searchable pour le contribuable
+            var contribuableSelect = document.getElementById('modifier_contribuable');
+            var searchInput = document.querySelector('.searchable-select[data-target="modifier_contribuable"] .select-search');
+            
+            if (contribuableSelect && contribuableSelect.value && searchInput) {
+                var contribuableOption = contribuableSelect.querySelector('option[value="' + contribuableSelect.value + '"]');
+                if (contribuableOption) {
+                    searchInput.value = contribuableOption.textContent.trim();
+                } else {
+                    searchInput.value = '';
+                }
+            } else if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            document.getElementById('modalModifierBoutique').classList.add('active');
+        }
+        function closeModalModifierBoutique() {
+            document.getElementById('modalModifierBoutique').classList.remove('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fermer modales au clic sur le fond
+            document.getElementById('modalBoutique').addEventListener('click', function(e) {
+                if (e.target === this) closeModalBoutique();
+            });
+            document.getElementById('modalCreerLocal').addEventListener('click', function(e) {
+                if (e.target === this) closeModalCreerLocal();
+            });
+            document.getElementById('modalEmplacement').addEventListener('click', function(e) {
+                if (e.target === this) closeModalEmplacement();
+            });
+            document.getElementById('modalModifierBoutique').addEventListener('click', function(e) {
+                if (e.target === this) closeModalModifierBoutique();
+            });
+
+            // Formulaire emplacement (AJAX)
+            document.getElementById('formEmplacement').addEventListener('submit', function(e) {
+                e.preventDefault();
+                var btn = this.querySelector('button[type="submit"]');
+                btn.disabled = true;
+                var fd = new FormData();
+                fd.append('nom_lieu', document.getElementById('emplacement_nom_lieu').value.trim());
+                fd.append('quartier', document.getElementById('emplacement_quartier').value.trim());
+                fd.append('canton', document.getElementById('emplacement_canton').value.trim());
+                fd.append('village', document.getElementById('emplacement_village').value.trim());
+                fd.append('description', document.getElementById('emplacement_description').value.trim());
+                fd.append('csrfmiddlewaretoken', document.querySelector('#formEmplacement input[name="csrfmiddlewaretoken"]').value);
+                fetch("{% url 'creer_emplacement_ajax' %}", {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(function(r) { return r.json(); }).then(function(data) {
+                    if (data.success) {
+                        var sel = document.getElementById('id_emplacement');
+                        var opt = document.createElement('option');
+                        opt.value = data.id;
+                        opt.textContent = data.label;
+                        opt.selected = true;
+                        sel.appendChild(opt);
+                        closeModalEmplacement();
+                        document.getElementById('formEmplacement').reset();
+                    } else {
+                        alert(data.error || 'Erreur lors de la création.');
+                    }
+                }).catch(function() { alert('Erreur réseau.'); }).finally(function() { btn.disabled = false; });
+            });
+
+            // Searchable select
+            document.querySelectorAll('.searchable-select').forEach(function(wrapper) {
+                var searchInput = wrapper.querySelector('.select-search');
+                var select = wrapper.querySelector('select');
+                if (!searchInput || !select) return;
+
+                function filterOptions() {
+                    var q = (searchInput.value || '').toLowerCase().trim();
+                    var opts = select.querySelectorAll('option');
+                    opts.forEach(function(opt) {
+                        var search = (opt.getAttribute('data-search') || opt.textContent || '').toLowerCase();
+                        var show = !opt.value || !q || search.indexOf(q) >= 0;
+                        opt.style.display = show ? '' : 'none';
+                    });
+                }
+
+                function syncFromSelect() {
+                    var opt = select.options[select.selectedIndex];
+                    searchInput.value = opt ? opt.textContent.trim() : '';
+                }
+
+                searchInput.addEventListener('input', filterOptions);
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') e.preventDefault();
+                });
+                select.addEventListener('change', syncFromSelect);
+                syncFromSelect();
+            });
+
+            // Messages : disparition automatique après 5 secondes
+            var messagesContainer = document.getElementById('djangoMessages');
+            if (messagesContainer) {
+                var msgs = messagesContainer.querySelectorAll('.message');
+                var hasError = false;
+                msgs.forEach(function(msg) {
+                    if (msg.classList.contains('error')) hasError = true;
+                    setTimeout(function() { fadeOutMessage(msg); }, 5000);
+                });
+                if (hasError) openModalBoutique();
+            }
+        });
+
+        function fadeOutMessage(el) {
+            if (!el || !el.parentNode) return;
+            el.style.transition = 'opacity 0.4s ease-out, transform 0.4s ease-out';
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(-10px)';
+            setTimeout(function() {
+                if (el.parentNode) {
+                    el.remove();
+                    var container = document.getElementById('djangoMessages');
+                    if (container && container.children.length === 0) container.remove();
+                }
+            }, 400);
+        }
+
+        function closeBoutiqueMessage(btn) {
+            var msg = btn && btn.closest ? btn.closest('.message') : null;
+            if (msg) fadeOutMessage(msg);
+        }
+    </script>
+</body>
+</html>
+

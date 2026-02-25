@@ -97,6 +97,11 @@ class ActeurEconomiqueAdmin(admin.ModelAdmin):
             ),
             "classes": ("collapse",),
         }),
+        ("Agents collecteurs", {
+            "fields": (
+                "agents_collecteurs",
+            )
+        }),
         ("Validation", {
             "fields": (
                 "accepte_public",
@@ -107,6 +112,7 @@ class ActeurEconomiqueAdmin(admin.ModelAdmin):
             )
         }),
     )
+    filter_horizontal = ("agents_collecteurs",)
 
 
 @admin.register(InstitutionFinanciere)
@@ -209,6 +215,11 @@ class InstitutionFinanciereAdmin(admin.ModelAdmin):
             ),
             "classes": ("collapse",),
         }),
+        ("Agents collecteurs", {
+            "fields": (
+                "agents_collecteurs",
+            )
+        }),
         ("Validation", {
             "fields": (
                 "certifie_info",
@@ -220,6 +231,7 @@ class InstitutionFinanciereAdmin(admin.ModelAdmin):
             )
         }),
     )
+    filter_horizontal = ("agents_collecteurs",)
     
     def get_services_display(self, obj):
         """Affiche les services de manière lisible."""

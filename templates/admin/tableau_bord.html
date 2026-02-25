@@ -354,6 +354,69 @@
             font-size: 1.3rem;
         }
 
+        /* Boutons et champs du formulaire Infrastructures */
+        .infra-form-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: center;
+        }
+
+        .btn-infra-primary,
+        .btn-infra-secondary,
+        .btn-geo {
+            padding: 0.7rem 1.3rem;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-infra-primary {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            box-shadow: 0 3px 8px rgba(0, 98, 51, 0.3);
+        }
+
+        .btn-infra-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 12px rgba(0, 98, 51, 0.4);
+        }
+
+        .btn-infra-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #d0d0d0;
+        }
+
+        .btn-infra-secondary:hover {
+            background: #e4e4e4;
+        }
+
+        .btn-geo {
+            background: rgba(0, 98, 51, 0.06);
+            color: var(--primary);
+            border: 1px solid rgba(0, 98, 51, 0.4);
+            border-radius: 999px;
+            padding: 0.6rem 1.1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-geo:hover {
+            background: rgba(0, 98, 51, 0.12);
+        }
+
+        .btn-geo:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
         @media (max-width: 768px) {
             .pdf-export-grid {
                 grid-template-columns: 1fr;
@@ -611,6 +674,10 @@
                     <div class="value">{{ stats.diaspora }}</div>
                 </div>
                 <div class="stat-card">
+                    <h3>🤝 Organisations de la Société Civile (OSC)</h3>
+                    <div class="value">{{ stats.osc }}</div>
+                </div>
+                <div class="stat-card">
                     <h3>Candidatures reçues</h3>
                     <div class="value">{{ stats.candidatures }}</div>
                 </div>
@@ -624,7 +691,7 @@
         <div class="stats-section" style="margin-top: 2rem;">
             <h2>🗺️ Carte des Acteurs Économiques et Institutions Financières</h2>
             <p style="margin-bottom: 1rem; color: var(--dark); opacity: 0.8;">Localisation des acteurs et institutions ayant renseigné leurs coordonnées GPS.</p>
-            <div id="carte-acteurs" style="height: 450px; border-radius: 10px; overflow: hidden; background: var(--light);"></div>
+            <div id="carte-acteurs" style="height: 320px; border-radius: 10px; overflow: hidden; background: var(--light); margin-bottom: 1.5rem;"></div>
         </div>
         <script type="application/json" id="mapMarkersData">{{ map_markers_json|safe }}</script>
 
@@ -677,6 +744,13 @@
                 <div class="menu-card-count">{{ stats.diaspora }}</div>
             </a>
 
+            <a href="{% url 'liste_osc_tableau_bord' %}" class="menu-card">
+                <div class="menu-card-icon">🤝</div>
+                <h2>Organisations de la Société Civile</h2>
+                <p>Consulter la liste des OSC enregistrées</p>
+                <div class="menu-card-count">{{ stats.osc }}</div>
+            </a>
+
             <a href="{% url 'liste_suggestions' %}" class="menu-card">
                 <div class="menu-card-icon">💡</div>
                 <h2>Suggestions</h2>
@@ -690,12 +764,139 @@
                 <p>Valider, activer et suivre les campagnes publicitaires</p>
             </a>
 
+            <a href="{% url 'newsletters_admin' %}" class="menu-card">
+                <div class="menu-card-icon">📨</div>
+                <h2>Newsletters</h2>
+                <p>Consulter les abonnés et préparer l'envoi des actualités par email</p>
+            </a>
+
+            <a href="{% url 'liste_agents_collecteurs' %}" class="menu-card">
+                <div class="menu-card-icon">👮</div>
+                <h2>Agents Collecteurs</h2>
+                <p>Gérer les agents chargés de collecter les recettes auprès des contribuables</p>
+                <div class="menu-card-count">{{ stats.agents_collecteurs }}</div>
+            </a>
+
+            <a href="{% url 'liste_contribuables' %}" class="menu-card">
+                <div class="menu-card-icon">👥</div>
+                <h2>Contribuables</h2>
+                <p>Consulter la liste des contribuables (marchés et places publiques)</p>
+                <div class="menu-card-count">{{ stats.contribuables }}</div>
+            </a>
+
+            <a href="{% url 'liste_boutiques' %}" class="menu-card">
+                <div class="menu-card-icon">🏪</div>
+                <h2>Boutiques / Magasins</h2>
+                <p>Créer et gérer les boutiques / magasins de marché (locations aux contribuables)</p>
+                <div class="menu-card-count">{{ stats.boutiques_magasins }}</div>
+            </a>
+
+            <a href="{% url 'liste_contributions' %}" class="menu-card">
+                <div class="menu-card-icon">💰</div>
+                <h2>Contributions / Taxes</h2>
+                <p>Consulter les cotisations annuelles, paiements mensuels et tickets marché</p>
+                <div class="menu-card-count">{{ stats.cotisations_annuelles }} cotisations</div>
+            </a>
+            <a href="{% url 'liste_cotisations_acteurs_institutions' %}" class="menu-card">
+                <div class="menu-card-icon">🏢</div>
+                <h2>Cotisations Acteurs & Institutions</h2>
+                <p>Cotisations annuelles (acteurs économiques et institutions financières)</p>
+            </a>
+
+            <a href="{% url 'tableau_bord_organigramme' %}" class="menu-card">
+                <div class="menu-card-icon">🏛️</div>
+                <h2>Organigramme de la Mairie</h2>
+                <p>Créer et gérer les directions, sections et le personnel de l'organigramme.</p>
+                <div class="menu-card-count">
+                    {{ stats.directions_mairie }} dir. • {{ stats.sections_mairie }} sec. • {{ stats.personnels_sections }} pers.
+                </div>
+            </a>
+
+            <a href="#infrastructures-commune" class="menu-card">
+                <div class="menu-card-icon">🗺️</div>
+                <h2>Infrastructures de la Commune</h2>
+                <p>Créer et modifier les infrastructures (santé, éducation, voirie, administrations) sur la carte.</p>
+                <div class="menu-card-count">{{ stats.infrastructures_commune }}</div>
+            </a>
+
             <a href="/Securelogin/" class="menu-card" target="_blank">
                 <div class="menu-card-icon">⚙️</div>
                 <h2>Admin Django</h2>
                 <p>Accéder à l'interface d'administration Django complète</p>
             </a>
         </div>
+
+        <div class="stats-section" id="infrastructures-commune" style="margin-top: 2rem; scroll-margin-top: 120px;">
+            <h2>🏛️ Infrastructures de la Commune (santé, éducation, voirie, administrations)</h2>
+            <p style="margin-bottom: 1rem; color: var(--dark); opacity: 0.8;">Cliquez sur la carte pour créer (ou replacer) une infrastructure, puis enregistrez-la via le formulaire.</p>
+            <div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr); gap: 1.5rem; align-items: flex-start;">
+                <div>
+                    <div id="carte-infrastructures" style="height: 380px; border-radius: 10px; overflow: hidden; background: var(--light);"></div>
+                    <small style="display:block; margin-top:0.5rem; color:#777;">Astuce : cliquez sur un point existant pour le modifier ; cliquez sur la carte pour préparer un nouveau point.</small>
+                </div>
+                <div>
+                    <form id="form-infrastructure" method="post" action="{% url 'sauvegarder_infrastructure_ajax' %}" class="card" style="padding:1.5rem; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.06);">
+                        {% csrf_token %}
+                        <input type="hidden" name="infra_id" id="infra_id">
+                        <div class="form-group">
+                            <label for="infra_type">Type d'infrastructure <span style="color:#D21034;">*</span></label>
+                            <select name="type_infrastructure" id="infra_type" required>
+                                <option value="">-- Sélectionner --</option>
+                                <option value="sante">Infrastructure de santé</option>
+                                <option value="education">Infrastructure éducative</option>
+                                <option value="voirie">Réseau viaire / voirie</option>
+                                <option value="administration">Administration / service public</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="infra_nom">Nom <span style="color:#D21034;">*</span></label>
+                            <input type="text" name="nom" id="infra_nom" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="infra_adresse">Adresse / quartier</label>
+                            <input type="text" name="adresse" id="infra_adresse">
+                        </div>
+                        <div class="form-group">
+                            <label for="infra_description">Description</label>
+                            <textarea name="description" id="infra_description" rows="3"></textarea>
+                            <small class="helper-text" style="font-size:0.8rem; color:#777; display:block; margin-top:0.25rem;">Décrivez brièvement le rôle ou les services de cette infrastructure.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Coordonnées GPS <span style="color:#D21034;">*</span></label>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <div style="flex:1 1 120px; min-width:0;">
+                                    <input type="text" name="latitude" id="infra_latitude" placeholder="Latitude (ex : 6.903421)" required>
+                                </div>
+                                <div style="flex:1 1 120px; min-width:0;">
+                                    <input type="text" name="longitude" id="infra_longitude" placeholder="Longitude (ex : 0.627845)" required>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-geo" id="btnGeoInfra" style="margin-top:0.5rem;">Obtenir ma position automatiquement</button>
+                            <small class="helper-text" style="font-size:0.8rem; color:#777; display:block; margin-top:0.25rem;">Vous pouvez cliquer sur la carte ou utiliser la géolocalisation automatique si vous êtes sur place.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" name="est_active" id="infra_active" checked>
+                                Afficher sur la carte publique
+                            </label>
+                        </div>
+                        <div class="form-group infra-form-actions">
+                            <button type="submit" class="btn-infra-primary">
+                                <span>💾</span>
+                                <span>Enregistrer l'infrastructure</span>
+                            </button>
+                            <button type="button" id="btn-reset-infra" class="btn-infra-secondary">
+                                <span>➕</span>
+                                <span>Nouvelle infrastructure</span>
+                            </button>
+                        </div>
+                        <div id="infra-message" style="margin-top:0.5rem; font-size:0.85rem;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script type="application/json" id="infrastructuresData">{{ infrastructures_json|safe }}</script>
+        <script type="application/json" id="infrastructuresCenter">{{ infrastructures_center_json|safe }}</script>
 
         <div class="stats-section" style="margin-top: 2rem;">
             <h2>📄 Impression PDF par période</h2>
@@ -834,6 +1035,33 @@
                         </button>
                     </div>
                 </form>
+
+                <form method="get" action="{% url 'export_pdf_osc' %}" class="pdf-export-card">
+                    <div class="pdf-card-header">
+                        <div class="pdf-card-icon">🤝</div>
+                        <h3>Organisations de la Société Civile (OSC)</h3>
+                    </div>
+                    <div class="pdf-card-body">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="label-icon">📅</span>
+                                Date de début
+                            </label>
+                            <input type="date" name="start" class="form-input" placeholder="Sélectionner une date">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="label-icon">📅</span>
+                                Date de fin
+                            </label>
+                            <input type="date" name="end" class="form-input" placeholder="Sélectionner une date">
+                        </div>
+                        <button type="submit" class="pdf-export-btn">
+                            <span class="btn-icon">📥</span>
+                            <span>Générer le PDF</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -861,6 +1089,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         (function() {
+            // Carte acteurs / institutions
             var markersData = [];
             try {
                 var el = document.getElementById('mapMarkersData');
@@ -869,7 +1098,7 @@
             var mapEl = document.getElementById('carte-acteurs');
             if (mapEl && typeof L !== 'undefined') {
                 var map = L.map('carte-acteurs').setView([6.9057, 0.6287], 12);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>' }).addTo(map);
                 for (var i = 0; i < markersData.length; i++) {
                     var m = markersData[i];
                     var icon = L.divIcon({ html: m.type === 'institution' ? '🏦' : '🏢', iconSize: [24, 24], className: 'marker-icon' });
@@ -877,6 +1106,208 @@
                 }
                 if (markersData.length === 0) {
                     L.marker([6.9057, 0.6287]).addTo(map).bindPopup('Kpalimé (centre)<br>Aucun acteur ou institution avec coordonnées GPS pour le moment.');
+                }
+            }
+
+            // Carte infrastructures
+            var infraData = [];
+            var infraCenter = {lat: 6.9057, lng: 0.6287, zoom: 12};
+            try {
+                var infraEl = document.getElementById('infrastructuresData');
+                if (infraEl && infraEl.textContent) infraData = JSON.parse(infraEl.textContent);
+            } catch (e) {}
+            try {
+                var centerEl = document.getElementById('infrastructuresCenter');
+                if (centerEl && centerEl.textContent) {
+                    var parsedCenter = JSON.parse(centerEl.textContent);
+                    if (parsedCenter && typeof parsedCenter.lat === 'number' && typeof parsedCenter.lng === 'number') {
+                        infraCenter = parsedCenter;
+                    }
+                }
+            } catch (e) {}
+
+            var infraMapEl = document.getElementById('carte-infrastructures');
+            if (infraMapEl && typeof L !== 'undefined') {
+                var infraMap = L.map('carte-infrastructures').setView([infraCenter.lat, infraCenter.lng], infraCenter.zoom || 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(infraMap);
+
+                var infraMarkers = {};
+                var selectedMarker = null;
+
+                function getIconForType(type, active) {
+                    var emoji = '📍';
+                    if (type === 'sante') emoji = '🏥';
+                    else if (type === 'education') emoji = '🏫';
+                    else if (type === 'voirie') emoji = '🚧';
+                    else if (type === 'administration') emoji = '🏛️';
+                    var cls = active ? 'marker-icon' : 'marker-icon marker-disabled';
+                    return L.divIcon({ html: emoji, iconSize: [24, 24], className: cls });
+                }
+
+                function addOrUpdateMarker(infra) {
+                    var key = String(infra.id);
+                    if (infraMarkers[key]) {
+                        infraMap.removeLayer(infraMarkers[key]);
+                    }
+                    var icon = getIconForType(infra.type, infra.est_active);
+                    var marker = L.marker([infra.lat, infra.lng], { icon: icon, draggable: false });
+                    marker.addTo(infraMap);
+                    marker.on('click', function() {
+                        // Remplir le formulaire avec cette infrastructure
+                        document.getElementById('infra_id').value = infra.id;
+                        document.getElementById('infra_type').value = infra.type;
+                        document.getElementById('infra_nom').value = infra.nom || '';
+                        document.getElementById('infra_adresse').value = infra.adresse || '';
+                        document.getElementById('infra_description').value = infra.description || '';
+                        document.getElementById('infra_latitude').value = infra.lat;
+                        document.getElementById('infra_longitude').value = infra.lng;
+                        document.getElementById('infra_active').checked = !!infra.est_active;
+                        selectedMarker = marker;
+                    });
+                    infraMarkers[key] = marker;
+                }
+
+                // Placer les infrastructures existantes
+                for (var j = 0; j < infraData.length; j++) {
+                    addOrUpdateMarker(infraData[j]);
+                }
+
+                // Clic sur la carte pour préparer une nouvelle infrastructure
+                infraMap.on('click', function(e) {
+                    var lat = e.latlng.lat.toFixed(6);
+                    var lng = e.latlng.lng.toFixed(6);
+                    document.getElementById('infra_id').value = '';
+                    document.getElementById('infra_nom').value = '';
+                    document.getElementById('infra_adresse').value = '';
+                    document.getElementById('infra_description').value = '';
+                    document.getElementById('infra_latitude').value = lat;
+                    document.getElementById('infra_longitude').value = lng;
+                    document.getElementById('infra_active').checked = true;
+                    var msg = document.getElementById('infra-message');
+                    if (msg) {
+                        msg.textContent = 'Nouvelle infrastructure préparée aux coordonnées : ' + lat + ', ' + lng;
+                        msg.style.color = '#555';
+                    }
+                });
+
+                // Gestion du formulaire (AJAX)
+                var form = document.getElementById('form-infrastructure');
+                if (form) {
+                    form.addEventListener('submit', function(evt) {
+                        evt.preventDefault();
+                        var msg = document.getElementById('infra-message');
+                        if (msg) {
+                            msg.textContent = 'Enregistrement en cours...';
+                            msg.style.color = '#555';
+                        }
+                        var formData = new FormData(form);
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        }).then(function(resp) {
+                            return resp.json();
+                        }).then(function(data) {
+                            if (!data.success) {
+                                if (msg) {
+                                    msg.textContent = data.error || 'Erreur lors de lenregistrement.';
+                                    msg.style.color = '#b71c1c';
+                                }
+                                return;
+                            }
+                            var infraObj = {
+                                id: data.id,
+                                type: data.type_infrastructure,
+                                nom: data.nom,
+                                description: data.description,
+                                adresse: data.adresse,
+                                lat: parseFloat(data.latitude),
+                                lng: parseFloat(data.longitude),
+                                est_active: data.est_active
+                            };
+                            addOrUpdateMarker(infraObj);
+                            document.getElementById('infra_id').value = data.id;
+                            document.getElementById('infra_latitude').value = data.latitude;
+                            document.getElementById('infra_longitude').value = data.longitude;
+                            if (msg) {
+                                msg.textContent = 'Infrastructure enregistrée avec succès.';
+                                msg.style.color = '#1b5e20';
+                            }
+                        }).catch(function() {
+                            if (msg) {
+                                msg.textContent = 'Erreur réseau lors de lenregistrement.';
+                                msg.style.color = '#b71c1c';
+                            }
+                        });
+                    });
+                }
+
+                var resetBtn = document.getElementById('btn-reset-infra');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', function() {
+                        document.getElementById('infra_id').value = '';
+                        document.getElementById('infra_nom').value = '';
+                        document.getElementById('infra_adresse').value = '';
+                        document.getElementById('infra_description').value = '';
+                        document.getElementById('infra_latitude').value = '';
+                        document.getElementById('infra_longitude').value = '';
+                        document.getElementById('infra_type').value = '';
+                        document.getElementById('infra_active').checked = true;
+                        var msg = document.getElementById('infra-message');
+                        if (msg) {
+                            msg.textContent = 'Formulaire réinitialisé. Cliquez sur la carte pour choisir un emplacement.';
+                            msg.style.color = '#555';
+                        }
+                    });
+                }
+
+                // Géolocalisation automatique (comme chez les acteurs)
+                var btnGeo = document.getElementById('btnGeoInfra');
+                if (btnGeo) {
+                    btnGeo.addEventListener('click', function() {
+                        if (!navigator.geolocation) {
+                            alert("La géolocalisation n'est pas supportée par votre navigateur.");
+                            return;
+                        }
+                        btnGeo.disabled = true;
+                        var originalText = btnGeo.textContent;
+                        btnGeo.textContent = "Recherche en cours...";
+                        navigator.geolocation.getCurrentPosition(
+                            function(p) {
+                                var latVal = p.coords.latitude.toFixed(6);
+                                var lngVal = p.coords.longitude.toFixed(6);
+                                var latInput = document.getElementById('infra_latitude');
+                                var lngInput = document.getElementById('infra_longitude');
+                                if (latInput) latInput.value = latVal;
+                                if (lngInput) lngInput.value = lngVal;
+
+                                // Recentrer la carte et ajouter/mettre à jour un marqueur temporaire
+                                infraMap.setView([parseFloat(latVal), parseFloat(lngVal)], infraCenter.zoom || 15);
+
+                                var tempInfra = {
+                                    id: document.getElementById('infra_id').value || 'temp',
+                                    type: document.getElementById('infra_type').value || 'voirie',
+                                    nom: document.getElementById('infra_nom').value || 'Nouvelle infrastructure',
+                                    description: document.getElementById('infra_description').value || '',
+                                    adresse: document.getElementById('infra_adresse').value || '',
+                                    lat: parseFloat(latVal),
+                                    lng: parseFloat(lngVal),
+                                    est_active: true
+                                };
+                                addOrUpdateMarker(tempInfra);
+
+                                btnGeo.disabled = false;
+                                btnGeo.textContent = originalText;
+                            },
+                            function(err) {
+                                alert("Impossible d'obtenir la position : " + (err.message || "accès refusé"));
+                                btnGeo.disabled = false;
+                                btnGeo.textContent = originalText;
+                            }
+                        );
+                    });
                 }
             }
         })();
@@ -933,6 +1364,15 @@
                             data: data.diaspora,
                             borderColor: '#9C27B0', // Purple
                             backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: '🤝 OSC',
+                            data: data.osc,
+                            borderColor: '#0097A7', // Teal
+                            backgroundColor: 'rgba(0, 151, 167, 0.1)',
                             borderWidth: 2,
                             tension: 0.3,
                             fill: true

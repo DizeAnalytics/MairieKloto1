@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --primary: #006233;
+    --secondary: #FFCD00;
+    --accent: #D21034;
+    --dark: #1a1a1a;
+    --light: #f5f5f5;
+    --white: #ffffff;
+    --success: #2e7d32;
+    --danger: #c62828;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    padding: 2rem 1rem 0 1rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  /* Header local - ne doit pas masquer le header principal */
+  .container header {
+    background: linear-gradient(135deg, var(--primary), #004d28);
+    color: var(--white);
+    padding: 2rem;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    text-align: center;
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* S'assurer que le header principal reste au-dessus */
+  body > header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+  }
+
+  .logo {
+    width: 80px;
+    height: 80px;
+    background: var(--white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 2rem;
+    margin: 0 auto 1rem;
+  }
+
+  .logo-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--white);
+    display: block;
+    margin: 0 auto 1rem;
+    background: var(--white);
+  }
+
+  header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--white);
+  }
+
+  header p {
+    opacity: 0.95;
+    font-size: 1.05rem;
+    color: var(--white);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .form-container {
+    background: var(--white);
+    padding: 3rem;
+    border-radius: 0 0 15px 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    margin-top: 0;
+  }
+
+  .section-title {
+    color: var(--primary);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    margin-top: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid var(--secondary);
+  }
+
+  .section-title:first-of-type {
+    margin-top: 0;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--dark);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--dark);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .required {
+    color: var(--accent);
+    margin-left: 0.2rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  input, select, textarea {
+    width: 100%;
+    padding: 0.9rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus,
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+  }
+
+  .form-group textarea,
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .helper-text {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.3rem;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .row > div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .member, .sector {
+    background: #f9fafb;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    position: relative;
+  }
+
+  button {
+    padding: 0.9rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+    font-weight: 600;
+  }
+
+  .add-btn {
+    background: var(--success);
+    color: white;
+    margin-top: 1rem;
+  }
+
+  .add-btn:hover {
+    background: #256b2a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+
+  .remove-btn {
+    background: var(--danger);
+    color: white;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .remove-btn:hover {
+    background: #a61b1b;
+    transform: translateY(-2px);
+  }
+
+  .submit-btn {
+    background: linear-gradient(135deg, var(--primary), #004d28);
+    color: white;
+    font-size: 1.1rem;
+    width: 100%;
+    margin-top: 2rem;
+    padding: 1rem 2rem;
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 98, 51, 0.3);
+  }
+
+  .success-message, .error-message {
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    font-weight: 500;
+  }
+
+  .success-message {
+    background: #d4edda;
+    color: #155724;
+    border: 2px solid #c3e6cb;
+  }
+
+  .error-message {
+    background: #f8d7da;
+    color: #721c24;
+    border: 2px solid #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+  }
+
+  footer {
+    background: linear-gradient(135deg, #006233, #004d28);
+    color: #ffffff;
+    padding: 3rem 2rem 1rem;
+    margin-top: 3rem;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    margin-right: 0;
+    box-sizing: border-box;
+  }
+
+  .footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .footer-column h4 {
+    margin-bottom: 0.6rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #ffcd00;
+  }
+
+  .footer-column p,
+  .footer-column li,
+  .footer-bottom p {
+    font-size: 0.9rem;
+    color: #ffffff;
+    opacity: 0.9;
+  }
+
+  .footer-column ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .footer-column ul li + li {
+    margin-top: 0.3rem;
+  }
+
+  .footer-column a {
+    color: #ffffff;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  
+  .footer-column a:hover {
+    color: var(--secondary, #FFCD00);
+    text-decoration: underline;
+  }
+
+  .footer-social {
+    display: flex;
+    gap: 0.7rem;
+    margin-top: 0.5rem;
+  }
+
+  .footer-social a {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.2);
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .form-container {
+      padding: 1.5rem;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+    }
+
+    .form-grid,
+    .row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <header>
+    {% if mairie_config and mairie_config.logo %}
+      <img src="{{ mairie_config.logo.url }}" alt="Logo Mairie de Kloto 1" class="logo-image">
+    {% else %}
+      <div class="logo">🤝</div>
+    {% endif %}
+    <h1>Formulaire d’Enregistrement des OSC</h1>
+    <p>
+      Une <strong>Organisation de la Société Civile (OSC)</strong> regroupe les associations, ONG, comités de développement,
+      organisations communautaires, groupements socioprofessionnels, structures religieuses, organisations de défense des droits, etc.
+      Ce formulaire permet à la mairie de mieux connaître et accompagner ces organisations dans leurs actions.
+    </p>
+  </header>
+
+  <div class="form-container">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}success-message{% else %}error-message{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% if form.username %}
+    <div class="section-title">Informations de Connexion</div>
+    <div class="row">
+      <div>
+        <label>Nom d'utilisateur <span class="required">*</span></label>
+        {{ form.username }}
+        <small>{{ form.username.help_text }}</small>
+        {% if form.username.errors %}<div class="error-message">{{ form.username.errors|first }}</div>{% endif %}
+      </div>
+      <div>
+        <label>Mot de passe <span class="required">*</span></label>
+        {{ form.password }}
+        <small>{{ form.password.help_text }}</small>
+        {% if form.password.errors %}<div class="error-message">{{ form.password.errors|first }}</div>{% endif %}
+      </div>
+      <div>
+        <label>Confirmer le mot de passe <span class="required">*</span></label>
+        {{ form.confirm_password }}
+        {% if form.confirm_password.errors %}<div class="error-message">{{ form.confirm_password.errors|first }}</div>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="section-title">Informations générales sur l'OSC</div>
+
+    <label>Nom de l’OSC <span class="required">*</span></label>
+    {{ form.nom_osc }}
+
+    <label>Sigle</label>
+    {{ form.sigle }}
+
+    <label>Type d’OSC</label>
+    {{ form.type_osc }}
+
+    <label>Date de création</label>
+    {{ form.date_creation }}
+
+    <label>Adresse</label>
+    {{ form.adresse }}
+
+    <div class="row">
+      <div>
+        <label>Téléphone</label>
+        {{ form.telephone }}
+      </div>
+      <div>
+        <label>Email</label>
+        {{ form.email }}
+      </div>
+    </div>
+
+    <div class="form-group full-width">
+      <label>Papiers justificatifs (PDF)</label>
+      {{ form.papiers_justificatifs }}
+      <span class="helper-text">Document optionnel : statuts, récépissé, etc. (PDF, max 5 Mo)</span>
+      {% if osc and osc.papiers_justificatifs %}
+      <p class="helper-text">Fichier actuel : <a href="{{ osc.papiers_justificatifs.url }}" target="_blank">📄 {{ osc.papiers_justificatifs.name }}</a></p>
+      {% endif %}
+      {% if form.papiers_justificatifs.errors %}<div class="error-message">{{ form.papiers_justificatifs.errors|first }}</div>{% endif %}
+    </div>
+
+    <div class="section-title">Domaines d'intervention</div>
+    <div id="sectors"></div>
+    <button type="button" class="add-btn" onclick="addSector()">Editer</button>
+
+    <div class="section-title">Membres / Responsables</div>
+    <div id="members"></div>
+    <button type="button" class="add-btn" onclick="addMember()">Editer</button>
+
+    <button type="submit" class="submit-btn">Enregistrer l’OSC</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ secteurs|json_script:"initial-secteurs" }}
+{{ membres|json_script:"initial-membres" }}
+<script>
+function addMember(nom, fonction) {
+  nom = nom || '';
+  fonction = fonction || '';
+  const container = document.getElementById("members");
+  const div = document.createElement("div");
+  div.className = "member";
+  div.innerHTML = `
+    <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Supprimer</button>
+    <div class="row">
+      <div>
+        <label>Nom</label>
+        <input type="text" name="member_nom[]" value="` + nom.replace(/"/g, '&quot;') + `">
+      </div>
+      <div>
+        <label>Fonction</label>
+        <input type="text" name="member_fonction[]" value="` + fonction.replace(/"/g, '&quot;') + `">
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function addSector(val) {
+  val = val || '';
+  const container = document.getElementById("sectors");
+  const div = document.createElement("div");
+  div.className = "sector";
+  div.innerHTML = `
+    <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Supprimer</button>
+    <label>Domaine</label>
+    <input type="text" name="sector[]" value="` + val.replace(/"/g, '&quot;') + `">
+  `;
+  container.appendChild(div);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var secteursEl = document.getElementById('initial-secteurs');
+  var membresEl = document.getElementById('initial-membres');
+  if (secteursEl) {
+    var secteurs = JSON.parse(secteursEl.textContent);
+    secteurs.forEach(function(s) { addSector(s); });
+  }
+  if (membresEl) {
+    var membres = JSON.parse(membresEl.textContent);
+    membres.forEach(function(m) {
+      var s = (m || '').trim();
+      var idx = s.indexOf(' - ');
+      var nom = idx >= 0 ? s.substring(0, idx) : s;
+      var fonction = idx >= 0 ? s.substring(idx + 3) : '';
+      addMember(nom, fonction);
+    });
+  }
+});
+</script>
+{% endblock %}
+

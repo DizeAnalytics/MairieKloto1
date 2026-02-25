@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            background: var(--white);
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .container header {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+            margin-bottom: 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        body > header {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1000 !important;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+        }
+        .logo-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--white);
+            display: block;
+            margin: 0 auto 1rem;
+            background: var(--white);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--white);
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .form-container {
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .info-box h3 {
+            color: var(--primary);
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .info-box li:before {
+            content: "✓ ";
+            color: var(--primary);
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 2rem 0 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--secondary);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .required {
+            color: var(--accent);
+        }
+
+        .form-control {
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 98, 51, 0.1);
+        }
+
+        .helper-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+
+        .error-message {
+            color: var(--accent);
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+            display: block;
+        }
+
+        .btn {
+            padding: 0.9rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 98, 51, 0.3);
+        }
+
+        .btn-submit-container {
+            text-align: center;
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--light);
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .form-container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <header>
+            {% load static %}
+            {% if mairie_config and mairie_config.logo %}
+            <img src="{{ mairie_config.logo.url }}" alt="Logo" class="logo-image">
+            {% else %}
+            <div class="logo">🏪</div>
+            {% endif %}
+            <h1>Inscription Contribuable</h1>
+            <p>Mairie de Kloto 1 - Kpalimé, Région des Plateaux, Togo</p>
+        </header>
+
+        <div class="form-container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="success-message {% if message.tags == 'success' %}active{% endif %}">
+                        <strong>✓ {{ message }}</strong>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="info-box">
+                <h3>📋 Informations importantes</h3>
+                <ul>
+                    <li>Tous les champs marqués d'un astérisque (<span class="required">*</span>) sont obligatoires</li>
+                    <li>Assurez-vous que les informations fournies sont exactes et à jour</li>
+                    <li>Après inscription, vous pourrez consulter vos cotisations dans "Mon compte"</li>
+                    <li>Les agents de la mairie enregistreront vos paiements mensuels</li>
+                </ul>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Section 0: Informations de Connexion -->
+                {% if form.username %}
+                <div class="section-title">Informations de Connexion</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom d'utilisateur <span class="required">*</span></label>
+                        {{ form.username }}
+                        <span class="helper-text">{{ form.username.help_text }}</span>
+                        {% if form.username.errors %}
+                            <span class="error-message">{{ form.username.errors|first }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mot de passe <span class="required">*</span></label>
+                        {{ form.password }}
+                        <span class="helper-text">{{ form.password.help_text }}</span>
+                        {% if form.password.errors %}
+                            <span class="error-message">{{ form.password.errors|first }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirmer le mot de passe <span class="required">*</span></label>
+                        {{ form.confirm_password }}
+                        {% if form.confirm_password.errors %}
+                            <span class="error-message">{{ form.confirm_password.errors|first }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Section 1: Informations Personnelles -->
+                <div class="section-title">1. Informations Personnelles</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>{{ form.nom.label }} <span class="required">*</span></label>
+                        {{ form.nom }}
+                        {% if form.nom.errors %}
+                            <span class="error-message">{{ form.nom.errors|first }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ form.prenom.label }} <span class="required">*</span></label>
+                        {{ form.prenom }}
+                        {% if form.prenom.errors %}
+                            <span class="error-message">{{ form.prenom.errors|first }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ form.telephone.label }} <span class="required">*</span></label>
+                        {{ form.telephone }}
+                        {% if form.telephone.errors %}
+                            <span class="error-message">{{ form.telephone.errors|first }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ form.date_naissance.label }}</label>
+                        {{ form.date_naissance }}
+                        {% if form.date_naissance.errors %}
+                            <span class="error-message">{{ form.date_naissance.errors|first }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ form.lieu_naissance.label }}</label>
+                        {{ form.lieu_naissance }}
+                        {% if form.lieu_naissance.errors %}
+                            <span class="error-message">{{ form.lieu_naissance.errors|first }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ form.nationalite.label }} <span class="required">*</span></label>
+                        {{ form.nationalite }}
+                        {% if form.nationalite.errors %}
+                            <span class="error-message">{{ form.nationalite.errors|first }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="btn-submit-container">
+                    <button type="submit" class="btn btn-primary">📤 Soumettre l'inscription</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

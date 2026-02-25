@@ -140,6 +140,14 @@ class ActeurEconomique(models.Model):
     est_valide_par_mairie = models.BooleanField(default=False)
     date_enregistrement = models.DateTimeField(auto_now_add=True)
 
+    # Agents collecteurs assignés pour la collecte des cotisations
+    agents_collecteurs = models.ManyToManyField(
+        "mairie.AgentCollecteur",
+        related_name="acteurs_economiques",
+        blank=True,
+        help_text="Agents collecteurs assignés pour la collecte des cotisations de cet acteur.",
+    )
+
     class Meta:
         ordering = ["-date_enregistrement"]
         verbose_name = "Acteur économique"
@@ -224,6 +232,14 @@ class InstitutionFinanciere(models.Model):
 
     est_valide_par_mairie = models.BooleanField(default=False)
     date_enregistrement = models.DateTimeField(auto_now_add=True)
+
+    # Agents collecteurs assignés pour la collecte des cotisations
+    agents_collecteurs = models.ManyToManyField(
+        "mairie.AgentCollecteur",
+        related_name="institutions_financieres",
+        blank=True,
+        help_text="Agents collecteurs assignés pour la collecte des cotisations de cette institution.",
+    )
 
     class Meta:
         ordering = ["-date_enregistrement"]

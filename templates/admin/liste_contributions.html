@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre }} - Tableau de Bord</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --accent: #D21034;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        /* TOP BAR + HAMBURGER */
+        .topbar {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 0.85rem 1.25rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .topbar-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .topbar-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+        .topbar-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .topbar-subtitle {
+            font-size: 0.85rem;
+            opacity: 0.85;
+        }
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .back-link {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .back-link:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        .hamburger {
+            width: 38px;
+            height: 38px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.5);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: rgba(0,0,0,0.12);
+        }
+        .hamburger-lines {
+            width: 18px;
+            height: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .hamburger-line {
+            height: 2px;
+            border-radius: 999px;
+            background: #fff;
+        }
+
+        /* SLIDE-IN MENU */
+        .nav-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 35;
+        }
+        .nav-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            max-width: 80%;
+            background: #ffffff;
+            box-shadow: 2px 0 16px rgba(0,0,0,0.18);
+            transform: translateX(-100%);
+            transition: transform 0.25s ease;
+            z-index: 36;
+            display: flex;
+            flex-direction: column;
+        }
+        .nav-drawer-header {
+            padding: 1.25rem 1.25rem 0.75rem;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .nav-drawer-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.15rem;
+        }
+        .nav-drawer-subtitle {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .nav-drawer-links {
+            padding: 0.75rem 0.5rem 1.25rem;
+            overflow-y: auto;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.55rem 0.85rem;
+            border-radius: 999px;
+            text-decoration: none;
+            color: #222;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        .nav-link-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--light);
+        }
+        .nav-link:hover {
+            background: rgba(0,98,51,0.06);
+            color: #000;
+        }
+        .nav-link-active {
+            background: rgba(0,98,51,0.12);
+            font-weight: 600;
+        }
+
+        .nav-open .nav-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .nav-open .nav-drawer {
+            transform: translateX(0);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .page-header {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        .form-control {
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+        }
+        .section {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--light);
+        }
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead { background: var(--primary); color: var(--white); }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        tbody tr:hover { background: var(--light); }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .badge-cotisation { background: #d4edda; color: #155724; }
+        .badge-paiement { background: #cce5ff; color: #004085; }
+        .badge-ticket { background: #fff3cd; color: #856404; }
+        .montant {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .topbar-title {
+                font-size: 1rem;
+            }
+            .container {
+                padding: 1.25rem 1rem 2rem;
+            }
+            .page-header {
+                padding: 1.1rem 1rem;
+            }
+            th, td {
+                padding: 0.7rem 0.55rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <div class="topbar-brand">
+                <div class="topbar-title">{{ titre }}</div>
+                <div class="topbar-subtitle">Mairie de Kloto 1 · Tableau de bord</div>
+            </div>
+            <div class="topbar-actions">
+                <a href="{% url 'tableau_bord' %}" class="back-link">← Retour</a>
+                <button type="button" class="hamburger" aria-label="Ouvrir le menu">
+                    <div class="hamburger-lines">
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                        <span class="hamburger-line"></span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-overlay"></div>
+    <nav class="nav-drawer" aria-label="Menu tableau de bord">
+        <div class="nav-drawer-header">
+            <div class="nav-drawer-title">Navigation</div>
+            <div class="nav-drawer-subtitle">Tableau de bord administratif</div>
+        </div>
+        <div class="nav-drawer-links">
+            <a href="{% url 'tableau_bord' %}" class="nav-link">
+                <span class="nav-link-icon">🏠</span>
+                <span>Tableau de bord</span>
+            </a>
+            <a href="{% url 'liste_agents_collecteurs' %}" class="nav-link">
+                <span class="nav-link-icon">👮</span>
+                <span>Agents collecteurs</span>
+            </a>
+            <a href="{% url 'liste_contribuables' %}" class="nav-link">
+                <span class="nav-link-icon">👥</span>
+                <span>Contribuables</span>
+            </a>
+            <a href="{% url 'liste_contributions' %}" class="nav-link nav-link-active">
+                <span class="nav-link-icon">💰</span>
+                <span>Contributions / taxes</span>
+            </a>
+            <a href="{% url 'liste_acteurs' %}" class="nav-link">
+                <span class="nav-link-icon">🏢</span>
+                <span>Acteurs économiques</span>
+            </a>
+            <a href="{% url 'liste_institutions' %}" class="nav-link">
+                <span class="nav-link-icon">🏦</span>
+                <span>Institutions financières</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>{{ titre }}</h2>
+            <p>Consulter les cotisations annuelles, paiements mensuels et tickets marché</p>
+            <div style="margin-top: 0.8rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <form method="get" action="{% url 'export_pdf_contributions' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="type" value="{{ current_filters.type }}">
+                    <input type="hidden" name="annee" value="{{ current_filters.annee }}">
+                    <input type="hidden" name="mois" value="{{ current_filters.mois }}">
+                    <input type="hidden" name="agent_collecteur" value="{{ current_filters.agent_collecteur }}">
+                    <input type="hidden" name="date_du" value="{{ current_filters.date_du }}">
+                    <input type="hidden" name="date_au" value="{{ current_filters.date_au }}">
+                    <input type="hidden" name="q" value="{{ current_filters.q }}">
+                    <button type="submit" class="btn-primary" style="padding:0.5rem 1rem;">📄 Exporter en PDF</button>
+                </form>
+                <form method="get" action="{% url 'export_excel_contributions' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="type" value="{{ current_filters.type }}">
+                    <input type="hidden" name="annee" value="{{ current_filters.annee }}">
+                    <input type="hidden" name="mois" value="{{ current_filters.mois }}">
+                    <input type="hidden" name="agent_collecteur" value="{{ current_filters.agent_collecteur }}">
+                    <input type="hidden" name="date_du" value="{{ current_filters.date_du }}">
+                    <input type="hidden" name="date_au" value="{{ current_filters.date_au }}">
+                    <input type="hidden" name="q" value="{{ current_filters.q }}">
+                    <button type="submit" class="btn-primary" style="padding:0.5rem 1rem; background: #2e7d32;">📊 Exporter en Excel</button>
+                </form>
+            </div>
+            <form method="get" class="search-form">
+                <div>
+                    <label>Type</label>
+                    <select name="type" class="form-control">
+                        <option value="">Tous</option>
+                        <option value="cotisations" {% if current_filters.type == 'cotisations' %}selected{% endif %}>Cotisations annuelles</option>
+                        <option value="paiements" {% if current_filters.type == 'paiements' %}selected{% endif %}>Paiements mensuels</option>
+                        <option value="tickets" {% if current_filters.type == 'tickets' %}selected{% endif %}>Tickets marché</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Année</label>
+                    <select name="annee" class="form-control">
+                        <option value="">Toutes</option>
+                        {% for annee in annees_disponibles %}
+                        <option value="{{ annee }}" {% if current_filters.annee == annee|stringformat:"s" %}selected{% endif %}>{{ annee }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Mois</label>
+                    <select name="mois" class="form-control">
+                        <option value="">Tous</option>
+                        <option value="1" {% if current_filters.mois == '1' %}selected{% endif %}>Janvier</option>
+                        <option value="2" {% if current_filters.mois == '2' %}selected{% endif %}>Février</option>
+                        <option value="3" {% if current_filters.mois == '3' %}selected{% endif %}>Mars</option>
+                        <option value="4" {% if current_filters.mois == '4' %}selected{% endif %}>Avril</option>
+                        <option value="5" {% if current_filters.mois == '5' %}selected{% endif %}>Mai</option>
+                        <option value="6" {% if current_filters.mois == '6' %}selected{% endif %}>Juin</option>
+                        <option value="7" {% if current_filters.mois == '7' %}selected{% endif %}>Juillet</option>
+                        <option value="8" {% if current_filters.mois == '8' %}selected{% endif %}>Août</option>
+                        <option value="9" {% if current_filters.mois == '9' %}selected{% endif %}>Septembre</option>
+                        <option value="10" {% if current_filters.mois == '10' %}selected{% endif %}>Octobre</option>
+                        <option value="11" {% if current_filters.mois == '11' %}selected{% endif %}>Novembre</option>
+                        <option value="12" {% if current_filters.mois == '12' %}selected{% endif %}>Décembre</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Agent collecteur</label>
+                    <select name="agent_collecteur" class="form-control">
+                        <option value="">Tous</option>
+                        {% for a in agents_collecteurs %}
+                        <option value="{{ a.id }}" {% if current_filters.agent_collecteur == a.id|stringformat:"s" %}selected{% endif %}>{{ a.matricule }} - {{ a.nom }} {{ a.prenom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Du (date)</label>
+                    <input type="date" name="date_du" value="{{ current_filters.date_du }}" class="form-control" title="Période : date de début">
+                </div>
+                <div>
+                    <label>Au (date)</label>
+                    <input type="date" name="date_au" value="{{ current_filters.date_au }}" class="form-control" title="Période : date de fin">
+                </div>
+                <div>
+                    <label>Recherche</label>
+                    <input type="text" name="q" value="{{ current_filters.q }}" class="form-control" placeholder="Matricule, nom contribuable...">
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
+                    <button type="submit" class="btn-primary">🔍 Filtrer</button>
+                    <a href="{% url 'liste_contributions' %}" class="btn-primary" style="text-decoration: none; background: #6c757d;">↺ Réinitialiser</a>
+                </div>
+            </form>
+        </div>
+
+        {% if not current_filters.type or current_filters.type == 'cotisations' %}
+        <div class="section">
+            <h3>📋 Cotisations Annuelles</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Boutique</th>
+                            <th>Contribuable</th>
+                            <th>Année</th>
+                            <th>Montant dû</th>
+                            <th>Montant payé</th>
+                            <th>Reste à payer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cot in cotisations_annuelles %}
+                        <tr>
+                            <td><strong>{{ cot.boutique.matricule }}</strong></td>
+                            <td>{{ cot.boutique.contribuable.nom_complet }}</td>
+                            <td>{{ cot.annee }}</td>
+                            <td class="montant">{{ cot.montant_annuel_du|floatformat:0 }} FCFA</td>
+                            <td class="montant">{{ cot.montant_paye|floatformat:0 }} FCFA</td>
+                            <td class="montant">{{ cot.reste_a_payer|floatformat:0 }} FCFA</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem; color: #888;">
+                                Aucune cotisation annuelle trouvée.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not current_filters.type or current_filters.type == 'paiements' %}
+        <div class="section">
+            <h3>💵 Paiements Mensuels</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Boutique</th>
+                            <th>Contribuable</th>
+                            <th>Année</th>
+                            <th>Mois</th>
+                            <th>Montant payé</th>
+                            <th>Date paiement</th>
+                            <th>Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paiement in paiements %}
+                        <tr>
+                            <td><strong>{{ paiement.cotisation_annuelle.boutique.matricule }}</strong></td>
+                            <td>{{ paiement.cotisation_annuelle.boutique.contribuable.nom_complet }}</td>
+                            <td>{{ paiement.cotisation_annuelle.annee }}</td>
+                            <td>Mois {{ paiement.mois }}</td>
+                            <td class="montant">{{ paiement.montant_paye|floatformat:0 }} FCFA</td>
+                            <td>{{ paiement.date_paiement|date:"d/m/Y H:i" }}</td>
+                            <td>{{ paiement.encaisse_par_agent.nom_complet|default:"—" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 2rem; color: #888;">
+                                Aucun paiement trouvé.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not current_filters.type or current_filters.type == 'tickets' %}
+        <div class="section">
+            <h3>🎫 Tickets Marché (Étalages)</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Emplacement</th>
+                            <th>Vendeur</th>
+                            <th>Contribuable</th>
+                            <th>Montant</th>
+                            <th>Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets %}
+                        <tr>
+                            <td>{{ ticket.date|date:"d/m/Y" }}</td>
+                            <td>{{ ticket.emplacement.nom_lieu }}</td>
+                            <td><strong>{{ ticket.nom_vendeur }}</strong></td>
+                            <td>{{ ticket.contribuable.nom_complet|default:"—" }}</td>
+                            <td class="montant">{{ ticket.montant|floatformat:0 }} FCFA</td>
+                            <td>{{ ticket.encaisse_par_agent.nom_complet|default:"—" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem; color: #888;">
+                                Aucun ticket marché trouvé.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        (function () {
+            const body = document.body;
+            const burger = document.querySelector('.hamburger');
+            const overlay = document.querySelector('.nav-overlay');
+
+            function toggleNav() {
+                body.classList.toggle('nav-open');
+            }
+
+            if (burger && overlay) {
+                burger.addEventListener('click', toggleNav);
+                overlay.addEventListener('click', toggleNav);
+            }
+        })();
+    </script>
+</body>
+</html>

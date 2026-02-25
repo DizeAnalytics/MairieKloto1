@@ -399,7 +399,6 @@
 {% endblock %}
 {% block content %}
     <div class="container">
-        <a href="{% url 'mairie:accueil' %}" class="back-link">← Retour à l'accueil</a>
         <header>
             {% if mairie_config and mairie_config.logo %}
             <img src="{{ mairie_config.logo.url }}" alt="Logo Mairie de Kloto 1" class="logo-image">
