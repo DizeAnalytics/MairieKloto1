@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Newsletters - Tableau de Bord</title>
+    {% load static %}
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% else %}
+    <link rel="icon" href="{% static 'mairie/icons/icon-192x192.png' %}">
+    <link rel="shortcut icon" href="{% static 'mairie/icons/icon-192x192.png' %}">
+    {% endif %}
     <style>
         :root {
             --primary: #006233;

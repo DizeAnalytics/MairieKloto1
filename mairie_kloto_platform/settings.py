@@ -57,6 +57,16 @@ INSTALLED_APPS = [
     'osc',  # Organisations de la Société Civile
 ]
 
+# Configuration Jazzmin pour personnaliser l'admin Django (favicon, titre, etc.)
+JAZZMIN_SETTINGS = {
+    "site_title": "Mairie Kloto 1 Admin",
+    "site_header": "Mairie de Kloto 1",
+    "site_brand": "Mairie de Kloto 1",
+    # Utilise le même pictogramme que le site public pour l'icône de l'onglet admin
+    "site_logo": "mairie/icons/icon-192x192.png",
+    "site_icon": "mairie/icons/icon-192x192.png",
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
