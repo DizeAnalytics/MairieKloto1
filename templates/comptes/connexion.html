@@ -26,13 +26,78 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: var(--dark);
-            background: linear-gradient(135deg, rgba(0,98,51,0.85), rgba(0,77,40,0.85)), url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1200 800\"><rect fill=\"%23006233\" width=\"1200\" height=\"800\"/></svg>');
-            background-size: cover;
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.12), transparent 55%), #004d28;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flag-bg {
+            position: fixed;
+            inset: 0;
+            background:
+                linear-gradient(to bottom,
+                    #006233 0%,
+                    #006233 20%,
+                    #FFCD00 20%,
+                    #FFCD00 35%,
+                    #006233 35%,
+                    #006233 65%,
+                    #FFCD00 65%,
+                    #FFCD00 80%,
+                    #006233 80%,
+                    #006233 100%);
+            transform-origin: left center;
+            animation: flag-wave 10s ease-in-out infinite;
+            z-index: -2;
+        }
+
+        .flag-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40%;
+            height: 60%;
+            background: #D21034;
+        }
+
+        .flag-bg::after {
+            content: '';
+            position: absolute;
+            top: 18%;
+            left: 16%;
+            width: 80px;
+            height: 80px;
+            background: #ffffff;
+            clip-path: polygon(
+                50% 0%,
+                61% 35%,
+                98% 35%,
+                68% 57%,
+                79% 91%,
+                50% 70%,
+                21% 91%,
+                32% 57%,
+                2% 35%,
+                39% 35%
+            );
+        }
+
+        @keyframes flag-wave {
+            0% { transform: translateX(0) skewX(0deg); }
+            50% { transform: translateX(-12px) skewX(-2.5deg); }
+            100% { transform: translateX(0) skewX(0deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .flag-bg {
+                animation: none;
+            }
         }
 
         .auth-container {
@@ -43,6 +108,8 @@
             max-width: 520px;
             width: 100%;
             backdrop-filter: blur(6px);
+            position: relative;
+            z-index: 1;
         }
 
         .auth-header {
@@ -203,6 +270,7 @@
     </script>
 </head>
 <body>
+    <div class="flag-bg"></div>
     <div class="auth-container">
         <div class="auth-header">
             <h1>Connexion</h1>
