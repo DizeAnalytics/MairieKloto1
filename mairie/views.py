@@ -251,14 +251,26 @@ def organigramme_mairie(request):
     Conseil communal → Maire de la commune → Secrétaire Général → Directions → Divisions → Sections → Services → Personnel.
     """
 
-    directions = (
+    directions_qs = (
         DirectionMairie.objects.filter(est_active=True)
         .prefetch_related(
             "divisions__sections__personnels",
             "divisions__sections__services",
+            # Sections éventuellement rattachées directement à la direction
+            "sections__personnels",
+            "sections__services",
         )
         .order_by("ordre_affichage", "nom")
     )
+
+    directions = list(directions_qs)
+    for direction in directions:
+        # Sections sans division, pour un affichage dédié
+        direction.orphan_sections = [
+            section
+            for section in direction.sections.all()
+            if section.division_id is None and section.est_active
+        ]
 
     context = {
         "directions": directions,
@@ -269,22 +281,40 @@ def organigramme_mairie(request):
 def section_services_detail(request, pk: int):
     """
     Page publique affichant les services rattachés à une section donnée.
+    Si la section est rattachée à une division, on liste toutes les sections
+    actives de cette division avec leurs services, une après l'autre.
     """
     section = get_object_or_404(
-        SectionDirection.objects.select_related("direction").prefetch_related("services"),
+        SectionDirection.objects.select_related("direction", "division").prefetch_related("services"),
         pk=pk,
         est_active=True,
     )
 
-    services = (
-        section.services.filter(est_actif=True)
-        .order_by("ordre_affichage", "titre")
-    )
+    if section.division:
+        sections_qs = (
+            SectionDirection.objects.filter(division=section.division, est_active=True)
+            .prefetch_related("services")
+            .order_by("ordre_affichage", "nom")
+        )
+    else:
+        # Si la section n'est pas rattachée à une division, on ne montre que cette section
+        sections_qs = (
+            SectionDirection.objects.filter(pk=section.pk, est_active=True)
+            .prefetch_related("services")
+        )
+
+    sections = list(sections_qs)
+    for s in sections:
+        s.active_services = list(
+            s.services.filter(est_actif=True)
+            .order_by("ordre_affichage", "titre")
+        )
 
     context = {
         "section": section,
         "direction": section.direction,
-        "services": services,
+        "division": section.division,
+        "sections": sections,
     }
     return render(request, "mairie/section_services.html", context)
 

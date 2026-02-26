@@ -22,11 +22,11 @@
     }
     .section-info-card {
         margin: 1.2rem auto 0;
-        max-width: 520px;
+        max-width: 700px;
         background: var(--secondary);
         color: #111827;
         border-radius: 12px;
-        padding: 0.9rem 1.1rem;
+        padding: 0.9rem 1.2rem;
         box-shadow: 0 3px 10px rgba(0,0,0,0.16);
         text-align: left;
     }
@@ -50,9 +50,9 @@
     .services-list {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 1.5rem;
         margin-top: 1.5rem;
-        align-items: center;
+        align-items: stretch;
     }
     .service-card {
         background: #ffffff;
@@ -62,6 +62,7 @@
         padding: 1.25rem 1.5rem;
         max-width: 700px;
         width: 100%;
+        margin: 0 auto;
     }
     .service-title {
         font-size: 1.1rem;
@@ -123,35 +124,36 @@
 {% block content %}
 <div class="container section-services-container">
     <div class="section-services-header">
-        <h1 class="section-services-title">Services de la {{ section.nom }}</h1>
+        {% if division %}
+            <h1 class="section-services-title">
+                Services des sections de la division {{ division.nom }}
+            </h1>
+        {% else %}
+            <h1 class="section-services-title">
+                Services de la section {{ section.nom }}
+            </h1>
+        {% endif %}
         <p class="section-services-subtitle">
-            Section rattachée à la direction :
+            Rattaché à la direction :
             <strong>{{ direction.nom }}</strong>
             {% if direction.sigle %} ({{ direction.sigle }}){% endif %}
         </p>
 
         <div class="section-info-card">
-            {% if section.division %}
-                <div class="section-info-title">Division {{ section.division.nom }}</div>
-                {% if section.division.sigle %}
-                    <div class="section-info-sigle">{{ section.division.sigle }}</div>
+            {% if division %}
+                <div class="section-info-title">Division {{ division.nom }}</div>
+                {% if division.sigle %}
+                    <div class="section-info-sigle">{{ division.sigle }}</div>
                 {% endif %}
-                {% if section.division.chef_division %}
+                {% if division.chef_division %}
                     <div class="section-info-division">
-                        Chef de division&nbsp;: <strong>{{ section.division.chef_division }}</strong>
+                        Chef de division&nbsp;: <strong>{{ division.chef_division }}</strong>
                     </div>
                 {% endif %}
                 <div class="section-info-chief" style="margin-top: 0.6rem;">
-                    Section fille&nbsp;: <strong>{{ section.nom }}</strong>
-                    {% if section.sigle %}
-                        <span class="section-info-sigle">({{ section.sigle }})</span>
-                    {% endif %}
+                    Cette page liste toutes les sections actives de cette division
+                    et leurs services.
                 </div>
-                {% if section.chef_section %}
-                    <div class="section-info-chief">
-                        Chef de section&nbsp;: <strong>{{ section.chef_section }}</strong>
-                    </div>
-                {% endif %}
             {% else %}
                 <div class="section-info-title">Section {{ section.nom }}</div>
                 {% if section.sigle %}
@@ -166,27 +168,47 @@
         </div>
     </div>
 
-    {% if services %}
+    {% if sections %}
         <div class="services-list">
-            {% for service in services %}
-                <article class="service-card">
-                    <h2 class="service-title">{{ service.titre }}</h2>
-                    {% if service.responsable %}
-                    <div class="service-meta">
-                        Responsable : <strong>{{ service.responsable }}</strong>
-                    </div>
-                    {% endif %}
-                    {% if service.description %}
-                        <div class="service-description">
-                            {{ service.description }}
+            {% for s in sections %}
+                <section>
+                    <h2 class="service-title">
+                        Section {{ s.nom }}
+                        {% if s.sigle %}<span class="section-info-sigle">({{ s.sigle }})</span>{% endif %}
+                    </h2>
+                    {% if s.chef_section %}
+                        <div class="service-meta">
+                            Chef de section : <strong>{{ s.chef_section }}</strong>
                         </div>
                     {% endif %}
-                </article>
+
+                    {% if s.active_services %}
+                        {% for service in s.active_services %}
+                            <article class="service-card">
+                                <h3 class="service-title">{{ service.titre }}</h3>
+                                {% if service.responsable %}
+                                <div class="service-meta">
+                                    Responsable : <strong>{{ service.responsable }}</strong>
+                                </div>
+                                {% endif %}
+                                {% if service.description %}
+                                    <div class="service-description">
+                                        {{ service.description }}
+                                    </div>
+                                {% endif %}
+                            </article>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-services">
+                            Aucun service actif n'est actuellement renseigné pour cette section.
+                        </p>
+                    {% endif %}
+                </section>
             {% endfor %}
         </div>
     {% else %}
         <p class="no-services">
-            Aucun service actif n'est actuellement renseigné pour cette section.
+            Aucune section active n'est configurée pour cette division.
         </p>
     {% endif %}
 
