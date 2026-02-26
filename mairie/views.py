@@ -272,6 +272,14 @@ def organigramme_mairie(request):
             if section.division_id is None and section.est_active
         ]
 
+        # Pour chaque division, déterminer une section de référence
+        # (première section active) pour le bouton "Voir les services"
+        for division in direction.divisions.all():
+            division.section_services_anchor = next(
+                (s for s in division.sections.all() if s.est_active),
+                None,
+            )
+
     context = {
         "directions": directions,
     }
