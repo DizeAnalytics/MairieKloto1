@@ -28,8 +28,12 @@
     .contribuables-table {
         background: white;
         border-radius: 10px;
-        overflow: hidden;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .table-responsive-x {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
     table {
         width: 100%;
@@ -139,39 +143,41 @@
             <p style="color: #666; margin: 0.5rem 0 0 0;">Liste des contribuables dans vos emplacements assignés</p>
         </div>
         {% if contribuables %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Prénom</th>
-                    <th>Téléphone</th>
-                    <th>Boutiques/Magasins</th>
-                    <th>Emplacements</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for contribuable in contribuables %}
-                <tr>
-                    <td><strong>{{ contribuable.nom }}</strong></td>
-                    <td>{{ contribuable.prenom }}</td>
-                    <td>{{ contribuable.telephone }}</td>
-                    <td>
-                        <span class="badge">{{ contribuable.boutiques_magasins.count }} boutique(s)</span>
-                    </td>
-                    <td>
-                        {% for boutique in contribuable.boutiques_magasins.all|slice:":3" %}
-                            {{ boutique.emplacement.nom_lieu }}{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
-                        {% if contribuable.boutiques_magasins.count > 3 %}...{% endif %}
-                    </td>
-                    <td>
-                        <a href="{% url 'comptes:payer_contribuable' contribuable.id %}" class="btn-action">💰 Payer</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive-x">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Téléphone</th>
+                        <th>Boutiques/Magasins</th>
+                        <th>Emplacements</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contribuable in contribuables %}
+                    <tr>
+                        <td><strong>{{ contribuable.nom }}</strong></td>
+                        <td>{{ contribuable.prenom }}</td>
+                        <td>{{ contribuable.telephone }}</td>
+                        <td>
+                            <span class="badge">{{ contribuable.boutiques_magasins.count }} boutique(s)</span>
+                        </td>
+                        <td>
+                            {% for boutique in contribuable.boutiques_magasins.all|slice:":3" %}
+                                {{ boutique.emplacement.nom_lieu }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            {% if contribuable.boutiques_magasins.count > 3 %}...{% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'comptes:payer_contribuable' contribuable.id %}" class="btn-action">💰 Payer</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
         <div style="padding: 3rem; text-align: center; color: #888;">
             {% if search_query %}
@@ -191,30 +197,32 @@
             <h2 style="color: var(--primary); margin: 0;">🏢 Acteurs Économiques assignés</h2>
             <p style="color: #666; margin: 0.5rem 0 0 0;">Liste des acteurs économiques assignés pour la collecte des cotisations annuelles</p>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Raison sociale</th>
-                    <th>Sigle</th>
-                    <th>Responsable</th>
-                    <th>Téléphone</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for acteur in acteurs_economiques %}
-                <tr>
-                    <td><strong>{{ acteur.raison_sociale }}</strong></td>
-                    <td>{{ acteur.sigle|default:"—" }}</td>
-                    <td>{{ acteur.nom_responsable }}</td>
-                    <td>{{ acteur.telephone1 }}</td>
-                    <td>
-                        <a href="{% url 'comptes:payer_acteur' acteur.id %}" class="btn-action">💰 Payer cotisation</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive-x">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Raison sociale</th>
+                        <th>Sigle</th>
+                        <th>Responsable</th>
+                        <th>Téléphone</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for acteur in acteurs_economiques %}
+                    <tr>
+                        <td><strong>{{ acteur.raison_sociale }}</strong></td>
+                        <td>{{ acteur.sigle|default:"—" }}</td>
+                        <td>{{ acteur.nom_responsable }}</td>
+                        <td>{{ acteur.telephone1 }}</td>
+                        <td>
+                            <a href="{% url 'comptes:payer_acteur' acteur.id %}" class="btn-action">💰 Payer cotisation</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% endif %}
 
@@ -225,32 +233,34 @@
             <h2 style="color: var(--primary); margin: 0;">🏦 Institutions Financières assignées</h2>
             <p style="color: #666; margin: 0.5rem 0 0 0;">Liste des institutions financières assignées pour la collecte des cotisations annuelles</p>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nom institution</th>
-                    <th>Sigle</th>
-                    <th>Type</th>
-                    <th>Responsable</th>
-                    <th>Téléphone</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for institution in institutions_financieres %}
-                <tr>
-                    <td><strong>{{ institution.nom_institution }}</strong></td>
-                    <td>{{ institution.sigle|default:"—" }}</td>
-                    <td>{{ institution.get_type_institution_display }}</td>
-                    <td>{{ institution.nom_responsable }}</td>
-                    <td>{{ institution.telephone1 }}</td>
-                    <td>
-                        <a href="{% url 'comptes:payer_institution' institution.id %}" class="btn-action">💰 Payer cotisation</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive-x">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom institution</th>
+                        <th>Sigle</th>
+                        <th>Type</th>
+                        <th>Responsable</th>
+                        <th>Téléphone</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for institution in institutions_financieres %}
+                    <tr>
+                        <td><strong>{{ institution.nom_institution }}</strong></td>
+                        <td>{{ institution.sigle|default:"—" }}</td>
+                        <td>{{ institution.get_type_institution_display }}</td>
+                        <td>{{ institution.nom_responsable }}</td>
+                        <td>{{ institution.telephone1 }}</td>
+                        <td>
+                            <a href="{% url 'comptes:payer_institution' institution.id %}" class="btn-action">💰 Payer cotisation</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% endif %}
 
