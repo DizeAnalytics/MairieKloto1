@@ -263,6 +263,27 @@
             font-weight: 600;
             color: var(--primary);
         }
+        .totals-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .total-pill {
+            background: #f8f9fa;
+            border-radius: 999px;
+            padding: 0.45rem 0.9rem;
+            font-size: 0.85rem;
+            border: 1px solid #e0e0e0;
+        }
+        .total-pill-label {
+            opacity: 0.8;
+            margin-right: 0.25rem;
+        }
+        .total-pill-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
 
         @media (max-width: 768px) {
             .topbar-title {
@@ -423,6 +444,26 @@
                     <a href="{% url 'liste_contributions' %}" class="btn-primary" style="text-decoration: none; background: #6c757d;">↺ Réinitialiser</a>
                 </div>
             </form>
+            <div class="totals-bar">
+                <div class="total-pill">
+                    <span class="total-pill-label">Cotisations annuelles dues :</span>
+                    <span class="total-pill-value">
+                        {{ total_cotisations_montant_du|default_if_none:"0"|floatformat:0 }} FCFA
+                    </span>
+                </div>
+                <div class="total-pill">
+                    <span class="total-pill-label">Paiements mensuels encaissés :</span>
+                    <span class="total-pill-value">
+                        {{ total_paiements_montant|default_if_none:"0"|floatformat:0 }} FCFA
+                    </span>
+                </div>
+                <div class="total-pill">
+                    <span class="total-pill-label">Tickets marché encaissés :</span>
+                    <span class="total-pill-value">
+                        {{ total_tickets_montant|default_if_none:"0"|floatformat:0 }} FCFA
+                    </span>
+                </div>
+            </div>
         </div>
 
         {% if not current_filters.type or current_filters.type == 'cotisations' %}

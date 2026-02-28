@@ -2600,6 +2600,19 @@ def liste_contributions(request):
             Q(contribuable__prenom__icontains=q)
         )
     
+    # Calcul des totaux sur les queryset FILTRÉS (avant limitation d'affichage)
+    from django.db.models import Sum
+
+    total_cotisations_montant_du = (
+        cotisations_annuelles.aggregate(total=Sum("montant_annuel_du"))["total"] or 0
+    )
+    total_paiements_montant = (
+        paiements.aggregate(total=Sum("montant_paye"))["total"] or 0
+    )
+    total_tickets_montant = (
+        tickets.aggregate(total=Sum("montant"))["total"] or 0
+    )
+
     # Années disponibles pour le filtre
     annees_cotisations = sorted(
         CotisationAnnuelle.objects.values_list('annee', flat=True).distinct(),
@@ -2617,6 +2630,9 @@ def liste_contributions(request):
         'paiements': paiements[:100],
         'tickets': tickets[:100],
         'titre': '💰 Contributions / Taxes',
+        'total_cotisations_montant_du': total_cotisations_montant_du,
+        'total_paiements_montant': total_paiements_montant,
+        'total_tickets_montant': total_tickets_montant,
         'annees_disponibles': annees_disponibles,
         'agents_collecteurs': agents_collecteurs,
         'current_filters': {
