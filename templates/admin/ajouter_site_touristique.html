@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajouter un site touristique - Tableau de Bord</title>
+    {% load static %}
+    {% if mairie_config and mairie_config.favicon %}
+    <link rel="icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    <link rel="shortcut icon" href="{{ mairie_config.favicon.url }}?v={{ mairie_config.date_modification|date:'U' }}">
+    {% else %}
+    <link rel="icon" href="{% static 'mairie/icons/icon-192x192.png' %}">
+    <link rel="shortcut icon" href="{% static 'mairie/icons/icon-192x192.png' %}">
+    {% endif %}
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #006233;
+            --secondary: #FFCD00;
+            --light: #f5f5f5;
+            --white: #ffffff;
+            --dark: #1a1a1a;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); color: var(--dark); }
+        .topbar {
+            background: linear-gradient(135deg, var(--primary), #004d28);
+            color: var(--white);
+            padding: 0.85rem 1.25rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .topbar-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .topbar-title { font-size: 1.1rem; font-weight: 600; }
+        .topbar-subtitle { font-size: 0.85rem; opacity: 0.85; }
+        .back-link { color: var(--white); text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { text-decoration: underline; }
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem 2.5rem; }
+        .card {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 1.75rem 1.5rem 1.9rem;
+        }
+        .card h2 { margin-bottom: 0.4rem; color: var(--primary); font-size: 1.4rem; }
+        .card p.lead { margin-bottom: 1.3rem; color: #666; font-size: 0.95rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #555; font-weight: 500; }
+        .required { color: #D21034; }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-row-full { display: block; }
+        .helper-text { font-size: 0.8rem; color: #777; margin-top: 0.25rem; }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.7rem;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .btn-primary:hover { background: #004d28; }
+        .btn-secondary {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 999px;
+            font-size: 1rem;
+            margin-left: 0.5rem;
+        }
+        .messages .error { background: #f8d7da; color: #721c24; padding: 0.6rem; border-radius: 6px; margin-bottom: 0.5rem; }
+        .section-title {
+            margin: 1.2rem 0 0.6rem;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        .btn-geo {
+            margin-top: 0.4rem;
+            padding: 0.5rem 1.1rem;
+            border-radius: 999px;
+            border: none;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-geo:hover { background: #004d28; }
+        .btn-geo:disabled { opacity: 0.7; cursor: wait; }
+        @media (max-width: 700px) {
+            .container { padding: 0 1rem 2rem; }
+            .card { padding: 1.3rem 1.1rem 1.6rem; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <div>
+                <div class="topbar-title">🏞️ Ajouter un site touristique</div>
+                <div class="topbar-subtitle">Mairie de Kloto 1 · Tableau de bord</div>
+            </div>
+            <a href="{% url 'liste_sites_touristiques_admin' %}" class="back-link">← Retour à la liste des sites</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="error">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <h2>Nouveau site touristique</h2>
+            <p class="lead">Enregistrez un site touristique validé par la mairie (visible dans la rubrique publique des sites touristiques).</p>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="section-title">1. Informations de base</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_nom_site">Nom du site <span class="required">*</span></label>
+                        {{ form.nom_site }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_categorie_site">Catégorie <span class="required">*</span></label>
+                        {{ form.categorie_site }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="id_description">Description <span class="required">*</span></label>
+                    {{ form.description }}
+                </div>
+                <div class="form-group">
+                    <label for="id_particularite">Particularité</label>
+                    {{ form.particularite }}
+                </div>
+
+                <div class="section-title">2. Visite</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_prix_visite">Prix de visite (FCFA) <span class="required">*</span></label>
+                        {{ form.prix_visite }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_horaires_visite">Horaires de visite <span class="required">*</span></label>
+                        {{ form.horaires_visite }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="id_jours_ouverture">Jours d'ouverture</label>
+                    {{ form.jours_ouverture }}
+                </div>
+
+                <div class="section-title">3. Localisation</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_quartier">Quartier <span class="required">*</span></label>
+                        {{ form.quartier }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_canton">Canton</label>
+                        {{ form.canton }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="id_adresse_complete">Adresse complète <span class="required">*</span></label>
+                    {{ form.adresse_complete }}
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_coordonnees_gps">Coordonnées GPS</label>
+                        {{ form.coordonnees_gps }}
+                        <div class="helper-text">Ex : 6.905700, 0.628700</div>
+                    </div>
+                    <div class="form-group form-row-full">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn-geo" id="btnGeoSite">📍 Obtenir ma position automatiquement</button>
+                    </div>
+                </div>
+
+                <div class="section-title">4. Services & accessibilité</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_guide_disponible">Guide disponible</label>
+                        {{ form.guide_disponible }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_parking_disponible">Parking disponible</label>
+                        {{ form.parking_disponible }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_restauration_disponible">Restauration disponible</label>
+                        {{ form.restauration_disponible }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_acces_handicapes">Accès pour personnes handicapées</label>
+                        {{ form.acces_handicapes }}
+                    </div>
+                </div>
+
+                <div class="section-title">5. Contact & média</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_telephone_contact">Téléphone</label>
+                        {{ form.telephone_contact }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_email_contact">Email</label>
+                        {{ form.email_contact }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_site_web">Site web</label>
+                        {{ form.site_web }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_photo_principale">Photo principale</label>
+                        {{ form.photo_principale }}
+                    </div>
+                </div>
+
+                <div class="section-title">6. Accès</div>
+                <div class="form-group">
+                    <label for="id_conditions_acces">Conditions d'accès</label>
+                    {{ form.conditions_acces }}
+                </div>
+
+                <button type="submit" class="btn-primary">✅ Enregistrer le site</button>
+                <a href="{% url 'liste_sites_touristiques_admin' %}" class="btn-secondary">Annuler</a>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var btn = document.getElementById('btnGeoSite');
+        if (!btn) return;
+        btn.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                alert("La géolocalisation n'est pas supportée par votre navigateur.");
+                return;
+            }
+            btn.disabled = true;
+            var originalText = btn.textContent;
+            btn.textContent = "Recherche en cours...";
+            navigator.geolocation.getCurrentPosition(
+                function(p) {
+                    var input = document.getElementById('id_coordonnees_gps');
+                    if (input) {
+                        var lat = p.coords.latitude.toFixed(6);
+                        var lng = p.coords.longitude.toFixed(6);
+                        input.value = lat + ", " + lng;
+                    }
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                },
+                function(err) {
+                    alert("Impossible d'obtenir la position : " + (err.message || "accès refusé"));
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            );
+        });
+    })();
+    </script>
+</body>
+</html>
+

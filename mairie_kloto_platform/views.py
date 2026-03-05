@@ -44,7 +44,7 @@ from mairie.models import (
     InfrastructureCommune,
 )
 
-from acteurs.models import ActeurEconomique, InstitutionFinanciere
+from acteurs.models import ActeurEconomique, InstitutionFinanciere, SiteTouristique
 from emploi.models import ProfilEmploi
 from mairie.models import Candidature, AppelOffre
 from mairie.forms import (
@@ -57,6 +57,7 @@ from mairie.forms import (
 from comptes.models import Notification
 from diaspora.models import MembreDiaspora
 from osc.models import OrganisationSocieteCivile, OSC_TYPE_CHOICES, get_osc_type_display
+from acteurs.forms import SiteTouristiqueForm
 from django.utils.html import escape
 from django.utils.text import slugify
 from openpyxl import Workbook
@@ -526,6 +527,56 @@ def tableau_bord(request):
     }
     
     return render(request, "admin/tableau_bord.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def ajouter_site_touristique(request):
+    """
+    Formulaire simple d'ajout d'un site touristique depuis le tableau de bord,
+    avec un style similaire à la page 'Ajouter un agent collecteur'.
+    """
+    if request.method == "POST":
+        form = SiteTouristiqueForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Le site touristique a été enregistré avec succès.")
+            return redirect("liste_sites_touristiques_admin")
+    else:
+        form = SiteTouristiqueForm()
+
+    context = {
+        "form": form,
+    }
+    return render(request, "admin/ajouter_site_touristique.html", context)
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def liste_sites_touristiques_admin(request):
+    """
+    Liste des sites touristiques pour le tableau de bord (vue administrateur).
+    Affiche un tableau avec les principales informations de chaque site.
+    """
+    q = request.GET.get("q", "").strip()
+
+    sites = SiteTouristique.objects.all().order_by("-date_enregistrement")
+    if q:
+        sites = sites.filter(
+            Q(nom_site__icontains=q)
+            | Q(quartier__icontains=q)
+            | Q(canton__icontains=q)
+            | Q(categorie_site__icontains=q)
+        )
+
+    context = {
+        "sites": sites,
+        "titre": "🌄 Sites touristiques",
+        "current_filters": {
+            "q": q,
+        },
+    }
+    return render(request, "admin/liste_sites_touristiques.html", context)
 
 
 @login_required
@@ -3922,6 +3973,106 @@ def export_pdf_osc(request):
 
 @login_required
 @user_passes_test(is_staff_user)
+def export_pdf_sites_touristiques(request):
+    """
+    Export PDF des sites touristiques validés par la mairie.
+    Filtrage simple sur le champ de recherche (nom, quartier, canton, catégorie).
+    """
+    q = request.GET.get("q", "").strip()
+
+    qs = SiteTouristique.objects.filter(est_valide_par_mairie=True).order_by("-date_enregistrement")
+    if q:
+        qs = qs.filter(
+            Q(nom_site__icontains=q)
+            | Q(quartier__icontains=q)
+            | Q(canton__icontains=q)
+            | Q(categorie_site__icontains=q)
+        )
+
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="sites_touristiques_valides.pdf"'
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+
+    story.append(Paragraph("Sites Touristiques", title_style))
+    if q:
+        story.append(Paragraph(f"Filtre : {escape(q)}", styles["Normal"]))
+    story.append(Paragraph("(Uniquement les sites validés par la mairie)", styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+
+    # En-têtes de colonnes
+    data = [
+        [
+            "Nom du site",
+            "Catégorie",
+            "Quartier / Canton",
+            "Prix visite (FCFA)",
+            "Horaires",
+            "Jours d'ouverture",
+            "Coordonnées GPS",
+        ]
+    ]
+
+    for s in qs[:1000]:
+        data.append(
+            [
+                s.nom_site,
+                s.get_categorie_site_display(),
+                f"{s.quartier}{', ' + s.canton if s.canton else ''}",
+                s.prix_visite,
+                s.horaires_visite,
+                s.jours_ouverture or "",
+                s.coordonnees_gps or "",
+            ]
+        )
+
+    table = Table(
+        data,
+        colWidths=[6 * cm, 4 * cm, 5 * cm, 3 * cm, 4 * cm, 4 * cm, 4 * cm],
+    )
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    story.append(table)
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
 def notifications_candidats(request):
     """Liste des appels d'offres avec candidats acceptés pour envoyer des notifications."""
     
@@ -6378,6 +6529,87 @@ def export_excel_acteurs(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     response['Content-Disposition'] = 'attachment; filename="acteurs_economiques.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_excel_sites_touristiques(request):
+    """
+    Exporte les sites touristiques en Excel avec des colonnes complètes.
+    Utilise le même style que les autres exports Excel.
+    """
+    sites = SiteTouristique.objects.all().order_by("-date_enregistrement")
+
+    q = request.GET.get("q", "").strip()
+    if q:
+        sites = sites.filter(
+            Q(nom_site__icontains=q)
+            | Q(quartier__icontains=q)
+            | Q(canton__icontains=q)
+            | Q(categorie_site__icontains=q)
+        )
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sites Touristiques"
+
+    headers = [
+        "ID",
+        "Nom du site",
+        "Catégorie",
+        "Quartier",
+        "Canton",
+        "Adresse complète",
+        "Prix visite (FCFA)",
+        "Horaires de visite",
+        "Jours d'ouverture",
+        "Coordonnées GPS",
+        "Guide disponible",
+        "Parking disponible",
+        "Restauration disponible",
+        "Accès personnes handicapées",
+        "Téléphone contact",
+        "Email contact",
+        "Site web",
+        "Validé par mairie",
+        "Date d'enregistrement",
+    ]
+    ws.append(headers)
+    _style_excel_header(ws, 1)
+
+    for s in sites:
+        row = [
+            s.pk,
+            s.nom_site,
+            s.get_categorie_site_display(),
+            s.quartier,
+            s.canton or "",
+            s.adresse_complete,
+            s.prix_visite,
+            s.horaires_visite,
+            s.jours_ouverture or "",
+            s.coordonnees_gps or "",
+            "Oui" if s.guide_disponible else "Non",
+            "Oui" if s.parking_disponible else "Non",
+            "Oui" if s.restauration_disponible else "Non",
+            "Oui" if s.acces_handicapes else "Non",
+            s.telephone_contact or "",
+            s.email_contact or "",
+            s.site_web or "",
+            "Oui" if s.est_valide_par_mairie else "Non",
+            _format_excel_value(s.date_enregistrement),
+        ]
+        ws.append(row)
+
+    for idx, col in enumerate(ws.columns, 1):
+        ws.column_dimensions[get_column_letter(idx)].width = 22
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="sites_touristiques.xlsx"'
     wb.save(response)
     return response
 

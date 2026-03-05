@@ -421,6 +421,44 @@ class InformationMairie(models.Model):
         return f"{self.get_type_info_display()}: {self.titre}"
 
 
+class InformationMairieImage(models.Model):
+    """
+    Image(s) associée(s) à une information de la mairie (bloc 'Informations Utiles').
+    Permet d'illustrer des contenus comme la mission/vision avec une ou plusieurs images.
+    """
+
+    information = models.ForeignKey(
+        InformationMairie,
+        on_delete=models.CASCADE,
+        related_name="images",
+        help_text="Information à laquelle cette image est rattachée.",
+    )
+    image = models.ImageField(
+        upload_to="mairie/informations/",
+        validators=[validate_file_size],
+        help_text="Image illustrative pour ce bloc d'information.",
+    )
+    legende = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Légende facultative affichée sous l'image.",
+    )
+    ordre_affichage = models.PositiveIntegerField(
+        default=0,
+        help_text="Ordre d'affichage des images pour cette information.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Image pour information mairie"
+        verbose_name_plural = "Images pour informations mairie"
+        ordering = ["information", "ordre_affichage", "pk"]
+
+    def __str__(self):
+        return f"Image pour {self.information.titre} (#{self.pk})"
+
+
 class AppelOffre(models.Model):
     """Appel d'offres lancé par la mairie, ouvert à un ou plusieurs publics cibles."""
 

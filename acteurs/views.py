@@ -182,9 +182,15 @@ def liste_sites_touristiques(request):
 def site_detail(request, pk: int):
     site = get_object_or_404(SiteTouristique, pk=pk, est_valide_par_mairie=True)
     autres_sites = SiteTouristique.objects.filter(est_valide_par_mairie=True).exclude(pk=pk).order_by("nom_site")[:6]
+    site_images = []
+    for field_name in ["photo_principale", "photo_2", "photo_3", "photo_4"]:
+        image_field = getattr(site, field_name, None)
+        if image_field:
+            site_images.append(image_field)
     context = {
         "site": site,
         "autres_sites": autres_sites,
+        "site_images": site_images,
     }
     return render(request, "acteurs/detail-site.html", context)
 

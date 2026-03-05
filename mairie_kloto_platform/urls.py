@@ -80,6 +80,7 @@ urlpatterns = [
     path("tableau-bord/export/retraites/", views.export_pdf_retraites, name="export_pdf_retraites"),
     path("tableau-bord/export/diaspora/", views.export_pdf_diaspora, name="export_pdf_diaspora"),
     path("tableau-bord/export/osc/", views.export_pdf_osc, name="export_pdf_osc"),
+    path("tableau-bord/export/sites-touristiques/", views.export_pdf_sites_touristiques, name="export_pdf_sites_touristiques"),
     # Exports Excel
     path("tableau-bord/export-excel/acteurs/", views.export_excel_acteurs, name="export_excel_acteurs"),
     path("tableau-bord/export-excel/institutions/", views.export_excel_institutions, name="export_excel_institutions"),
@@ -88,6 +89,7 @@ urlpatterns = [
     path("tableau-bord/export-excel/diaspora/", views.export_excel_diaspora, name="export_excel_diaspora"),
     path("tableau-bord/export-excel/candidatures/", views.export_excel_candidatures, name="export_excel_candidatures"),
     path("tableau-bord/export-excel/osc/", views.export_excel_osc, name="export_excel_osc"),
+    path("tableau-bord/export-excel/sites-touristiques/", views.export_excel_sites_touristiques, name="export_excel_sites_touristiques"),
     # Exports agents, contribuables, boutiques, contributions, cotisations acteurs/institutions
     path("tableau-bord/export/agents-collecteurs/", views.export_pdf_agents_collecteurs, name="export_pdf_agents_collecteurs"),
     path("tableau-bord/export-excel/agents-collecteurs/", views.export_excel_agents_collecteurs, name="export_excel_agents_collecteurs"),
@@ -108,6 +110,8 @@ urlpatterns = [
     path("tableau-bord/organigramme/", views.tableau_bord_organigramme, name="tableau_bord_organigramme"),
     path("tableau-bord/export/organigramme/", views.export_pdf_organigramme, name="export_pdf_organigramme"),
     path("tableau-bord/export-excel/organigramme/", views.export_excel_organigramme, name="export_excel_organigramme"),
+    path("tableau-bord/sites-touristiques/", views.liste_sites_touristiques_admin, name="liste_sites_touristiques_admin"),
+    path("tableau-bord/sites-touristiques/ajouter/", views.ajouter_site_touristique, name="ajouter_site_touristique"),
 ]
 
 # Servir les fichiers média en développement

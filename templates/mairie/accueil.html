@@ -425,6 +425,38 @@
             color: var(--dark);
         }
 
+        .info-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .info-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .info-image-wrapper {
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f3f4f6;
+        }
+
+        .info-image-wrapper img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .info-image-caption {
+            font-size: 0.85rem;
+            padding: 0.45rem 0.6rem 0.6rem;
+            color: #4b5563;
+            background: #f9fafb;
+        }
+
         footer {
             background: linear-gradient(135deg, var(--primary), #004d28);
             color: var(--white);
@@ -636,7 +668,23 @@
                         {% if info.icone %}<span class="icone">{{ info.icone }}</span>{% endif %}
                         {{ info.titre }}
                     </h4>
-                    <p>{{ info.contenu|linebreaks }}</p>
+                    <div class="info-card-body">
+                        <div class="info-text">
+                            {{ info.contenu|linebreaks }}
+                        </div>
+                        {% if info.images.all %}
+                        <div class="info-images-grid">
+                            {% for image in info.images.all %}
+                            <figure class="info-image-wrapper">
+                                <img src="{{ image.image.url }}" alt="{{ image.legende|default:info.titre }}">
+                                {% if image.legende %}
+                                <figcaption class="info-image-caption">{{ image.legende }}</figcaption>
+                                {% endif %}
+                            </figure>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
                 {% endfor %}
             </div>

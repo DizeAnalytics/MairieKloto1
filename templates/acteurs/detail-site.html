@@ -122,26 +122,57 @@
         overflow: hidden;
         margin-bottom: 2.5rem;
         background-color: #f5f5f5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         box-shadow: var(--shadow-md);
+        position: relative;
+    }
+
+    .site-slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transition: opacity 0.7s ease-in-out;
+    }
+
+    .site-slide.active {
+        opacity: 1;
     }
 
     .site-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.5s ease;
-    }
-    
-    .site-image:hover {
-        transform: scale(1.02);
     }
     
     .no-image-placeholder {
         font-size: 5rem;
         color: #ddd;
+    }
+    
+    .site-dots {
+        position: absolute;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 2;
+    }
+
+    .site-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.6);
+        cursor: pointer;
+        transition: background 0.3s, transform 0.3s;
+    }
+
+    .site-dot.active {
+        background: #ffffff;
+        transform: scale(1.2);
     }
 
     /* Typography */
@@ -504,8 +535,19 @@
         <!-- Main Content -->
         <div class="main-column">
             <div class="site-image-container">
-                {% if site.photo_principale %}
-                    <img src="{{ site.photo_principale.url }}" alt="{{ site.nom_site }}" class="site-image">
+                {% if site_images %}
+                    {% for image in site_images %}
+                    <div class="site-slide {% if forloop.first %}active{% endif %}">
+                        <img src="{{ image.url }}" alt="{{ site.nom_site }}" class="site-image">
+                    </div>
+                    {% endfor %}
+                    {% if site_images|length > 1 %}
+                    <div class="site-dots">
+                        {% for image in site_images %}
+                        <div class="site-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}"></div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 {% else %}
                     <div class="no-image-placeholder">📷</div>
                 {% endif %}
@@ -673,4 +715,67 @@
     </div>
     {% endif %}
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const slides = document.querySelectorAll('.site-slide');
+    const dots = document.querySelectorAll('.site-dot');
+    if (!slides.length) {
+        return;
+    }
+
+    let currentIndex = 0;
+    const intervalMs = 5000;
+    let timer = null;
+
+    function showSlide(index) {
+        slides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === index);
+        });
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+        currentIndex = index;
+    }
+
+    function nextSlide() {
+        const count = slides.length;
+        if (count <= 1) {
+            return;
+        }
+        const next = (currentIndex + 1) % count;
+        showSlide(next);
+    }
+
+    function start() {
+        if (timer || slides.length <= 1) {
+            return;
+        }
+        timer = setInterval(nextSlide, intervalMs);
+    }
+
+    function stop() {
+        if (timer) {
+            clearInterval(timer);
+            timer = null;
+        }
+    }
+
+    dots.forEach(dot => {
+        dot.addEventListener('click', function () {
+            const idx = parseInt(this.getAttribute('data-index'), 10) || 0;
+            showSlide(idx);
+            stop();
+            start();
+        });
+    });
+
+    const container = document.querySelector('.site-image-container');
+    if (container) {
+        container.addEventListener('mouseenter', stop);
+        container.addEventListener('mouseleave', start);
+    }
+
+    start();
+});
+</script>
 {% endblock %}

@@ -8,6 +8,7 @@ from .models import (
     SectionDirection,
     PersonnelSection,
     InformationMairie,
+    InformationMairieImage,
     AppelOffre,
     ImageCarousel,
     ConfigurationMairie,
@@ -355,6 +356,14 @@ class PersonnelSectionAdmin(admin.ModelAdmin):
     readonly_fields = ("date_creation", "date_modification")
 
 
+class InformationMairieImageInline(admin.TabularInline):
+    """Images associées à une information (bloc 'Informations Utiles')."""
+
+    model = InformationMairieImage
+    extra = 1
+    fields = ("image", "legende", "ordre_affichage")
+
+
 @admin.register(InformationMairie)
 class InformationMairieAdmin(admin.ModelAdmin):
     """Administration des informations de la mairie."""
@@ -393,6 +402,7 @@ class InformationMairieAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ("date_creation", "date_modification")
+    inlines = (InformationMairieImageInline,)
     
     class Media:
         js = ('mairie/js/information_mairie_icons.js',)

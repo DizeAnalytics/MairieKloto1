@@ -305,6 +305,9 @@ class SiteTouristiqueAdmin(admin.ModelAdmin):
                 "email_contact",
                 "site_web",
                 "photo_principale",
+                "photo_2",
+                "photo_3",
+                "photo_4",
             )
         }),
         ("Accès et validation", {

@@ -44,7 +44,11 @@ def accueil(request):
     
     mot_maire = MotMaire.objects.filter(est_actif=True).first()
     collaborateurs = Collaborateur.objects.filter(est_visible=True).order_by('ordre_affichage', 'fonction', 'nom')
-    informations = InformationMairie.objects.filter(est_visible=True).order_by('ordre_affichage', 'type_info')
+    informations = (
+        InformationMairie.objects.filter(est_visible=True)
+        .prefetch_related("images")
+        .order_by("ordre_affichage", "type_info")
+    )
     
     # Récupérer les images actives du carousel (max 5) et les mélanger aléatoirement
     images_carousel = list(ImageCarousel.objects.filter(est_actif=True).order_by('ordre_affichage', '-date_creation')[:5])

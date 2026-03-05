@@ -263,11 +263,14 @@ class SiteTouristique(models.Model):
         ("musee", "Musée"),
         ("site_culturel", "Site culturel"),
         ("site_historique", "Site historique"),
+        ("site_religieux", "Site religieux"),
+        ("bibliotheque", "Bibliothèque"),
+        ("place_publique", "Place publique"),
         ("autre", "Autre"),
     ]
 
     nom_site = models.CharField(max_length=255)
-    categorie_site = models.CharField(max_length=30, choices=CATEGORIE_SITE_CHOICES)
+    categorie_site = models.CharField(max_length=60, choices=CATEGORIE_SITE_CHOICES)
     description = models.TextField()
     particularite = models.TextField(blank=True)
 
@@ -290,6 +293,9 @@ class SiteTouristique(models.Model):
     site_web = models.URLField(blank=True)
 
     photo_principale = models.FileField(upload_to="sites/photos/", blank=True)
+    photo_2 = models.FileField(upload_to="sites/photos/", blank=True)
+    photo_3 = models.FileField(upload_to="sites/photos/", blank=True)
+    photo_4 = models.FileField(upload_to="sites/photos/", blank=True)
 
     conditions_acces = models.TextField(blank=True)
 

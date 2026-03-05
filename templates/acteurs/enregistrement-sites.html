@@ -1,12 +1,302 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
-    <header>
-        <div class="logo">K1</div>
+<style>
+    .sites-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2.5rem;
+    }
+    .sites-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    .sites-header-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #006233;
+        color: #fff;
+        font-weight: 700;
+        margin: 0 auto 0.5rem;
+    }
+    .sites-header h1 {
+        font-size: 1.6rem;
+        margin: 0;
+        color: #006233;
+    }
+    .sites-header p {
+        margin: 0;
+        color: #666;
+        font-size: 0.95rem;
+    }
+    .sites-main-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        padding: 1.5rem 1.25rem 1.75rem;
+    }
+    .info-box {
+        background: #f8f9fa;
+        border-left: 4px solid #006233;
+        padding: 0.9rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .info-box h3 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+        color: #006233;
+    }
+    .info-box ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: #555;
+        font-size: 0.9rem;
+    }
+    .success-message {
+        display: none;
+        margin-bottom: 1rem;
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        background: #d4edda;
+        color: #155724;
+        font-size: 0.9rem;
+    }
+    .success-message.active {
+        display: block;
+    }
+    .section-title {
+        margin: 1.4rem 0 0.7rem;
+        font-weight: 600;
+        color: #006233;
+        font-size: 1rem;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem 1.25rem;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-group label {
+        font-size: 0.9rem;
+        color: #444;
+        font-weight: 500;
+    }
+    .required {
+        color: #D21034;
+    }
+    .sites-toolbar {
+        margin: 0.5rem 0 0.5rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .btn-add-site {
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.65rem 1.4rem;
+        font-size: 0.95rem;
+    }
+    .form-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .form-actions .btn.btn-primary {
+        padding: 0.75rem 1.6rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    /* Tableau responsive des sites enregistrés */
+    .sites-table-section {
+        margin-top: 2rem;
+    }
+    .sites-table-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    .sites-table-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .sites-table-header h2 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #006233;
+    }
+    .sites-table-badge {
+        background: #006233;
+        color: #fff;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .sites-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+    }
+    .sites-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+    }
+    .sites-table thead {
+        background: linear-gradient(135deg, #006233, #004d28);
+        color: #fff;
+    }
+    .sites-table th,
+    .sites-table td {
+        padding: 0.7rem 0.75rem;
+        font-size: 0.85rem;
+        text-align: left;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .sites-table th {
+        font-weight: 600;
+    }
+    .sites-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    .sites-table-empty {
+        padding: 1.8rem 1.25rem;
+        text-align: center;
+        color: #777;
+        font-size: 0.9rem;
+    }
+
+    /* Modale d'ajout de site touristique */
+    .modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    .modal-backdrop.active {
+        display: flex;
+    }
+    .modal-box {
+        background: #ffffff;
+        border-radius: 12px;
+        max-width: 900px;
+        width: 100%;
+        max-height: 95vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .modal-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        background: #ffffff;
+        z-index: 5;
+    }
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.15rem;
+        color: #006233;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.6rem;
+        cursor: pointer;
+        color: #999;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background 0.2s, color 0.2s;
+    }
+    .modal-close:hover {
+        background: #f0f0f0;
+        color: #333;
+    }
+    .modal-body {
+        padding: 1.25rem 1.5rem 1.5rem;
+    }
+    .btn-geo-coords {
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: none;
+        background: #006233;
+        color: #ffffff;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        transition: background 0.2s, transform 0.1s;
+    }
+    .btn-geo-coords:hover {
+        background: #004d28;
+        transform: translateY(-1px);
+    }
+    .btn-geo-coords:disabled {
+        opacity: 0.7;
+        cursor: wait;
+        transform: none;
+    }
+
+    @media (max-width: 768px) {
+        .sites-wrapper {
+            padding: 1rem 0.75rem 2rem;
+        }
+        .sites-header h1 {
+            font-size: 1.3rem;
+        }
+        .sites-main-card {
+            padding: 1.25rem 1rem 1.5rem;
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .form-actions {
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="sites-wrapper">
+    <header class="sites-header">
+        <div class="sites-header-logo">K1</div>
         <h1>Enregistrement des Sites Touristiques</h1>
         <p>Mairie de Kloto 1 - Kpalimé, Région des Plateaux, Togo</p>
     </header>
-    <div class="form-container">
+
+    <div class="sites-main-card">
         {% if success %}
         <div class="success-message active">
             <strong>✓ Succès !</strong> Votre site touristique a été enregistré.
@@ -19,124 +309,250 @@
                 <li>Assurez-vous que les informations sont exactes et à jour</li>
             </ul>
         </div>
-        <form id="siteTouristiqueForm" method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="section-title">1. Informations de Base</div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Nom du site <span class="required">*</span></label>
-                    {{ form.nom_site }}
-                </div>
-                <div class="form-group">
-                    <label>Catégorie <span class="required">*</span></label>
-                    {{ form.categorie_site }}
-                </div>
-                <div class="form-group full-width">
-                    <label>Description <span class="required">*</span></label>
-                    {{ form.description }}
-                </div>
-                <div class="form-group full-width">
-                    <label>Particularité</label>
-                    {{ form.particularite }}
-                </div>
+        <div class="sites-toolbar">
+            <button type="button" id="btnOpenSiteModal" class="btn btn-primary btn-add-site">
+                ➕ Ajouter un site touristique
+            </button>
+        </div>
+    </div>
+
+    <div class="sites-table-section">
+        <div class="sites-table-card">
+            <div class="sites-table-header">
+                <h2>Sites touristiques enregistrés</h2>
+                <span class="sites-table-badge">
+                    Total : {{ sites|length }} site{{ sites|length|pluralize:"s" }}
+                </span>
             </div>
-            <div class="section-title">2. Visite</div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Prix de visite par personne (FCFA) <span class="required">*</span></label>
-                    {{ form.prix_visite }}
-                </div>
-                <div class="form-group">
-                    <label>Horaires de visite <span class="required">*</span></label>
-                    {{ form.horaires_visite }}
-                </div>
-                <div class="form-group full-width">
-                    <label>Jours d'ouverture</label>
-                    {{ form.jours_ouverture }}
-                </div>
-            </div>
-            <div class="section-title">3. Localisation</div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Quartier <span class="required">*</span></label>
-                    {{ form.quartier }}
-                </div>
-                <div class="form-group">
-                    <label>Canton</label>
-                    {{ form.canton }}
-                </div>
-                <div class="form-group full-width">
-                    <label>Adresse complète <span class="required">*</span></label>
-                    {{ form.adresse_complete }}
-                </div>
-                <div class="form-group">
-                    <label>Coordonnées GPS</label>
-                    {{ form.coordonnees_gps }}
-                </div>
-            </div>
-            <div class="section-title">4. Options</div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Guide disponible</label>
-                    {{ form.guide_disponible }}
-                </div>
-                <div class="form-group">
-                    <label>Parking disponible</label>
-                    {{ form.parking_disponible }}
-                </div>
-                <div class="form-group">
-                    <label>Restauration disponible</label>
-                    {{ form.restauration_disponible }}
-                </div>
-                <div class="form-group">
-                    <label>Accès pour personnes handicapées</label>
-                    {{ form.acces_handicapes }}
-                </div>
-            </div>
-            <div class="section-title">5. Contact et Média</div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Téléphone</label>
-                    {{ form.telephone_contact }}
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    {{ form.email_contact }}
-                </div>
-                <div class="form-group">
-                    <label>Site web</label>
-                    {{ form.site_web }}
-                </div>
-                <div class="form-group">
-                    <label>Photo principale</label>
-                    {{ form.photo_principale }}
-                </div>
-            </div>
-            <div class="section-title">6. Accès</div>
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label>Conditions d'accès</label>
-                    {{ form.conditions_acces }}
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Enregistrer</button>
-            </div>
-        </form>
-        <div class="section-title">Sites enregistrés</div>
-        <div class="list-container">
             {% if sites %}
-                <ul class="item-list">
-                    {% for s in sites %}
-                        <li>
-                            <strong>{{ s.nom_site }}</strong> — {{ s.categorie_site }} — {{ s.quartier }} — {{ s.prix_visite }} FCFA
-                        </li>
-                    {% endfor %}
-                </ul>
+                <div class="sites-table-wrapper">
+                    <table class="sites-table">
+                        <thead>
+                            <tr>
+                                <th>Nom du site</th>
+                                <th>Catégorie</th>
+                                <th>Quartier / Canton</th>
+                                <th>Prix visite (FCFA)</th>
+                                <th>Horaires</th>
+                                <th>Jours d'ouverture</th>
+                                <th>Coordonnées GPS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in sites %}
+                            <tr>
+                                <td><strong>{{ s.nom_site }}</strong></td>
+                                <td>{{ s.get_categorie_site_display|default:s.categorie_site }}</td>
+                                <td>
+                                    {{ s.quartier }}{% if s.canton %}, {{ s.canton }}{% endif %}
+                                </td>
+                                <td>{{ s.prix_visite }}</td>
+                                <td>{{ s.horaires_visite }}</td>
+                                <td>{{ s.jours_ouverture|default:"—" }}</td>
+                                <td>{{ s.coordonnees_gps|default:"—" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
-                <p>Aucun site enregistré pour le moment.</p>
+                <div class="sites-table-empty">
+                    Aucun site enregistré pour le moment.
+                </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Modale : ajout d'un site touristique -->
+    <div class="modal-backdrop" id="modalSite">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>➕ Ajouter un site touristique</h3>
+                <button type="button" class="modal-close" onclick="closeModalSite()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="siteTouristiqueForm" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="section-title">1. Informations de Base</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nom du site <span class="required">*</span></label>
+                            {{ form.nom_site }}
+                        </div>
+                        <div class="form-group">
+                            <label>Catégorie <span class="required">*</span></label>
+                            {{ form.categorie_site }}
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Description <span class="required">*</span></label>
+                            {{ form.description }}
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Particularité</label>
+                            {{ form.particularite }}
+                        </div>
+                    </div>
+
+                    <div class="section-title">2. Visite</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Prix de visite par personne (FCFA) <span class="required">*</span></label>
+                            {{ form.prix_visite }}
+                        </div>
+                        <div class="form-group">
+                            <label>Horaires de visite <span class="required">*</span></label>
+                            {{ form.horaires_visite }}
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Jours d'ouverture</label>
+                            {{ form.jours_ouverture }}
+                        </div>
+                    </div>
+
+                    <div class="section-title">3. Localisation</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Quartier <span class="required">*</span></label>
+                            {{ form.quartier }}
+                        </div>
+                        <div class="form-group">
+                            <label>Canton</label>
+                            {{ form.canton }}
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Adresse complète <span class="required">*</span></label>
+                            {{ form.adresse_complete }}
+                        </div>
+                        <div class="form-group">
+                            <label>Coordonnées GPS</label>
+                            {{ form.coordonnees_gps }}
+                            <small class="helper-text">Ex: 6.905700, 0.628700</small>
+                        </div>
+                        <div class="form-group full-width">
+                            <button type="button" class="btn-geo-coords" id="btnGeoCoord">
+                                📍 Obtenir ma position automatiquement
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="section-title">4. Options</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Guide disponible</label>
+                            {{ form.guide_disponible }}
+                        </div>
+                        <div class="form-group">
+                            <label>Parking disponible</label>
+                            {{ form.parking_disponible }}
+                        </div>
+                        <div class="form-group">
+                            <label>Restauration disponible</label>
+                            {{ form.restauration_disponible }}
+                        </div>
+                        <div class="form-group">
+                            <label>Accès pour personnes handicapées</label>
+                            {{ form.acces_handicapes }}
+                        </div>
+                    </div>
+
+                    <div class="section-title">5. Contact et Média</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Téléphone</label>
+                            {{ form.telephone_contact }}
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            {{ form.email_contact }}
+                        </div>
+                        <div class="form-group">
+                            <label>Site web</label>
+                            {{ form.site_web }}
+                        </div>
+                        <div class="form-group">
+                            <label>Photo principale</label>
+                            {{ form.photo_principale }}
+                        </div>
+                    </div>
+
+                    <div class="section-title">6. Accès</div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Conditions d'accès</label>
+                            {{ form.conditions_acces }}
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">✅ Enregistrer le site</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+(function() {
+    const modal = document.getElementById('modalSite');
+    const openBtn = document.getElementById('btnOpenSiteModal');
+
+    function openModalSite() {
+        if (modal) {
+            modal.classList.add('active');
+        }
+    }
+
+    function closeModalSite() {
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+
+    window.closeModalSite = closeModalSite;
+
+    if (openBtn && modal) {
+        openBtn.addEventListener('click', openModalSite);
+    }
+
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModalSite();
+            }
+        });
+    }
+
+    // Géolocalisation automatique pour les coordonnées GPS du site
+    const btnGeo = document.getElementById('btnGeoCoord');
+    if (btnGeo) {
+        btnGeo.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                alert("La géolocalisation n'est pas supportée par votre navigateur.");
+                return;
+            }
+            btnGeo.disabled = true;
+            const originalText = btnGeo.textContent;
+            btnGeo.textContent = "Recherche en cours...";
+            navigator.geolocation.getCurrentPosition(
+                function(p) {
+                    const coordInput = document.getElementById('id_coordonnees_gps');
+                    if (coordInput) {
+                        const lat = p.coords.latitude.toFixed(6);
+                        const lng = p.coords.longitude.toFixed(6);
+                        coordInput.value = lat + ", " + lng;
+                    }
+                    btnGeo.disabled = false;
+                    btnGeo.textContent = originalText;
+                },
+                function(err) {
+                    alert("Impossible d'obtenir la position : " + (err.message || "accès refusé"));
+                    btnGeo.disabled = false;
+                    btnGeo.textContent = originalText;
+                }
+            );
+        });
+    }
+})();
+</script>
 {% endblock %}
