@@ -2111,3 +2111,34 @@ class PaiementCotisationInstitution(models.Model):
 
     def __str__(self):
         return f"{self.cotisation_annuelle} - {self.montant_paye} FCFA ({self.date_paiement.date()})"
+
+
+class TypeLocal(models.Model):
+    """
+    Type de local au marché (boutique, magasin, kiosque, terrain, etc.),
+    géré dynamiquement en base de données.
+    """
+
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Code technique du type de local (ex: boutique, magasin).",
+    )
+    nom = models.CharField(
+        max_length=100,
+        help_text="Libellé affiché pour le type de local.",
+    )
+    est_actif = models.BooleanField(
+        default=True,
+        help_text="Permet de masquer ce type sans le supprimer.",
+    )
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Type de local (marché)"
+        verbose_name_plural = "Types de locaux (marché)"
+        ordering = ["nom"]
+
+    def __str__(self):
+        return self.nom

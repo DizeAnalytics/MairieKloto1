@@ -42,6 +42,7 @@ from mairie.models import (
     ServiceSection,
     CartographieCommune,
     InfrastructureCommune,
+    TypeLocal,
 )
 
 from acteurs.models import ActeurEconomique, InstitutionFinanciere, SiteTouristique
@@ -2396,7 +2397,9 @@ def liste_boutiques(request):
     emplacements = EmplacementMarche.objects.all().order_by("nom_lieu")
     contribuables_all = Contribuable.objects.all().order_by("nom", "prenom")
     agents_collecteurs = AgentCollecteur.objects.filter(statut="actif").order_by("matricule", "nom", "prenom")
-    type_local_choices = BoutiqueMagasin.TYPE_LOCAL_CHOICES
+    # Types de locaux dynamiques (gérés en base) pour les sélecteurs
+    type_locaux_qs = TypeLocal.objects.filter(est_actif=True).order_by("nom")
+    type_local_choices = [(t.code, t.nom) for t in type_locaux_qs]
     locaux_non_occupes = BoutiqueMagasin.objects.filter(contribuable__isnull=True).select_related(
         "emplacement"
     ).order_by("emplacement__nom_lieu", "matricule")
@@ -2443,6 +2446,42 @@ def creer_emplacement_ajax(request):
     )
     label = f"{emplacement.nom_lieu} - {emplacement.quartier}"
     return JsonResponse({"success": True, "id": emplacement.id, "label": label})
+
+
+@login_required
+@user_passes_test(is_staff_user)
+@require_POST
+def creer_type_local_ajax(request):
+    """Crée un type de local (boutique, magasin, terrain, etc.) via AJAX. Code généré automatiquement."""
+    from django.http import JsonResponse
+
+    nom = (request.POST.get("nom") or "").strip()
+    if not nom:
+        return JsonResponse(
+            {"success": False, "error": "Le nom du type de local est obligatoire."},
+            status=400,
+        )
+
+    # Générer un code unique à partir du nom (slug + suffixe si collision)
+    base_code = slugify(nom).replace("-", "_")
+    if not base_code:
+        base_code = "type_local"
+    code = base_code
+    suffix = 1
+    while TypeLocal.objects.filter(code=code).exists():
+        suffix += 1
+        code = f"{base_code}_{suffix}"
+
+    type_local = TypeLocal.objects.create(code=code, nom=nom, est_actif=True)
+
+    return JsonResponse(
+        {
+            "success": True,
+            "id": type_local.id,
+            "code": type_local.code,
+            "nom": type_local.nom,
+        }
+    )
 
 
 @login_required

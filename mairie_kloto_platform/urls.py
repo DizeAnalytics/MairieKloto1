@@ -61,6 +61,7 @@ urlpatterns = [
     path("tableau-bord/contribuables/", views.liste_contribuables, name="liste_contribuables"),
     path("tableau-bord/boutiques/", views.liste_boutiques, name="liste_boutiques"),
     path("tableau-bord/boutiques/creer-emplacement/", views.creer_emplacement_ajax, name="creer_emplacement_ajax"),
+    path("tableau-bord/boutiques/creer-type-local/", views.creer_type_local_ajax, name="creer_type_local_ajax"),
     path("tableau-bord/infrastructures/sauvegarder/", views.sauvegarder_infrastructure_ajax, name="sauvegarder_infrastructure_ajax"),
     path("tableau-bord/contributions/", views.liste_contributions, name="liste_contributions"),
     path("tableau-bord/cotisations-acteurs-institutions/", views.liste_cotisations_acteurs_institutions, name="liste_cotisations_acteurs_institutions"),

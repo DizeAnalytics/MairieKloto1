@@ -34,6 +34,7 @@ from .models import (
     CotisationAnnuelleInstitution,
     PaiementCotisationActeur,
     PaiementCotisationInstitution,
+    TypeLocal,
 )
 
 
@@ -1156,6 +1157,16 @@ class BoutiqueMagasinAdmin(admin.ModelAdmin):
             {"fields": ("contribuable", "activite_vendue")},
         ),
     )
+    readonly_fields = ("date_creation", "date_modification")
+
+
+@admin.register(TypeLocal)
+class TypeLocalAdmin(admin.ModelAdmin):
+    """Administration des types de locaux (boutique, magasin, kiosque, etc.)."""
+
+    list_display = ("code", "nom", "est_actif", "date_modification")
+    list_filter = ("est_actif",)
+    search_fields = ("code", "nom")
     readonly_fields = ("date_creation", "date_modification")
 
 

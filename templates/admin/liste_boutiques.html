@@ -500,6 +500,7 @@
                         <button type="button" class="btn-louer" onclick="openModalBoutique()">🏪 Louer une boutique/Magasin</button>
                         <button type="button" class="btn-creer-local" onclick="openModalCreerLocal()">➕ Créer un local</button>
                         <a class="add-emplacement-link" onclick="openModalEmplacement()">+ Ajouter un emplacement</a>
+                        <a class="add-type-local-link" onclick="openModalTypeLocal()">+ Types de locaux</a>
                     </div>
                 </form>
 
@@ -819,6 +820,31 @@
         </div>
     </div>
 
+    <!-- Modale : Ajouter un type de local -->
+    <div class="modal-backdrop" id="modalTypeLocal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🏷️ Ajouter un type de local</h3>
+                <button type="button" class="modal-close" onclick="closeModalTypeLocal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formTypeLocal">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="type_local_nom">Nom du type de local *</label>
+                        <input type="text" id="type_local_nom" required placeholder="Ex: Box, Hangar, Kiosque métallique">
+                    </div>
+                    <div class="form-group">
+                        <label>Code (généré automatiquement)</label>
+                        <input type="text" id="type_local_code_preview" disabled placeholder="Sera généré à partir du nom">
+                        <small>Le code technique (ex: <code>box</code>, <code>hangar</code>) sera créé automatiquement.</small>
+                    </div>
+                    <button type="submit" class="btn-primary">✅ Ajouter le type de local</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         function openModalBoutique() {
             document.getElementById('modalBoutique').classList.add('active');
@@ -837,6 +863,12 @@
         }
         function closeModalEmplacement() {
             document.getElementById('modalEmplacement').classList.remove('active');
+        }
+        function openModalTypeLocal() {
+            document.getElementById('modalTypeLocal').classList.add('active');
+        }
+        function closeModalTypeLocal() {
+            document.getElementById('modalTypeLocal').classList.remove('active');
         }
         function openModalModifierBoutique(button) {
             // Récupérer les données depuis les attributs data-*
@@ -910,6 +942,9 @@
             document.getElementById('modalEmplacement').addEventListener('click', function(e) {
                 if (e.target === this) closeModalEmplacement();
             });
+            document.getElementById('modalTypeLocal').addEventListener('click', function(e) {
+                if (e.target === this) closeModalTypeLocal();
+            });
             document.getElementById('modalModifierBoutique').addEventListener('click', function(e) {
                 if (e.target === this) closeModalModifierBoutique();
             });
@@ -945,6 +980,55 @@
                     }
                 }).catch(function() { alert('Erreur réseau.'); }).finally(function() { btn.disabled = false; });
             });
+
+            // Formulaire type de local (AJAX)
+            document.getElementById('formTypeLocal').addEventListener('submit', function(e) {
+                e.preventDefault();
+                var btn = this.querySelector('button[type="submit"]');
+                btn.disabled = true;
+                var fd = new FormData();
+                fd.append('nom', document.getElementById('type_local_nom').value.trim());
+                fd.append('csrfmiddlewaretoken', document.querySelector('#formTypeLocal input[name="csrfmiddlewaretoken"]').value);
+                fetch("{% url 'creer_type_local_ajax' %}", {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(function(r) { return r.json(); }).then(function(data) {
+                    if (data.success) {
+                        // Ajouter le type dans les selects "type_local" (création + modification)
+                        var selects = [
+                            document.getElementById('creer_type_local'),
+                            document.getElementById('modifier_type_local')
+                        ];
+                        selects.forEach(function(sel) {
+                            if (!sel) return;
+                            var opt = document.createElement('option');
+                            opt.value = data.code;
+                            opt.textContent = data.nom;
+                            opt.selected = true;
+                            sel.appendChild(opt);
+                        });
+                        closeModalTypeLocal();
+                        document.getElementById('formTypeLocal').reset();
+                        document.getElementById('type_local_code_preview').value = '';
+                    } else {
+                        alert(data.error || 'Erreur lors de la création.');
+                    }
+                }).catch(function() { alert('Erreur réseau.'); }).finally(function() { btn.disabled = false; });
+            });
+
+            // Preview du code généré à partir du nom (côté front, indicatif)
+            (function() {
+                var nomInput = document.getElementById('type_local_nom');
+                var codePreview = document.getElementById('type_local_code_preview');
+                if (!nomInput || !codePreview) return;
+                nomInput.addEventListener('input', function() {
+                    var raw = (nomInput.value || '').toLowerCase().trim();
+                    var code = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // retirer accents
+                    code = code.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                    codePreview.value = code || '';
+                });
+            })();
 
             // Searchable select
             document.querySelectorAll('.searchable-select').forEach(function(wrapper) {
