@@ -997,6 +997,23 @@ def payer_contribuable(request, contribuable_id):
                         )
                         return redirect('comptes:payer_contribuable', contribuable_id=contribuable.id)
 
+                # Si la cotisation sélectionnée est déjà totalement soldée,
+                # on bascule automatiquement sur la cotisation de l'année suivante
+                # (créée si nécessaire) pour permettre de continuer les paiements.
+                try:
+                    reste_selectionnee = cotisation_annuelle.reste_a_payer()
+                except Exception:
+                    reste_selectionnee = Decimal("0")
+                if reste_selectionnee <= 0:
+                    prochaine_annee = cotisation_annuelle.annee + 1
+                    cotisation_annuelle, _ = CotisationAnnuelle.objects.get_or_create(
+                        boutique=cotisation_annuelle.boutique,
+                        annee=prochaine_annee,
+                        defaults={
+                            "montant_annuel_du": cotisation_annuelle.boutique.get_prix_annuel(),
+                        },
+                    )
+
                 # Montant mensuel dû pour cette boutique (en Decimal)
                 monthly_due = cotisation_annuelle.boutique.prix_location_mensuel or Decimal("0")
                 if monthly_due <= 0:

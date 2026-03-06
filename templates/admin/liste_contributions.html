@@ -380,6 +380,18 @@
                     <input type="hidden" name="q" value="{{ current_filters.q }}">
                     <button type="submit" class="btn-primary" style="padding:0.5rem 1rem; background: #2e7d32;">📊 Exporter en Excel</button>
                 </form>
+                <form method="get" action="{% url 'export_pdf_historique_cotisations_par_agent' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="date_du" value="{{ current_filters.date_du }}">
+                    <input type="hidden" name="date_au" value="{{ current_filters.date_au }}">
+                    <input type="hidden" name="agent_collecteur" value="{{ current_filters.agent_collecteur }}">
+                    <button type="submit" class="btn-primary" style="padding:0.5rem 1rem; background: #1565c0;">📋 Historique par agent (PDF)</button>
+                </form>
+                <form method="get" action="{% url 'export_pdf_versement_journalier_agent' %}" style="display:inline-flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                    <input type="hidden" name="date_du" value="{{ current_filters.date_du }}">
+                    <input type="hidden" name="date_au" value="{{ current_filters.date_au }}">
+                    <input type="hidden" name="agent_collecteur" value="{{ current_filters.agent_collecteur }}">
+                    <button type="submit" class="btn-primary" style="padding:0.5rem 1rem; background: #8e24aa;">🧾 Versement journalier (PDF)</button>
+                </form>
             </div>
             <form method="get" class="search-form">
                 <div>

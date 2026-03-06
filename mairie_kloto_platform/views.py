@@ -5380,11 +5380,10 @@ def export_pdf_contributions(request):
     data_cot, data_pay, data_tick = [[""]], [[""]], [[""]]
     total_du_cot = total_paye_cot = total_reste_cot = Decimal("0")
     total_recettes_pay = total_recettes_tick = Decimal("0")
+
+    # Préparation des données et des totaux (sans encore les ajouter au story)
     if not type_contribution or type_contribution == "cotisations":
         data_cot = [["Boutique", "Année", "Montant dû", "Montant payé", "Reste"]]
-        total_du_cot = Decimal("0")
-        total_paye_cot = Decimal("0")
-        total_reste_cot = Decimal("0")
         for c in cotisations[:500]:
             mp = c.montant_paye() if hasattr(c, "montant_paye") and callable(c.montant_paye) else Decimal("0")
             try:
@@ -5405,24 +5404,9 @@ def export_pdf_contributions(request):
             )
         if len(data_cot) > 1:
             data_cot.append(["TOTAL", "", str(total_du_cot), str(total_paye_cot), str(total_reste_cot)])
-            table_cot = Table(data_cot, colWidths=[3 * cm, 1.5 * cm, 3 * cm, 3 * cm, 3 * cm])
-            table_cot.setStyle(
-                TableStyle(
-                    [
-                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
-                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                        ("FONTSIZE", (0, 0), (-1, -1), 8),
-                        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
-                    ]
-                )
-            )
-            story.append(Paragraph("Cotisations annuelles", styles["Heading2"]))
-            story.append(table_cot)
-            story.append(Spacer(1, 0.3 * cm))
+
     if not type_contribution or type_contribution == "paiements":
         data_pay = [["Boutique", "Année", "Montant", "Date", "Agent"]]
-        total_recettes_pay = Decimal("0")
         for p in paiements[:500]:
             montant_val = Decimal(str(p.montant_paye)) if p.montant_paye is not None else Decimal("0")
             total_recettes_pay += montant_val
@@ -5437,24 +5421,9 @@ def export_pdf_contributions(request):
             )
         if len(data_pay) > 1:
             data_pay.append(["TOTAL RECETTES", "", str(total_recettes_pay), "", ""])
-            table_pay = Table(data_pay, colWidths=[3 * cm, 1.5 * cm, 3 * cm, 3 * cm, 5 * cm])
-            table_pay.setStyle(
-                TableStyle(
-                    [
-                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
-                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                        ("FONTSIZE", (0, 0), (-1, -1), 8),
-                        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
-                    ]
-                )
-            )
-            story.append(Paragraph("Paiements", styles["Heading2"]))
-            story.append(table_pay)
-            story.append(Spacer(1, 0.3 * cm))
+
     if not type_contribution or type_contribution == "tickets":
         data_tick = [["Emplacement", "Vendeur", "Montant", "Date", "Agent"]]
-        total_recettes_tick = Decimal("0")
         for t in tickets[:500]:
             montant_val = Decimal(str(t.montant)) if t.montant is not None else Decimal("0")
             total_recettes_tick += montant_val
@@ -5469,44 +5438,536 @@ def export_pdf_contributions(request):
             )
         if len(data_tick) > 1:
             data_tick.append(["TOTAL RECETTES (tickets marché)", "", str(total_recettes_tick), "", ""])
-            table_tick = Table(data_tick, colWidths=[4 * cm, 5 * cm, 3 * cm, 3 * cm, 5 * cm])
-            table_tick.setStyle(
+
+    # Récapitulatif global des totaux – affiché en haut de la page, sous le titre
+    recap_rows = []
+    if (not type_contribution or type_contribution == "cotisations") and len(data_cot) > 1:
+        recap_rows.append(
+            [
+                "Cotisations",
+                f"Dû {total_du_cot:,.2f}".replace(",", " "),
+                f"Payé {total_paye_cot:,.0f}".replace(",", " "),
+                f"Reste à payer {total_reste_cot:,.2f} FCFA".replace(",", " "),
+            ]
+        )
+    if (not type_contribution or type_contribution == "paiements") and len(data_pay) > 1:
+        recap_rows.append(
+            [
+                "Recettes paiements",
+                "",
+                "",
+                f"{total_recettes_pay:,.2f} FCFA".replace(",", " "),
+            ]
+        )
+    if (not type_contribution or type_contribution == "tickets") and len(data_tick) > 1:
+        recap_rows.append(
+            [
+                "Recettes tickets",
+                "",
+                "",
+                f"{total_recettes_tick:,.2f} FCFA".replace(",", " "),
+            ]
+        )
+
+    if recap_rows:
+        story.append(Spacer(1, 0.3 * cm))
+        recap_title = Paragraph(
+            "RÉCAPITULATIF DES TOTAUX",
+            ParagraphStyle(
+                "RecapTitle",
+                parent=styles["Heading2"],
+                fontSize=13,
+                textColor=colors.HexColor("#006233"),
+                spaceAfter=6,
+            ),
+        )
+        story.append(recap_title)
+        recap_table = Table(
+            [["Rubrique", "Dû", "Payé", "Total / Reste"]] + recap_rows,
+            colWidths=[4 * cm, 4 * cm, 3.5 * cm, 6 * cm],
+        )
+        recap_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+                    ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+                ]
+            )
+        )
+        story.append(recap_table)
+        story.append(Spacer(1, 0.5 * cm))
+
+    # Ajout des tableaux détaillés après le récapitulatif
+    if (not type_contribution or type_contribution == "cotisations") and len(data_cot) > 1:
+        table_cot = Table(data_cot, colWidths=[3 * cm, 1.5 * cm, 3 * cm, 3 * cm, 3 * cm])
+        table_cot.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                ]
+            )
+        )
+        story.append(Paragraph("Cotisations annuelles", styles["Heading2"]))
+        story.append(table_cot)
+        story.append(Spacer(1, 0.3 * cm))
+
+    if (not type_contribution or type_contribution == "paiements") and len(data_pay) > 1:
+        table_pay = Table(data_pay, colWidths=[3 * cm, 1.5 * cm, 3 * cm, 3 * cm, 5 * cm])
+        table_pay.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                ]
+            )
+        )
+        story.append(Paragraph("Paiements", styles["Heading2"]))
+        story.append(table_pay)
+        story.append(Spacer(1, 0.3 * cm))
+
+    if (not type_contribution or type_contribution == "tickets") and len(data_tick) > 1:
+        table_tick = Table(data_tick, colWidths=[4 * cm, 5 * cm, 3 * cm, 3 * cm, 5 * cm])
+        table_tick.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
+                ]
+            )
+        )
+        story.append(Paragraph("Tickets marché", styles["Heading2"]))
+        story.append(table_tick)
+
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_first_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    def on_later_pages(c, d):
+        # Pas d'en-tête répété sur les pages suivantes
+        pass
+
+    doc.build(story, onFirstPage=on_first_page, onLaterPages=on_later_pages, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_historique_cotisations_par_agent(request):
+    """
+    Historique des cotisations par agent entre deux dates.
+    Affiche pour chaque agent : somme due, somme encaissée, reste à encaisser.
+    Un seul en-tête (première page uniquement).
+    """
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    agent_collecteur_id = request.GET.get("agent_collecteur", "").strip()
+    start = _parse_date(date_du)
+    end = _parse_date(date_au)
+    today = timezone.localdate()
+    if start is None and end is None:
+        start = today.replace(month=1, day=1)
+        end = today
+    elif start is None:
+        start = end.replace(day=1) if end else today.replace(month=1, day=1)
+    elif end is None:
+        end = today
+    if start and end and start > end:
+        start, end = end, start
+
+    months_in_period = _iter_year_months(start, end)
+    month_count = len(months_in_period) if months_in_period else 0
+
+    agents_qs = AgentCollecteur.objects.filter(statut="actif")
+    if agent_collecteur_id:
+        try:
+            agents_qs = agents_qs.filter(pk=int(agent_collecteur_id))
+        except (ValueError, TypeError):
+            pass
+    agents = agents_qs.order_by("matricule", "nom", "prenom")
+    cotisations = CotisationAnnuelle.objects.select_related("boutique").filter(
+        boutique__agent_collecteur__in=agents
+    )
+    cot_map = {(c.boutique_id, c.annee): c for c in cotisations}
+
+    paiements_qs = PaiementCotisation.objects.select_related(
+        "cotisation_annuelle__boutique__emplacement",
+        "encaisse_par_agent",
+    ).filter(date_paiement__date__gte=start, date_paiement__date__lte=end).order_by("encaisse_par_agent", "date_paiement")
+    tickets_qs = TicketMarche.objects.select_related("emplacement", "encaisse_par_agent").filter(
+        date__gte=start, date__lte=end
+    ).order_by("encaisse_par_agent", "date")
+    paiements = list(paiements_qs)
+    tickets = list(tickets_qs)
+
+    agent_ids_with_activity = set()
+    for p in paiements:
+        if p.encaisse_par_agent_id:
+            agent_ids_with_activity.add(p.encaisse_par_agent_id)
+    for t in tickets:
+        if t.encaisse_par_agent_id:
+            agent_ids_with_activity.add(t.encaisse_par_agent_id)
+    agent_ids_with_boutiques = set(
+        BoutiqueMagasin.objects.filter(agent_collecteur__in=agents).values_list("agent_collecteur_id", flat=True)
+    )
+    agent_ids = agent_ids_with_activity | agent_ids_with_boutiques
+    agents = [a for a in agents if a.pk in agent_ids]
+
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    response = HttpResponse(content_type="application/pdf")
+    filename = "historique_cotisations_par_agent.pdf"
+    if agent_collecteur_id:
+        filename = f"historique_cotisations_agent_{agent_collecteur_id}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=15,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=10,
+    )
+    story.append(Paragraph("Historique des cotisations par agent", title_style))
+    story.append(
+        Paragraph(
+            f"<b>Période :</b> {start.strftime('%d/%m/%Y')} au {end.strftime('%d/%m/%Y')} "
+            f"(<b>{month_count}</b> mois)",
+            styles["Normal"],
+        )
+    )
+    story.append(Spacer(1, 0.4 * cm))
+
+    boutiques_par_agent = {}
+    for b in BoutiqueMagasin.objects.filter(agent_collecteur__in=agents).select_related("agent_collecteur"):
+        aid = b.agent_collecteur_id
+        if aid not in boutiques_par_agent:
+            boutiques_par_agent[aid] = []
+        boutiques_par_agent[aid].append(b)
+
+    for agent in agents:
+        story.append(Paragraph(f"<b>Agent : {escape(agent.nom_complet)} ({agent.matricule})</b>", styles["Heading2"]))
+        boutiques = boutiques_par_agent.get(agent.pk, [])
+        somme_due = Decimal("0")
+        for b in boutiques:
+            for (y, m) in months_in_period:
+                cot = cot_map.get((b.pk, y))
+                if cot:
+                    attendu = Decimal(str(cot.montant_annuel_du or 0)) / Decimal("12")
+                else:
+                    attendu = Decimal(str(b.prix_location_mensuel or 0))
+                somme_due += attendu.quantize(Decimal("0.01"))
+
+        paiements_agent = [p for p in paiements if p.encaisse_par_agent_id == agent.pk]
+        tickets_agent = [t for t in tickets if t.encaisse_par_agent_id == agent.pk]
+        somme_encaissee = sum(Decimal(str(p.montant_paye or 0)) for p in paiements_agent) + sum(
+            Decimal(str(t.montant or 0)) for t in tickets_agent
+        )
+        reste = max(Decimal("0"), somme_due - somme_encaissee)
+
+        synth = [
+            ["Somme due (période)", f"{somme_due:,.0f} FCFA".replace(",", " ")],
+            ["Somme totale encaissée", f"{somme_encaissee:,.0f} FCFA".replace(",", " ")],
+            ["Reste à encaisser", f"{reste:,.0f} FCFA".replace(",", " ")],
+        ]
+        tbl_synth = Table(synth, colWidths=[5 * cm, 8 * cm])
+        tbl_synth.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+                ]
+            )
+        )
+        story.append(tbl_synth)
+        story.append(Spacer(1, 0.2 * cm))
+
+        if paiements_agent:
+            data_p = [["Boutique", "Année", "Mois", "Montant", "Date"]]
+            for p in paiements_agent[:150]:
+                cot = p.cotisation_annuelle
+                b = cot.boutique if cot else None
+                data_p.append(
+                    [
+                        (b.matricule if b else "")[:18],
+                        str(getattr(cot, "annee", "")),
+                        f"{int(p.mois):02d}",
+                        f"{Decimal(str(p.montant_paye or 0)):,.0f} FCFA".replace(",", " "),
+                        p.date_paiement.strftime("%d/%m/%Y %H:%M") if hasattr(p.date_paiement, "strftime") else "",
+                    ]
+                )
+            total_p = sum(Decimal(str(p.montant_paye or 0)) for p in paiements_agent)
+            data_p.append(["TOTAL paiements", "", "", f"{total_p:,.0f} FCFA".replace(",", " "), ""])
+            tbl_p = Table(data_p, colWidths=[3 * cm, 1.5 * cm, 1.2 * cm, 3.2 * cm, 4 * cm])
+            tbl_p.setStyle(
                 TableStyle(
                     [
                         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#C8E6C9")),
                         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
                         ("FONTSIZE", (0, 0), (-1, -1), 8),
                         ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#E8F5E9")),
                     ]
                 )
             )
-            story.append(Paragraph("Tickets marché", styles["Heading2"]))
-            story.append(table_tick)
-    # Récapitulatif global des totaux
-    recap_parts = []
-    if (not type_contribution or type_contribution == "cotisations") and len(data_cot) > 1:
-        recap_parts.append(f"Cotisations: Dû {total_du_cot} | Payé {total_paye_cot} | Reste à payer {total_reste_cot} FCFA")
-    if (not type_contribution or type_contribution == "paiements") and len(data_pay) > 1:
-        recap_parts.append(f"Recettes paiements: {total_recettes_pay} FCFA")
-    if (not type_contribution or type_contribution == "tickets") and len(data_tick) > 1:
-        recap_parts.append(f"Recettes tickets: {total_recettes_tick} FCFA")
-    if recap_parts:
+            story.append(Paragraph("Paiements encaissés", styles["Heading3"]))
+            story.append(tbl_p)
+            story.append(Spacer(1, 0.2 * cm))
+
+        if tickets_agent:
+            data_t = [["Date", "Emplacement", "Vendeur", "Montant"]]
+            for t in tickets_agent[:150]:
+                data_t.append(
+                    [
+                        t.date.strftime("%d/%m/%Y") if hasattr(t.date, "strftime") else "",
+                        (t.emplacement.nom_lieu if t.emplacement else "")[:22],
+                        (t.nom_vendeur or "")[:22],
+                        f"{Decimal(str(t.montant or 0)):,.0f} FCFA".replace(",", " "),
+                    ]
+                )
+            total_t = sum(Decimal(str(t.montant or 0)) for t in tickets_agent)
+            data_t.append(["TOTAL tickets", "", "", f"{total_t:,.0f} FCFA".replace(",", " ")])
+            tbl_t = Table(data_t, colWidths=[2.5 * cm, 5 * cm, 5 * cm, 3 * cm])
+            tbl_t.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#C8E6C9")),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8),
+                        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ]
+                )
+            )
+            story.append(Paragraph("Tickets marché encaissés", styles["Heading3"]))
+            story.append(tbl_t)
+
         story.append(Spacer(1, 0.4 * cm))
-        recap_style = ParagraphStyle(
-            "Recap",
-            parent=styles["Normal"],
-            fontSize=11,
-            textColor=colors.HexColor("#006233"),
-            fontName="Helvetica-Bold",
-            spaceBefore=6,
-            spaceAfter=6,
-        )
-        story.append(Paragraph("RÉCAPITULATIF DES TOTAUX", recap_style))
-        for part in recap_parts:
-            story.append(Paragraph(f"• {part}", styles["Normal"]))
-    story.append(Spacer(1, 0.6 * cm))
+
     story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_first_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    def on_later_pages(c, d):
+        pass
+
+    doc.build(story, onFirstPage=on_first_page, onLaterPages=on_later_pages, canvasmaker=NumberedCanvas)
+    return response
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_versement_journalier_agent(request):
+    """
+    Relevé de versement journalier par agent à la caisse.
+    Regroupe les paiements de cotisations et tickets marché d'un agent sur une journée.
+    """
+    agent_collecteur_id = request.GET.get("agent_collecteur", "").strip()
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+
+    # Date du jour de versement : on prend date_du si fourni, sinon date_au, sinon aujourd'hui.
+    jour = _parse_date(date_du) or _parse_date(date_au) or timezone.localdate()
+
+    agent = None
+    if agent_collecteur_id:
+        try:
+            agent = AgentCollecteur.objects.filter(statut="actif").get(pk=int(agent_collecteur_id))
+        except (ValueError, TypeError, AgentCollecteur.DoesNotExist):
+            agent = None
+
+    # Paiements et tickets du jour pour cet agent
+    paiements_qs = PaiementCotisation.objects.select_related(
+        "cotisation_annuelle__boutique__contribuable",
+        "cotisation_annuelle__boutique__emplacement",
+        "encaisse_par_agent",
+    ).filter(date_paiement__date=jour)
+    tickets_qs = TicketMarche.objects.select_related(
+        "emplacement",
+        "contribuable",
+        "encaisse_par_agent",
+    ).filter(date=jour)
+
+    if agent:
+        paiements_qs = paiements_qs.filter(encaisse_par_agent=agent)
+        tickets_qs = tickets_qs.filter(encaisse_par_agent=agent)
+
+    paiements = list(paiements_qs)
+    tickets = list(tickets_qs)
+
+    total_paiements = sum(Decimal(str(p.montant_paye or 0)) for p in paiements)
+    total_tickets = sum(Decimal(str(t.montant or 0)) for t in tickets)
+    total_general = total_paiements + total_tickets
+
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    response = HttpResponse(content_type="application/pdf")
+    filename = f"versement_journalier_{jour.strftime('%Y%m%d')}"
+    if agent:
+        filename += f"_agent_{agent.pk}"
+    filename += ".pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=A4,
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=16,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=12,
+    )
+    story.append(Paragraph("Versement journalier des recettes à la caisse", title_style))
+
+    sous_titre_parts = [f"Date : {jour.strftime('%d/%m/%Y')}"]
+    if agent:
+        sous_titre_parts.append(f"Agent collecteur : {escape(agent.nom_complet)} ({agent.matricule})")
+    else:
+        sous_titre_parts.append("Tous les agents")
+    story.append(Paragraph(" | ".join(sous_titre_parts), styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+
+    # Tableau de synthèse
+    synthese_data = [
+        ["Source", "Montant (FCFA)"],
+        ["Paiements cotisations (boutiques)", f"{total_paiements:,.0f}".replace(",", " ")],
+        ["Tickets marché (étalages)", f"{total_tickets:,.0f}".replace(",", " ")],
+        ["TOTAL À VERSER", f"{total_general:,.0f}".replace(",", " ")],
+    ]
+    synth_table = Table(synthese_data, colWidths=[8 * cm, 6 * cm])
+    synth_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#C8E6C9")),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+            ]
+        )
+    )
+    story.append(synth_table)
+    story.append(Spacer(1, 0.5 * cm))
+
+    # Détail des paiements
+    if paiements:
+        data_p = [["Boutique", "Contribuable", "Année", "Mois", "Montant", "Heure"]]
+        for p in paiements[:300]:
+            cot = p.cotisation_annuelle
+            b = cot.boutique if cot else None
+            contrib = b.contribuable if b and hasattr(b, "contribuable") else None
+            data_p.append(
+                [
+                    (b.matricule if b else "")[:18],
+                    (contrib.nom_complet if contrib else "")[:25],
+                    str(getattr(cot, "annee", "")),
+                    f"{int(p.mois):02d}",
+                    f"{Decimal(str(p.montant_paye or 0)):,.0f} FCFA".replace(",", " "),
+                    p.date_paiement.strftime("%H:%M") if hasattr(p.date_paiement, "strftime") else "",
+                ]
+            )
+        data_p.append(
+            [
+                "TOTAL PAIEMENTS",
+                "",
+                "",
+                "",
+                f"{total_paiements:,.0f} FCFA".replace(",", " "),
+                "",
+            ]
+        )
+        tbl_p = Table(data_p, colWidths=[3 * cm, 4.5 * cm, 1.5 * cm, 1.3 * cm, 3.2 * cm, 2.5 * cm])
+        tbl_p.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#C8E6C9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ]
+            )
+        )
+        story.append(Paragraph("Détail des paiements de cotisations", styles["Heading3"]))
+        story.append(tbl_p)
+        story.append(Spacer(1, 0.4 * cm))
+
+    # Détail des tickets
+    if tickets:
+        data_t = [["Date", "Emplacement", "Vendeur", "Contribuable", "Montant"]]
+        for t in tickets[:300]:
+            contrib = t.contribuable
+            data_t.append(
+                [
+                    t.date.strftime("%d/%m/%Y") if hasattr(t.date, "strftime") else "",
+                    (t.emplacement.nom_lieu if t.emplacement else "")[:20],
+                    (t.nom_vendeur or "")[:20],
+                    (contrib.nom_complet if contrib else "")[:22],
+                    f"{Decimal(str(t.montant or 0)):,.0f} FCFA".replace(",", " "),
+                ]
+            )
+        data_t.append(
+            [
+                "TOTAL TICKETS",
+                "",
+                "",
+                "",
+                f"{total_tickets:,.0f} FCFA".replace(",", " "),
+            ]
+        )
+        tbl_t = Table(data_t, colWidths=[2.5 * cm, 4.5 * cm, 4 * cm, 4 * cm, 2.5 * cm])
+        tbl_t.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#C8E6C9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ]
+            )
+        )
+        story.append(Paragraph("Détail des tickets marché", styles["Heading3"]))
+        story.append(tbl_t)
+        story.append(Spacer(1, 0.4 * cm))
+
+    story.append(Spacer(1, 0.8 * cm))
+    story.append(Paragraph("Signature de l'agent : ________________________________", styles["Normal"]))
+    story.append(Spacer(1, 0.4 * cm))
+    story.append(Paragraph("Visa de la caisse : ________________________________", styles["Normal"]))
 
     def on_page(c, d):
         _draw_pdf_header(c, d, conf)
@@ -5627,12 +6088,47 @@ def export_pdf_suivi_paiements_contribuable(request, contribuable_id: int):
         key = (cot.boutique_id, cot.annee, int(p.mois))
         paid_by_key[key] = paid_by_key.get(key, Decimal("0")) + Decimal(str(p.montant_paye or 0))
 
-    # Calcul attendu / encaissé / impayés sur la période (par mois)
+    # Calcul attendu / encaissé / impayés sur la période (par mois), groupés par boutique
     total_attendu = Decimal("0")
     total_encaisse = Decimal("0")
-    impayes_rows = []
+    impayes_par_boutique = {}  # boutique_id -> [(mois_str, attendu, payé, reste), ...] période
+    impayes_annees_passees_par_boutique = {}  # boutique_id -> [(mois_str, attendu, payé, reste), ...] arriérés
+    paiements_par_boutique = {}  # boutique_id -> [list of paiements]
+    avance_par_boutique = {}  # boutique_id -> [(annee, mois, montant, date_paiement), ...]
+
+    for p in paiements:
+        cot = p.cotisation_annuelle
+        bid = cot.boutique_id
+        if bid not in paiements_par_boutique:
+            paiements_par_boutique[bid] = []
+        paiements_par_boutique[bid].append(p)
+        # Paiement en avance = date_paiement (mois/an) < mois/annee du paiement
+        dp = p.date_paiement
+        if hasattr(dp, "date"):
+            dp = dp.date()
+        if dp and (dp.year < cot.annee or (dp.year == cot.annee and dp.month < int(p.mois))):
+            if bid not in avance_par_boutique:
+                avance_par_boutique[bid] = []
+            avance_par_boutique[bid].append((cot.annee, int(p.mois), Decimal(str(p.montant_paye or 0)), dp))
+
+    totaux_par_boutique = {}  # boutique_id -> {attendu, paye, reste}
+    # Mois à vérifier : inclure les années passées (avant la période) pour capturer les impayés historiques
+    min_year = start.year - 3 if start else (today.year - 3)
+    all_months_to_check = []
+    y, m = min_year, 1
+    end_y, end_m = end.year if end else today.year, end.month if end else today.month
+    while (y, m) <= (end_y, end_m):
+        all_months_to_check.append((y, m))
+        if m == 12:
+            y, m = y + 1, 1
+        else:
+            m += 1
 
     for b in boutiques:
+        impayes_par_boutique[b.pk] = []
+        impayes_annees_passees_par_boutique[b.pk] = []
+        att_b = Decimal("0")
+        pay_b = Decimal("0")
         for (y, m) in months_in_period:
             cot = cot_map.get((b.pk, y))
             if cot:
@@ -5642,21 +6138,44 @@ def export_pdf_suivi_paiements_contribuable(request, contribuable_id: int):
 
             attendu = attendu.quantize(Decimal("0.01"))
             total_attendu += attendu
+            att_b += attendu
 
             paid = paid_by_key.get((b.pk, y, m), Decimal("0")).quantize(Decimal("0.01"))
             total_encaisse += paid
+            pay_b += paid
 
             reste = (attendu - paid)
             if reste > 0:
-                impayes_rows.append(
-                    [
-                        b.matricule,
+                impayes_par_boutique[b.pk].append(
+                    (
                         f"{m:02d}/{y}",
-                        str(attendu.quantize(Decimal("1"))) if attendu == attendu.to_integral() else str(attendu),
-                        str(paid.quantize(Decimal("1"))) if paid == paid.to_integral() else str(paid),
-                        str(reste.quantize(Decimal("1"))) if reste == reste.to_integral() else str(reste),
-                    ]
+                        attendu,
+                        paid,
+                        reste,
+                    )
                 )
+        # Impayés des années passées : mois avant la période (arriérés)
+        # On ne compte que les années où une cotisation existe (boutique active cette année)
+        months_in_period_set = set(months_in_period)
+        for (y, m) in all_months_to_check:
+            if (y, m) in months_in_period_set:
+                continue
+            cot = cot_map.get((b.pk, y))
+            if not cot:
+                continue  # Pas de cotisation = boutique pas encore active, pas d'arriéré
+            attendu = (Decimal(str(cot.montant_annuel_du or 0)) / Decimal("12")).quantize(Decimal("0.01"))
+            paid = paid_by_key.get((b.pk, y, m), Decimal("0")).quantize(Decimal("0.01"))
+            reste = (attendu - paid)
+            if reste > 0:
+                impayes_annees_passees_par_boutique[b.pk].append(
+                    (
+                        f"{m:02d}/{y}",
+                        attendu,
+                        paid,
+                        reste,
+                    )
+                )
+        totaux_par_boutique[b.pk] = {"attendu": att_b, "paye": pay_b, "reste": max(Decimal("0"), att_b - pay_b)}
 
     reste_a_payer = max(Decimal("0"), (total_attendu - total_encaisse))
     taux_paiement = Decimal("0")
@@ -5747,82 +6266,134 @@ def export_pdf_suivi_paiements_contribuable(request, contribuable_id: int):
     story.append(tbl_s)
     story.append(Spacer(1, 0.25 * cm))
 
-    # Historique paiements
-    story.append(Paragraph("3) Historique des paiements (dans la période)", styles["Heading2"]))
-    if paiements:
-        data_p = [["Boutique", "Année", "Mois", "Montant", "Date", "Agent"]]
-        for p in paiements[:900]:
-            cot = p.cotisation_annuelle
-            b = cot.boutique if cot else None
-            data_p.append(
-                [
-                    (b.matricule if b else "")[:18],
-                    str(getattr(cot, "annee", "")),
-                    f"{int(p.mois):02d}",
-                    f"{Decimal(str(p.montant_paye or 0)):,.0f} FCFA".replace(",", " "),
-                    p.date_paiement.strftime("%d/%m/%Y %H:%M") if hasattr(p.date_paiement, "strftime") else "",
-                    p.encaisse_par_agent.nom_complet if p.encaisse_par_agent else "—",
-                ]
-            )
-        tbl_p = Table(data_p, colWidths=[3 * cm, 1.6 * cm, 1.4 * cm, 3.2 * cm, 4.0 * cm, 6.0 * cm])
-        tbl_p.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                    ("FONTSIZE", (0, 0), (-1, -1), 8),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ]
-            )
-        )
-        story.append(tbl_p)
-    else:
-        story.append(Paragraph("Aucun paiement trouvé sur cette période.", styles["Normal"]))
-    story.append(Spacer(1, 0.25 * cm))
+    # Suivi par boutique : pour chaque boutique, tableau des paiements + impayés + totaux
+    story.append(Paragraph("3) Suivi boutique par boutique (paiements et impayés)", styles["Heading2"]))
+    for b in boutiques:
+        story.append(Spacer(1, 0.2 * cm))
+        boutique_title = f"Boutique {b.matricule} — {b.emplacement.nom_lieu if b.emplacement else '—'}"
+        story.append(Paragraph(f"<b>{escape(boutique_title)}</b>", styles["Heading3"]))
 
-    # Impayés
-    story.append(Paragraph("4) Impayés / restes (par mois)", styles["Heading2"]))
-    if impayes_rows:
-        data_i = [["Boutique", "Mois", "Attendu", "Payé", "Reste"]]
-        data_i.extend(impayes_rows[:1200])
-        tbl_i = Table(data_i, colWidths=[3 * cm, 2.2 * cm, 3 * cm, 3 * cm, 3 * cm])
-        tbl_i.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#FFF3CD")),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                    ("FONTSIZE", (0, 0), (-1, -1), 8),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ]
+        # Paiements pour cette boutique
+        p_list = paiements_par_boutique.get(b.pk, [])
+        p_list = sorted(p_list, key=lambda x: (x.cotisation_annuelle.annee, int(x.mois)))
+        if p_list:
+            data_p = [["Année", "Mois", "Montant", "Date", "En avance"]]
+            total_boutique_p = Decimal("0")
+            for p in p_list[:200]:
+                cot = p.cotisation_annuelle
+                montant = Decimal(str(p.montant_paye or 0))
+                total_boutique_p += montant
+                dp = p.date_paiement
+                if hasattr(dp, "date"):
+                    dp = dp.date()
+                en_avance = ""
+                if dp and (dp.year < cot.annee or (dp.year == cot.annee and dp.month < int(p.mois))):
+                    en_avance = "Oui"
+                data_p.append(
+                    [
+                        str(getattr(cot, "annee", "")),
+                        f"{int(p.mois):02d}",
+                        f"{montant:,.0f} FCFA".replace(",", " "),
+                        p.date_paiement.strftime("%d/%m/%Y %H:%M") if hasattr(p.date_paiement, "strftime") else "",
+                        en_avance,
+                    ]
+                )
+            tot_b = totaux_par_boutique.get(b.pk, {})
+            total_attendu_b = tot_b.get("attendu", Decimal("0"))
+            reste_b = tot_b.get("reste", Decimal("0"))
+            data_p.append(["Total à payer (période)", "", "", f"{total_attendu_b:,.0f} FCFA".replace(",", " "), ""])
+            data_p.append(["Total payé", "", "", f"{total_boutique_p:,.0f} FCFA".replace(",", " "), ""])
+            data_p.append(["Reste à payer", "", "", f"{reste_b:,.0f} FCFA".replace(",", " "), ""])
+            tbl_p = Table(data_p, colWidths=[4.0 * cm, 1.4 * cm, 2.8 * cm, 4.2 * cm, 2.2 * cm])
+            n_rows = len(data_p)
+            tbl_p.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                        ("BACKGROUND", (0, n_rows - 3), (-1, n_rows - 1), colors.HexColor("#C8E6C9")),
+                        ("SPAN", (0, n_rows - 3), (2, n_rows - 3)),
+                        ("SPAN", (0, n_rows - 2), (2, n_rows - 2)),
+                        ("SPAN", (0, n_rows - 1), (2, n_rows - 1)),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8),
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                        ("FONTNAME", (0, n_rows - 3), (-1, n_rows - 1), "Helvetica-Bold"),
+                    ]
+                )
             )
-        )
-        story.append(tbl_i)
-    else:
-        story.append(Paragraph("Aucun impayé sur la période.", styles["Normal"]))
+            story.append(tbl_p)
+        else:
+            story.append(Paragraph("Aucun paiement sur cette période.", styles["Normal"]))
+
+        # Tableau Mois/Attendu/Payé/Reste : affiché uniquement s'il y a des arriérés des années passées
+        imp_annees_passees = impayes_annees_passees_par_boutique.get(b.pk, [])
+        if imp_annees_passees:
+            data_i = [["Mois", "Attendu", "Payé", "Reste"]]
+            total_ap = Decimal("0")
+            total_paye_ap = Decimal("0")
+            total_reste_ap = Decimal("0")
+            for (mois_str, attendu, paye, reste) in imp_annees_passees[:100]:
+                total_ap += attendu
+                total_paye_ap += paye
+                total_reste_ap += reste
+                data_i.append(
+                    [
+                        mois_str,
+                        f"{attendu:,.0f}".replace(",", " ") if attendu == attendu.to_integral() else str(attendu),
+                        f"{paye:,.0f}".replace(",", " ") if paye == paye.to_integral() else str(paye),
+                        f"{reste:,.0f}".replace(",", " ") if reste == reste.to_integral() else str(reste),
+                    ]
+                )
+            data_i.append(["Total arriérés", f"{total_ap:,.0f} FCFA".replace(",", " "), f"{total_paye_ap:,.0f} FCFA".replace(",", " "), f"{total_reste_ap:,.0f} FCFA".replace(",", " ")])
+            tbl_i = Table(data_i, colWidths=[4.5 * cm, 3.0 * cm, 3.0 * cm, 3.0 * cm])
+            tbl_i.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#FFF3CD")),
+                        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#FFECB3")),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8),
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                    ]
+                )
+            )
+            story.append(Spacer(1, 0.15 * cm))
+            story.append(tbl_i)
+        story.append(Spacer(1, 0.35 * cm))
+
+    if not boutiques:
+        story.append(Paragraph("Aucune boutique/magasin rattaché.", styles["Normal"]))
 
     # Tickets (optionnel)
     if tickets:
         story.append(Spacer(1, 0.3 * cm))
-        story.append(Paragraph("5) Tickets marché (dans la période)", styles["Heading2"]))
+        story.append(Paragraph("4) Tickets marché (dans la période)", styles["Heading2"]))
         data_t = [["Date", "Emplacement", "Vendeur", "Montant", "Agent"]]
+        total_tickets = Decimal("0")
         for t in tickets[:800]:
+            mnt = Decimal(str(t.montant or 0))
+            total_tickets += mnt
             data_t.append(
                 [
                     t.date.strftime("%d/%m/%Y") if hasattr(t.date, "strftime") else "",
                     (t.emplacement.nom_lieu if t.emplacement else "")[:22],
                     (t.nom_vendeur or "")[:22],
-                    f"{Decimal(str(t.montant or 0)):,.0f} FCFA".replace(",", " "),
+                    f"{mnt:,.0f} FCFA".replace(",", " "),
                     t.encaisse_par_agent.nom_complet if t.encaisse_par_agent else "—",
                 ]
             )
+        data_t.append(["", "", "TOTAL", f"{total_tickets:,.0f} FCFA".replace(",", " "), ""])
         tbl_t = Table(data_t, colWidths=[2.8 * cm, 6 * cm, 6 * cm, 3.5 * cm, 6.0 * cm])
         tbl_t.setStyle(
             TableStyle(
                 [
                     ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#C8E6C9")),
                     ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
                     ("FONTSIZE", (0, 0), (-1, -1), 8),
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
                 ]
             )
         )
@@ -5831,10 +6402,13 @@ def export_pdf_suivi_paiements_contribuable(request, contribuable_id: int):
     story.append(Spacer(1, 0.6 * cm))
     story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
 
-    def on_page(c, d):
+    def on_first_page(c, d):
         _draw_pdf_header(c, d, conf)
 
-    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    def on_later_pages(c, d):
+        pass  # Pas d'en-tête sur les pages suivantes
+
+    doc.build(story, onFirstPage=on_first_page, onLaterPages=on_later_pages, canvasmaker=NumberedCanvas)
     return response
 
 
