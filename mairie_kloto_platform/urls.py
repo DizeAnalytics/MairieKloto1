@@ -98,6 +98,7 @@ urlpatterns = [
     path("tableau-bord/export/boutiques/", views.export_pdf_boutiques, name="export_pdf_boutiques"),
     path("tableau-bord/export-excel/boutiques/", views.export_excel_boutiques, name="export_excel_boutiques"),
     path("tableau-bord/export/contributions/", views.export_pdf_contributions, name="export_pdf_contributions"),
+    path("tableau-bord/export/contributions/contribuable/<int:contribuable_id>/pdf/", views.export_pdf_suivi_paiements_contribuable, name="export_pdf_suivi_paiements_contribuable"),
     path("tableau-bord/export-excel/contributions/", views.export_excel_contributions, name="export_excel_contributions"),
     path("tableau-bord/export/cotisations-acteurs-institutions/", views.export_pdf_cotisations_acteurs_institutions, name="export_pdf_cotisations_acteurs_institutions"),
     path("tableau-bord/export-excel/cotisations-acteurs-institutions/", views.export_excel_cotisations_acteurs_institutions, name="export_excel_cotisations_acteurs_institutions"),

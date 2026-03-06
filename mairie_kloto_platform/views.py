@@ -5515,6 +5515,329 @@ def export_pdf_contributions(request):
     return response
 
 
+def _iter_year_months(start_date, end_date):
+    """Itère (année, mois) entre deux dates (inclus), par mois."""
+    if start_date is None or end_date is None:
+        return []
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+    y, m = start_date.year, start_date.month
+    end_y, end_m = end_date.year, end_date.month
+    out = []
+    while (y, m) <= (end_y, end_m):
+        out.append((y, m))
+        if m == 12:
+            y += 1
+            m = 1
+        else:
+            m += 1
+    return out
+
+
+@login_required
+@user_passes_test(is_staff_user)
+def export_pdf_suivi_paiements_contribuable(request, contribuable_id: int):
+    """
+    Relevé / suivi de paiement d'un contribuable, avec période (date_du/date_au),
+    montant mensuel, historique des paiements, impayés/restes et taux de paiement.
+    """
+    contribuable = get_object_or_404(Contribuable, pk=contribuable_id)
+
+    date_du = request.GET.get("date_du", "").strip()
+    date_au = request.GET.get("date_au", "").strip()
+    start = _parse_date(date_du)
+    end = _parse_date(date_au)
+    today = timezone.localdate()
+
+    # Valeurs par défaut si la période n'est pas fournie
+    if start is None and end is None:
+        start = today.replace(month=1, day=1)
+        end = today
+    elif start is None:
+        # Par défaut: 30 jours avant la fin
+        start = end.replace(day=1) if end else today.replace(month=1, day=1)
+    elif end is None:
+        end = today
+
+    if start and end and start > end:
+        start, end = end, start
+
+    months_in_period = _iter_year_months(start, end)
+    month_count = len(months_in_period) if months_in_period else 0
+
+    boutiques = (
+        BoutiqueMagasin.objects.select_related("emplacement", "agent_collecteur")
+        .filter(contribuable=contribuable)
+        .order_by("emplacement__nom_lieu", "matricule")
+    )
+
+    # Cotisations annuelles pour les boutiques du contribuable (années utiles)
+    years = sorted({y for (y, _m) in months_in_period}) if months_in_period else []
+    cotisations = (
+        CotisationAnnuelle.objects.select_related("boutique")
+        .filter(boutique__in=boutiques, annee__in=years)
+        .order_by("annee", "boutique__matricule")
+    )
+    cot_map = {(c.boutique_id, c.annee): c for c in cotisations}
+
+    # Paiements du contribuable dans la période (date paiement)
+    paiements_qs = (
+        PaiementCotisation.objects.select_related(
+            "cotisation_annuelle__boutique__emplacement",
+            "encaisse_par_agent",
+        )
+        .filter(cotisation_annuelle__boutique__in=boutiques)
+        .order_by("date_paiement")
+    )
+    if start:
+        paiements_qs = paiements_qs.filter(date_paiement__date__gte=start)
+    if end:
+        paiements_qs = paiements_qs.filter(date_paiement__date__lte=end)
+    paiements = list(paiements_qs)
+
+    # Tickets marché du contribuable dans la période (si existants)
+    tickets_qs = TicketMarche.objects.select_related("emplacement", "encaisse_par_agent").filter(contribuable=contribuable)
+    if start:
+        tickets_qs = tickets_qs.filter(date__gte=start)
+    if end:
+        tickets_qs = tickets_qs.filter(date__lte=end)
+    tickets = list(tickets_qs.order_by("date", "date_creation")[:800])
+
+    # Montants mensuels (par boutique + total)
+    montant_mensuel_total = Decimal("0")
+    boutiques_rows = []
+    for b in boutiques:
+        mensuel = Decimal(str(b.prix_location_mensuel or 0))
+        montant_mensuel_total += mensuel
+        boutiques_rows.append(
+            [
+                b.matricule,
+                b.emplacement.nom_lieu if b.emplacement else "",
+                b.get_type_local_display() if hasattr(b, "get_type_local_display") else (b.type_local or ""),
+                b.activite_vendue or "",
+                str(mensuel.quantize(Decimal("1"))) if mensuel == mensuel.to_integral() else str(mensuel),
+                (b.agent_collecteur.nom_complet if b.agent_collecteur else "—"),
+            ]
+        )
+
+    # Paiements indexés par (boutique_id, annee, mois)
+    paid_by_key = {}
+    for p in paiements:
+        cot = p.cotisation_annuelle
+        key = (cot.boutique_id, cot.annee, int(p.mois))
+        paid_by_key[key] = paid_by_key.get(key, Decimal("0")) + Decimal(str(p.montant_paye or 0))
+
+    # Calcul attendu / encaissé / impayés sur la période (par mois)
+    total_attendu = Decimal("0")
+    total_encaisse = Decimal("0")
+    impayes_rows = []
+
+    for b in boutiques:
+        for (y, m) in months_in_period:
+            cot = cot_map.get((b.pk, y))
+            if cot:
+                attendu = (Decimal(str(cot.montant_annuel_du or 0)) / Decimal("12"))
+            else:
+                attendu = Decimal(str(b.prix_location_mensuel or 0))
+
+            attendu = attendu.quantize(Decimal("0.01"))
+            total_attendu += attendu
+
+            paid = paid_by_key.get((b.pk, y, m), Decimal("0")).quantize(Decimal("0.01"))
+            total_encaisse += paid
+
+            reste = (attendu - paid)
+            if reste > 0:
+                impayes_rows.append(
+                    [
+                        b.matricule,
+                        f"{m:02d}/{y}",
+                        str(attendu.quantize(Decimal("1"))) if attendu == attendu.to_integral() else str(attendu),
+                        str(paid.quantize(Decimal("1"))) if paid == paid.to_integral() else str(paid),
+                        str(reste.quantize(Decimal("1"))) if reste == reste.to_integral() else str(reste),
+                    ]
+                )
+
+    reste_a_payer = max(Decimal("0"), (total_attendu - total_encaisse))
+    taux_paiement = Decimal("0")
+    if total_attendu > 0:
+        taux_paiement = (total_encaisse / total_attendu) * Decimal("100")
+
+    # PDF
+    conf = ConfigurationMairie.objects.filter(est_active=True).first()
+    response = HttpResponse(content_type="application/pdf")
+    filename = _make_pdf_filename("releve_paiements", contribuable.nom_complet) if "_make_pdf_filename" in globals() else f"releve_paiements_{slugify(contribuable.nom_complet)}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=landscape(A4),
+        topMargin=PDF_HEADER_HEIGHT_CM * cm,
+        bottomMargin=1.5 * cm,
+    )
+    story = []
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        fontSize=15,
+        textColor=colors.HexColor("#006233"),
+        alignment=1,
+        spaceAfter=10,
+    )
+    story.append(Paragraph("Relevé / Suivi de paiement (Contribuable)", title_style))
+    story.append(
+        Paragraph(
+            f"<b>Contribuable :</b> {escape(contribuable.nom_complet)} &nbsp;&nbsp; "
+            f"<b>Téléphone :</b> {escape(contribuable.telephone)}",
+            styles["Normal"],
+        )
+    )
+    story.append(
+        Paragraph(
+            f"<b>Période :</b> {start.strftime('%d/%m/%Y') if start else '...'} au {end.strftime('%d/%m/%Y') if end else '...'} "
+            f"(<b>{month_count}</b> mois)",
+            styles["Normal"],
+        )
+    )
+    story.append(Spacer(1, 0.35 * cm))
+
+    # Boutiques
+    story.append(Paragraph("1) Boutiques / magasins rattachés", styles["Heading2"]))
+    if boutiques_rows:
+        data_b = [["Matricule", "Emplacement", "Type", "Activité", "Montant mensuel", "Agent"]]
+        data_b.extend(boutiques_rows)
+        tbl_b = Table(data_b, colWidths=[3 * cm, 5.5 * cm, 2.8 * cm, 5.8 * cm, 3.3 * cm, 5.0 * cm])
+        tbl_b.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ]
+            )
+        )
+        story.append(tbl_b)
+    else:
+        story.append(Paragraph("Aucune boutique/magasin rattaché à ce contribuable.", styles["Normal"]))
+    story.append(Spacer(1, 0.25 * cm))
+
+    # Synthèse
+    story.append(Paragraph("2) Synthèse sur la période", styles["Heading2"]))
+    synth = [
+        ["Montant mensuel total", f"{montant_mensuel_total:,.0f} FCFA".replace(",", " ")],
+        ["Total attendu (période)", f"{total_attendu:,.0f} FCFA".replace(",", " ")],
+        ["Total encaissé (période)", f"{total_encaisse:,.0f} FCFA".replace(",", " ")],
+        ["Reste à payer (période)", f"{reste_a_payer:,.0f} FCFA".replace(",", " ")],
+        ["Taux de paiement", f"{taux_paiement.quantize(Decimal('0.01'))} %"],
+    ]
+    tbl_s = Table(synth, colWidths=[6 * cm, 12 * cm])
+    tbl_s.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#E8F5E9")),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        )
+    )
+    story.append(tbl_s)
+    story.append(Spacer(1, 0.25 * cm))
+
+    # Historique paiements
+    story.append(Paragraph("3) Historique des paiements (dans la période)", styles["Heading2"]))
+    if paiements:
+        data_p = [["Boutique", "Année", "Mois", "Montant", "Date", "Agent"]]
+        for p in paiements[:900]:
+            cot = p.cotisation_annuelle
+            b = cot.boutique if cot else None
+            data_p.append(
+                [
+                    (b.matricule if b else "")[:18],
+                    str(getattr(cot, "annee", "")),
+                    f"{int(p.mois):02d}",
+                    f"{Decimal(str(p.montant_paye or 0)):,.0f} FCFA".replace(",", " "),
+                    p.date_paiement.strftime("%d/%m/%Y %H:%M") if hasattr(p.date_paiement, "strftime") else "",
+                    p.encaisse_par_agent.nom_complet if p.encaisse_par_agent else "—",
+                ]
+            )
+        tbl_p = Table(data_p, colWidths=[3 * cm, 1.6 * cm, 1.4 * cm, 3.2 * cm, 4.0 * cm, 6.0 * cm])
+        tbl_p.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ]
+            )
+        )
+        story.append(tbl_p)
+    else:
+        story.append(Paragraph("Aucun paiement trouvé sur cette période.", styles["Normal"]))
+    story.append(Spacer(1, 0.25 * cm))
+
+    # Impayés
+    story.append(Paragraph("4) Impayés / restes (par mois)", styles["Heading2"]))
+    if impayes_rows:
+        data_i = [["Boutique", "Mois", "Attendu", "Payé", "Reste"]]
+        data_i.extend(impayes_rows[:1200])
+        tbl_i = Table(data_i, colWidths=[3 * cm, 2.2 * cm, 3 * cm, 3 * cm, 3 * cm])
+        tbl_i.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#FFF3CD")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ]
+            )
+        )
+        story.append(tbl_i)
+    else:
+        story.append(Paragraph("Aucun impayé sur la période.", styles["Normal"]))
+
+    # Tickets (optionnel)
+    if tickets:
+        story.append(Spacer(1, 0.3 * cm))
+        story.append(Paragraph("5) Tickets marché (dans la période)", styles["Heading2"]))
+        data_t = [["Date", "Emplacement", "Vendeur", "Montant", "Agent"]]
+        for t in tickets[:800]:
+            data_t.append(
+                [
+                    t.date.strftime("%d/%m/%Y") if hasattr(t.date, "strftime") else "",
+                    (t.emplacement.nom_lieu if t.emplacement else "")[:22],
+                    (t.nom_vendeur or "")[:22],
+                    f"{Decimal(str(t.montant or 0)):,.0f} FCFA".replace(",", " "),
+                    t.encaisse_par_agent.nom_complet if t.encaisse_par_agent else "—",
+                ]
+            )
+        tbl_t = Table(data_t, colWidths=[2.8 * cm, 6 * cm, 6 * cm, 3.5 * cm, 6.0 * cm])
+        tbl_t.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F5E9")),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ]
+            )
+        )
+        story.append(tbl_t)
+
+    story.append(Spacer(1, 0.6 * cm))
+    story.append(Paragraph("Date et Signature : ________________________________", styles["Normal"]))
+
+    def on_page(c, d):
+        _draw_pdf_header(c, d, conf)
+
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page, canvasmaker=NumberedCanvas)
+    return response
+
+
 @login_required
 @user_passes_test(is_staff_user)
 def export_excel_contributions(request):

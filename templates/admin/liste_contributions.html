@@ -479,6 +479,7 @@
                             <th>Montant dû</th>
                             <th>Montant payé</th>
                             <th>Reste à payer</th>
+                            <th>Relevé</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -490,10 +491,20 @@
                             <td class="montant">{{ cot.montant_annuel_du|floatformat:0 }} FCFA</td>
                             <td class="montant">{{ cot.montant_paye|floatformat:0 }} FCFA</td>
                             <td class="montant">{{ cot.reste_a_payer|floatformat:0 }} FCFA</td>
+                            <td>
+                                {% if cot.boutique.contribuable %}
+                                <a class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.85rem; text-decoration:none;"
+                                   href="{% url 'export_pdf_suivi_paiements_contribuable' cot.boutique.contribuable.pk %}?date_du={{ current_filters.date_du }}&date_au={{ current_filters.date_au }}">
+                                    📄 Relevé
+                                </a>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem; color: #888;">
+                            <td colspan="7" style="text-align: center; padding: 2rem; color: #888;">
                                 Aucune cotisation annuelle trouvée.
                             </td>
                         </tr>
@@ -518,6 +529,7 @@
                             <th>Montant payé</th>
                             <th>Date paiement</th>
                             <th>Agent</th>
+                            <th>Relevé</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -530,10 +542,20 @@
                             <td class="montant">{{ paiement.montant_paye|floatformat:0 }} FCFA</td>
                             <td>{{ paiement.date_paiement|date:"d/m/Y H:i" }}</td>
                             <td>{{ paiement.encaisse_par_agent.nom_complet|default:"—" }}</td>
+                            <td>
+                                {% if paiement.cotisation_annuelle.boutique.contribuable %}
+                                <a class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.85rem; text-decoration:none;"
+                                   href="{% url 'export_pdf_suivi_paiements_contribuable' paiement.cotisation_annuelle.boutique.contribuable.pk %}?date_du={{ current_filters.date_du }}&date_au={{ current_filters.date_au }}">
+                                    📄 Relevé
+                                </a>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem; color: #888;">
+                            <td colspan="8" style="text-align: center; padding: 2rem; color: #888;">
                                 Aucun paiement trouvé.
                             </td>
                         </tr>
@@ -557,6 +579,7 @@
                             <th>Contribuable</th>
                             <th>Montant</th>
                             <th>Agent</th>
+                            <th>Relevé</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -568,10 +591,20 @@
                             <td>{{ ticket.contribuable.nom_complet|default:"—" }}</td>
                             <td class="montant">{{ ticket.montant|floatformat:0 }} FCFA</td>
                             <td>{{ ticket.encaisse_par_agent.nom_complet|default:"—" }}</td>
+                            <td>
+                                {% if ticket.contribuable %}
+                                <a class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.85rem; text-decoration:none;"
+                                   href="{% url 'export_pdf_suivi_paiements_contribuable' ticket.contribuable.pk %}?date_du={{ current_filters.date_du }}&date_au={{ current_filters.date_au }}">
+                                    📄 Relevé
+                                </a>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem; color: #888;">
+                            <td colspan="7" style="text-align: center; padding: 2rem; color: #888;">
                                 Aucun ticket marché trouvé.
                             </td>
                         </tr>
